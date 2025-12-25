@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Brokle Loading Icon - Layer Build-up -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" aria-hidden="true">
+  <style>
+    .build1 { animation: build 1.8s ease-in-out infinite; }
+    .build2 { animation: build 1.8s ease-in-out 0.3s infinite; }
+    .build3 { animation: build 1.8s ease-in-out 0.6s infinite; }
+    @keyframes build {
+      0%, 10% { opacity: 0; transform: translateY(-4px); }
+      20%, 80% { opacity: 1; transform: translateY(0); }
+      90%, 100% { opacity: 0; transform: translateY(4px); }
+    }
+  </style>
+  <g fill="#000000">
+    <path class="build1" d="M16 2L28 8V10L16 16L4 10V8L16 2Z"/>
+    <path class="build2" d="M4 14L16 20L28 14V16L16 22L4 16V14Z"/>
+    <path class="build3" d="M4 20L16 26L28 20V22L16 28L4 22V20Z"/>
+  </g>
+</svg>
