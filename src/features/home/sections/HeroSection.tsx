@@ -21,12 +21,12 @@ export function HeroSection() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button size="lg" className="gap-2 h-13 px-8 text-base" asChild>
+              <Button size="lg" className="gap-2" asChild>
                 <Link href="https://app.brokle.ai/signup">
                   Get Started Free <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" className="gap-2 h-13 px-8 text-base" asChild>
+              <Button size="lg" variant="outline" asChild>
                 <Link href="#demo">
                   Take a Tour
                 </Link>

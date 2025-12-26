@@ -5,6 +5,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { CookieConsentProvider } from '@/providers/cookie-consent-provider';
 import { CookieConsent } from '@/components/cookie-consent';
 import { AnalyticsTracker } from '@/components/analytics-tracker';
+import { ScrollProvider } from '@/contexts/ScrollContext';
 import { Toaster } from 'sonner';
 import type { Metadata } from 'next';
 import './global.css';
@@ -80,7 +81,9 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <RootProvider>{children}</RootProvider>
+            <ScrollProvider>
+              <RootProvider>{children}</RootProvider>
+            </ScrollProvider>
             <CookieConsent />
             <Toaster />
           </ThemeProvider>

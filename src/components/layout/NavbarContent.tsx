@@ -26,7 +26,8 @@ import {
 import { useEffect, useState } from 'react';
 
 interface NavbarContentProps {
-  isScrolled: boolean
+  isScrolled: boolean;
+  variant?: 'default' | 'docs';
 }
 
 const productLinks = [
@@ -130,26 +131,29 @@ function GitHubStarsInline() {
   );
 }
 
-export default function NavbarContent({ isScrolled }: NavbarContentProps) {
-  return (
-    <header
-      className={`sticky top-0 z-40 w-full transition-all duration-300 ${
+export default function NavbarContent({ isScrolled, variant = 'default' }: NavbarContentProps) {
+  // In docs variant, parent handles sticky/scroll styling
+  const headerClasses = variant === 'docs'
+    ? 'w-full'
+    : `sticky top-0 z-40 w-full transition-all duration-300 ${
         isScrolled
-          ? "bg-background/80 backdrop-blur-md border-b shadow-sm"
-          : "bg-transparent"
-      }`}
-    >
-      <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
+          ? 'bg-background/80 backdrop-blur-md border-b border-border/50'
+          : 'bg-transparent'
+      }`;
+
+  return (
+    <header className={headerClasses}>
+      <div className="mx-auto w-full max-w-screen-2xl px-2 lg:px-6">
+        <div className="flex h-14 items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center">
+          <div className="flex shrink-0 items-center">
             <Link href="/" className="flex items-center">
-              <BrokleLogo variant="full" size="sm" />
+              <BrokleLogo variant="full" size="md" />
             </Link>
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:block">
+          <div className="hidden lg:block">
             <NavigationMenu>
               <NavigationMenuList>
                 {/* Product Dropdown */}
@@ -230,14 +234,14 @@ export default function NavbarContent({ isScrolled }: NavbarContentProps) {
           </div>
 
           {/* Desktop Actions */}
-          <div className="hidden md:flex items-center space-x-3">
+          <div className="hidden lg:flex items-center space-x-3">
             <SearchButton />
             {/* <GitHubStarsInline /> */}
             <AuthButtons />
           </div>
 
           {/* Mobile Menu */}
-          <div className="flex items-center md:hidden space-x-2">
+          <div className="flex items-center lg:hidden space-x-2">
             <SearchButton iconOnly />
             <Sheet>
               <SheetTrigger asChild>
@@ -251,7 +255,7 @@ export default function NavbarContent({ isScrolled }: NavbarContentProps) {
                   {/* Mobile Logo */}
                   <div className="px-2 py-6">
                     <Link href="/" className="flex items-center">
-                      <BrokleLogo variant="full" size="sm" />
+                      <BrokleLogo variant="full" size="md" />
                     </Link>
                   </div>
 
