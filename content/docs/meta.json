@@ -1,3 +1,15 @@
 {
-  "pages": ["documentation", "integrations", "sdk", "self-hosting"]
+  "title": "Docs",
+  "pages": [
+    "index",
+    "---Get Started---",
+    "quickstart",
+    "first-trace",
+    "---Observability---",
+    "tracing",
+    "evaluation",
+    "integrations",
+    "sdk",
+    "self-hosting"
+  ]
 }

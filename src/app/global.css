@@ -182,3 +182,19 @@ header#nd-nav a[href*="login"].inline-flex:hover,
   border-right: none !important;
   border-inline-end: none !important;
 }
+
+/* Docs layout offset - account for navbar (56px) + tabs (48px) */
+:root {
+  --docs-header-height: 104px;
+}
+
+/* Fix TOC "On this page" scrolling under navbar + tabs */
+#nd-toc {
+  top: var(--docs-header-height) !important;
+  height: calc(100vh - var(--docs-header-height)) !important;
+}
+
+/* Fix TOC popover (mobile) positioning */
+[data-toc-popover] {
+  top: var(--docs-header-height) !important;
+}

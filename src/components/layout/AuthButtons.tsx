@@ -19,8 +19,8 @@ export function AuthButtons({ className, mobile }: AuthButtonsProps) {
   const [authState, setAuthState] = useState<AuthState>('loading');
 
   useEffect(() => {
-    // Check auth state via /v1/auth/me endpoint
-    fetch(`${apiUrl}/v1/auth/me`, {
+    // Check auth state via /api/v1/auth/me endpoint (Dashboard routes use /api/v1 prefix)
+    fetch(`${apiUrl}/api/v1/auth/me`, {
       credentials: 'include', // Include httpOnly cookies
     })
       .then((res) => {

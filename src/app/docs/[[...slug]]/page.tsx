@@ -5,18 +5,12 @@ import {
   DocsPage,
   DocsTitle,
 } from 'fumadocs-ui/layouts/docs/page';
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { getMDXComponents } from '@/mdx-components';
 import type { Metadata } from 'next';
 
 export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
   const params = await props.params;
-
-  // Redirect /docs to /docs/documentation
-  if (!params.slug || params.slug.length === 0) {
-    redirect('/docs/documentation');
-  }
-
   const page = source.getPage(params.slug);
   if (!page) notFound();
 

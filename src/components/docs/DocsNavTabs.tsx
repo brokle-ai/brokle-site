@@ -7,8 +7,9 @@ import { BookOpen, Puzzle, Code, Server } from 'lucide-react';
 const tabs = [
   {
     title: 'Documentation',
-    href: '/docs/documentation',
+    href: '/docs',
     icon: BookOpen,
+    isRoot: true,
   },
   {
     title: 'Integrations',
@@ -30,12 +31,16 @@ const tabs = [
 export function DocsNavTabs() {
   const pathname = usePathname();
 
+  // Check if we're on a sub-section (integrations, sdk, self-hosting)
+  const isOnSubSection = tabs.slice(1).some((tab) => pathname.startsWith(tab.href));
+
   return (
     <div className="border-b bg-background">
       <div className="container mx-auto px-4">
         <nav className="flex items-center gap-1 overflow-x-auto py-2">
           {tabs.map((tab) => {
-            const isActive = pathname.startsWith(tab.href);
+            // For root tab, it's active when NOT on any sub-section
+            const isActive = (tab as any).isRoot ? !isOnSubSection : pathname.startsWith(tab.href);
             return (
               <Link
                 key={tab.href}

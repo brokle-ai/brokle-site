@@ -1,0 +1,49 @@
+---
+title: Quickstart
+description: Get started quickly
+---
+
+Get started with Brokle in just a few minutes.
+
+## Installation
+
+Install the Brokle SDK using your preferred package manager.
+
+### Python
+
+```bash
+pip install brokle
+```
+
+### JavaScript
+
+```bash
+npm install @brokle/sdk
+```
+
+## Initialize the Client
+
+Create a new Brokle client with your API key.
+
+```python
+from brokle import Brokle
+
+client = Brokle(api_key="your-api-key")
+```
+
+## Create Your First Trace
+
+Start tracing your AI application calls.
+
+```python
+with client.trace("my-first-trace") as trace:
+    # Your AI code here
+    response = openai.chat.completions.create(...)
+    trace.log(response)
+```
+
+## Next Steps
+
+- Explore the [Tracing](/docs/tracing/traces) documentation
+- Learn about [Evaluations](/docs/evaluation/scores)
+- Check out our [Integrations](/docs/integrations)
