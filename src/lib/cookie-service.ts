@@ -23,7 +23,7 @@ export const initializeAnalytics = async (): Promise<ReturnType<typeof import('a
     const measurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
     if (!measurementId) {
-      console.warn('Google Analytics measurement ID not configured. Set NEXT_PUBLIC_GA_MEASUREMENT_ID environment variable.');
+      // GA measurement ID not configured - analytics will be disabled
       return null;
     }
 
@@ -41,7 +41,6 @@ export const initializeAnalytics = async (): Promise<ReturnType<typeof import('a
       ]
     });
 
-    console.log('Analytics initialized successfully');
     return analyticsInstance;
   } catch (error) {
     console.error('Failed to initialize analytics:', error);
@@ -53,7 +52,6 @@ export const trackPageView = async (path: string): Promise<void> => {
   const analytics = analyticsInstance || await initializeAnalytics();
 
   if (!analytics) {
-    console.warn('Analytics not available. Page view not tracked.');
     return;
   }
 
@@ -67,7 +65,6 @@ export const trackEvent = async (category: string, action: string, label?: strin
   const analytics = analyticsInstance || await initializeAnalytics();
 
   if (!analytics) {
-    console.warn('Analytics not available. Event not tracked.');
     return;
   }
 
@@ -79,28 +76,21 @@ export const trackEvent = async (category: string, action: string, label?: strin
 };
 
 export const initializeMarketing = (): void => {
-  // Initialize marketing pixels (Facebook, LinkedIn, etc.)
-  console.log('Marketing cookies initialized');
-
-  // Example: Facebook Pixel implementation would go here
+  // TODO: Initialize marketing pixels (Facebook, LinkedIn, etc.)
+  // Implementation would go here when marketing integrations are added
 };
 
-export const applyPreferences = (preferences: CookiePreferences): boolean => {
-  console.log("Applying cookie preferences:", preferences);
-
-  // Set a flag to track initialization success
-  let analyticsSuccess = false;
-
+export const applyPreferences = async (preferences: CookiePreferences): Promise<boolean> => {
   if (preferences.analytics) {
-    initializeAnalytics().then(result => {
-      analyticsSuccess = !!result;
-      console.log("Analytics initialization result:", analyticsSuccess ? "Success" : "Failed");
-    });
+    const result = await initializeAnalytics();
+    if (!result) {
+      return false;
+    }
   } else {
     // Disable analytics if previously enabled
     analyticsInstance = null;
 
-    // Optionally remove Google Analytics cookies
+    // Remove Google Analytics cookies
     removeCookie('_ga');
     removeCookie('_gid');
     removeCookie('_gat');
@@ -120,13 +110,7 @@ export const applyPreferences = (preferences: CookiePreferences): boolean => {
     initializeMarketing();
   }
 
-  if (preferences.preferences) {
-    // Enable preference cookies
-    console.log('Preference cookies initialized');
-  }
-
-  // Return overall success status
-  return preferences.analytics ? analyticsSuccess : true;
+  return true;
 };
 
 export const setCookie = (name: string, value: string, options: Record<string, unknown> = {}): void => {

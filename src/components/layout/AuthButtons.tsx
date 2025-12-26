@@ -19,16 +19,26 @@ export function AuthButtons({ className, mobile }: AuthButtonsProps) {
   const [authState, setAuthState] = useState<AuthState>('loading');
 
   useEffect(() => {
+    let isMounted = true;
+
     // Check auth state via /api/v1/auth/me endpoint (Dashboard routes use /api/v1 prefix)
     fetch(`${apiUrl}/api/v1/auth/me`, {
       credentials: 'include', // Include httpOnly cookies
     })
       .then((res) => {
-        setAuthState(res.ok ? 'authenticated' : 'unauthenticated');
+        if (isMounted) {
+          setAuthState(res.ok ? 'authenticated' : 'unauthenticated');
+        }
       })
       .catch(() => {
-        setAuthState('unauthenticated');
+        if (isMounted) {
+          setAuthState('unauthenticated');
+        }
       });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   if (authState === 'loading') {

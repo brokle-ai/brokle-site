@@ -99,10 +99,10 @@ function GitHubStarsInline() {
   const [stars, setStars] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('https://api.github.com/repos/brokle-ai/brokle')
+    fetch('/api/github-stars')
       .then((res) => res.json())
       .then((data) => {
-        const count = data.stargazers_count;
+        const count = data.stars;
         if (typeof count === 'number') {
           setStars(count >= 1000 ? `${(count / 1000).toFixed(1)}k` : String(count));
         }
@@ -238,7 +238,7 @@ export default function NavbarContent({ isScrolled }: NavbarContentProps) {
 
           {/* Mobile Menu */}
           <div className="flex items-center md:hidden space-x-2">
-            <SearchButton />
+            <SearchButton iconOnly />
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-9 w-9">

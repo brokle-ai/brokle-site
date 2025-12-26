@@ -49,18 +49,8 @@ export async function submitRequestAccess(
     const { name, email, company, jobTitle, companySize, useCase } = validatedFields.data
 
     // TODO: Implement actual database storage and email notification
-    console.log('Request access submission:', {
-      name,
-      email,
-      company,
-      jobTitle,
-      companySize,
-      useCase,
-      timestamp: new Date().toISOString(),
-    })
-
-    // Simulate processing delay
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // For now, form validation is complete - storage/email would happen here
+    void { name, email, company, jobTitle, companySize, useCase }; // Mark as used
 
     revalidatePath('/request-access')
 

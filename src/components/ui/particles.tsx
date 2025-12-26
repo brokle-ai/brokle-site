@@ -75,20 +75,34 @@ const Particles: React.FC<ParticlesProps> = ({
   const mousePosition = MousePosition();
   const mouse = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const canvasSize = useRef<{ w: number; h: number }>({ w: 0, h: 0 });
+  const animationFrameRef = useRef<number | null>(null);
   const dpr = typeof window !== "undefined" ? window.devicePixelRatio : 1;
 
+  // Check for reduced motion preference
+  const prefersReducedMotion = typeof window !== "undefined"
+    ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    : false;
+
   useEffect(() => {
+    // Skip animation if user prefers reduced motion
+    if (prefersReducedMotion) return;
+
     if (canvasRef.current) {
       context.current = canvasRef.current.getContext("2d");
     }
     initCanvas();
-    animate();
+    startAnimation();
     window.addEventListener("resize", initCanvas);
 
     return () => {
       window.removeEventListener("resize", initCanvas);
+      // Clean up animation frame on unmount
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
     };
-  }, [color]);
+  }, [color, prefersReducedMotion]);
 
   useEffect(() => {
     onMouseMove();
@@ -266,7 +280,16 @@ const Particles: React.FC<ParticlesProps> = ({
         // update the circle position
       }
     });
-    window.requestAnimationFrame(animate);
+    // Store animation frame ID for cleanup
+    animationFrameRef.current = window.requestAnimationFrame(animate);
+  };
+
+  // Wrapper to start animation loop
+  const startAnimation = () => {
+    if (animationFrameRef.current !== null) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    animate();
   };
 
   return (

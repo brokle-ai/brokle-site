@@ -48,20 +48,9 @@ export async function submitContactForm(
 
     const { name, email, company, subject, message, inquiryType } = validatedFields.data
 
-    // TODO: Implement actual email sending logic
-    // For now, we'll simulate the form submission
-    console.log('Contact form submission:', {
-      name,
-      email,
-      company,
-      subject,
-      message,
-      inquiryType,
-      timestamp: new Date().toISOString(),
-    })
-
-    // Simulate processing delay
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // TODO: Implement actual email sending logic (e.g., Resend, SendGrid)
+    // For now, form validation is complete - email sending would happen here
+    void { name, email, company, subject, message, inquiryType }; // Mark as used
 
     revalidatePath('/contact')
 

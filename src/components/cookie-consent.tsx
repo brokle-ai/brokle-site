@@ -162,7 +162,7 @@ export const CookieConsent: React.FC = () => {
           transition={{ duration: 0.3 }}
           className="fixed bottom-6 left-0 right-0 z-50 mx-auto flex justify-center px-4"
         >
-          <Card className="w-full max-w-2xl shadow-lg border-0 bg-white/95 backdrop-blur-md dark:bg-gray-900/95 overflow-hidden">
+          <Card className="w-full max-w-2xl shadow-lg border-0 bg-background/95 backdrop-blur-md overflow-hidden">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -217,7 +217,7 @@ export const CookieConsent: React.FC = () => {
 
           <div className="py-4 space-y-4">
             {/* Necessary (always checked) */}
-            <div className="border-b border-gray-200 dark:border-gray-800 pb-4">
+            <div className="border-b border-border pb-4">
               <div className="flex items-center justify-between">
                 <div
                   className="flex items-center gap-3 cursor-pointer"
@@ -252,7 +252,7 @@ export const CookieConsent: React.FC = () => {
             </div>
 
             {/* Analytics */}
-            <div className="border-b border-gray-200 dark:border-gray-800 pb-4">
+            <div className="border-b border-border pb-4">
               <div className="flex items-center justify-between">
                 <div
                   className="flex items-center gap-3 cursor-pointer"
@@ -286,7 +286,7 @@ export const CookieConsent: React.FC = () => {
             </div>
 
             {/* Marketing */}
-            <div className="border-b border-gray-200 dark:border-gray-800 pb-4">
+            <div className="border-b border-border pb-4">
               <div className="flex items-center justify-between">
                 <div
                   className="flex items-center gap-3 cursor-pointer"
@@ -321,7 +321,7 @@ export const CookieConsent: React.FC = () => {
             </div>
 
             {/* Preferences */}
-            <div className="border-b border-gray-200 dark:border-gray-800 pb-4">
+            <div className="border-b border-border pb-4">
               <div className="flex items-center justify-between">
                 <div
                   className="flex items-center gap-3 cursor-pointer"
@@ -382,7 +382,7 @@ export const CookieConsent: React.FC = () => {
             variant="outline"
             size="sm"
             onClick={() => setShowAdvancedDialog(true)}
-            className="bg-white/90 backdrop-blur-sm shadow-md hover:bg-white dark:bg-gray-800/90 dark:hover:bg-gray-800 gap-2 rounded-full"
+            className="bg-background/90 backdrop-blur-sm shadow-md hover:bg-background gap-2 rounded-full"
           >
             <Cookie className="h-4 w-4" />
             Cookie Settings

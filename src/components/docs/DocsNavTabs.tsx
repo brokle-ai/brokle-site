@@ -2,45 +2,26 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookOpen, Puzzle, Code, Server } from 'lucide-react';
-
-const tabs = [
-  {
-    title: 'Documentation',
-    href: '/docs',
-    icon: BookOpen,
-    isRoot: true,
-  },
-  {
-    title: 'Integrations',
-    href: '/docs/integrations',
-    icon: Puzzle,
-  },
-  {
-    title: 'SDK & API',
-    href: '/docs/sdk',
-    icon: Code,
-  },
-  {
-    title: 'Self Hosting',
-    href: '/docs/self-hosting',
-    icon: Server,
-  },
-];
+import { DOCS_TABS } from '@/config/docs-tabs';
 
 export function DocsNavTabs() {
   const pathname = usePathname();
 
   // Check if we're on a sub-section (integrations, sdk, self-hosting)
-  const isOnSubSection = tabs.slice(1).some((tab) => pathname.startsWith(tab.href));
+  const isOnSubSection = DOCS_TABS.slice(1).some((tab) =>
+    pathname.startsWith(tab.href)
+  );
 
   return (
     <div className="border-b bg-background">
       <div className="container mx-auto px-4">
         <nav className="flex items-center gap-1 overflow-x-auto py-2">
-          {tabs.map((tab) => {
+          {DOCS_TABS.map((tab) => {
             // For root tab, it's active when NOT on any sub-section
-            const isActive = (tab as any).isRoot ? !isOnSubSection : pathname.startsWith(tab.href);
+            const isActive = tab.isRoot
+              ? !isOnSubSection
+              : pathname.startsWith(tab.href);
+            const Icon = tab.icon;
             return (
               <Link
                 key={tab.href}
@@ -51,7 +32,7 @@ export function DocsNavTabs() {
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 }`}
               >
-                <tab.icon className="size-4" />
+                <Icon className="size-4" />
                 {tab.title}
               </Link>
             );

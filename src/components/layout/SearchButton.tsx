@@ -3,8 +3,25 @@
 import { useSearchContext } from 'fumadocs-ui/contexts/search';
 import { Search } from 'lucide-react';
 
-export function SearchButton() {
+interface SearchButtonProps {
+  iconOnly?: boolean;
+}
+
+export function SearchButton({ iconOnly }: SearchButtonProps) {
   const { setOpenSearch, hotKey } = useSearchContext();
+
+  if (iconOnly) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpenSearch(true)}
+        className="inline-flex items-center justify-center rounded-lg border bg-secondary/50 p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+      >
+        <Search className="size-4" />
+        <span className="sr-only">Search</span>
+      </button>
+    );
+  }
 
   return (
     <button

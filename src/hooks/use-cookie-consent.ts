@@ -33,7 +33,7 @@ export const useCookieConsent = () => {
   // Apply preferences whenever they change
   useEffect(() => {
     if (initialized) {
-      applyPreferences(preferences);
+      void applyPreferences(preferences);
     }
   }, [preferences, initialized]);
 

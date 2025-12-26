@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -164,9 +164,9 @@ function DashboardPlaceholder({ tabId }: { tabId: string }) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   {trace.status === "success" ? (
-                    <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+                    <CheckCircle className="h-3.5 w-3.5 text-success" />
                   ) : (
-                    <AlertCircle className="h-3.5 w-3.5 text-red-500" />
+                    <AlertCircle className="h-3.5 w-3.5 text-destructive" />
                   )}
                   <span className="text-sm font-mono">{trace.id}</span>
                 </div>
@@ -197,7 +197,7 @@ function DashboardPlaceholder({ tabId }: { tabId: string }) {
           <div className="bg-muted/30 rounded-lg p-4">
             <div className="text-xs text-muted-foreground mb-1">Total Requests</div>
             <div className="text-2xl font-bold">3,310,278</div>
-            <div className="text-xs text-green-500 mt-1">+12.5% vs last week</div>
+            <div className="text-xs text-success mt-1">+12.5% vs last week</div>
           </div>
           <div className="bg-muted/30 rounded-lg p-4">
             <div className="text-xs text-muted-foreground mb-1">Total Cost</div>
@@ -212,7 +212,7 @@ function DashboardPlaceholder({ tabId }: { tabId: string }) {
           <div className="bg-muted/30 rounded-lg p-4">
             <div className="text-xs text-muted-foreground mb-1">Error Rate</div>
             <div className="text-2xl font-bold">0.13%</div>
-            <div className="text-xs text-green-500 mt-1">Below threshold</div>
+            <div className="text-xs text-success mt-1">Below threshold</div>
           </div>
         </div>
       </div>
@@ -240,7 +240,7 @@ function DashboardPlaceholder({ tabId }: { tabId: string }) {
             </div>
           </div>
           <div className="flex items-center gap-2 pt-2">
-            <Badge className="bg-green-500/10 text-green-600 border-green-500/20">production</Badge>
+            <Badge className="bg-success/10 text-success border-success/20">production</Badge>
             <Badge variant="outline">staging</Badge>
           </div>
         </div>
@@ -268,7 +268,7 @@ function DashboardPlaceholder({ tabId }: { tabId: string }) {
                   <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full ${
-                        eval_.status === "pass" ? "bg-green-500" : "bg-yellow-500"
+                        eval_.status === "pass" ? "bg-success" : "bg-warning"
                       }`}
                       style={{ width: `${eval_.score * 100}%` }}
                     />
@@ -323,14 +323,27 @@ function DashboardPlaceholder({ tabId }: { tabId: string }) {
 export function FeatureTabsSection() {
   const [copiedTab, setCopiedTab] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState("observability")
+  const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const copyToClipboard = (code: string, tab: string) => {
     navigator.clipboard.writeText(code)
     setCopiedTab(tab)
-    setTimeout(() => setCopiedTab(null), 2000)
-  }
 
-  const activeFeature = featureTabs.find(t => t.id === activeTab)
+    // Clear existing timeout before setting new one
+    if (copyTimeoutRef.current) {
+      clearTimeout(copyTimeoutRef.current)
+    }
+    copyTimeoutRef.current = setTimeout(() => setCopiedTab(null), 2000)
+  }
 
   return (
     <section className="py-20 md:py-28 lg:py-32 border-t">

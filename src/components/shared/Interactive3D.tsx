@@ -11,10 +11,18 @@ export function Interactive3D({ className }: Interactive3DProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const cubeRef = useRef<HTMLDivElement>(null)
 
+  // Check for reduced motion preference
+  const prefersReducedMotion = typeof window !== "undefined"
+    ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    : false;
+
   useEffect(() => {
     const container = containerRef.current
     const cube = cubeRef.current
     if (!container || !cube) return
+
+    // Skip mouse tracking if user prefers reduced motion
+    if (prefersReducedMotion) return
 
     const handleMouseMove = (e: MouseEvent) => {
       const rect = container.getBoundingClientRect()
@@ -38,11 +46,13 @@ export function Interactive3D({ className }: Interactive3DProps) {
       container.removeEventListener('mousemove', handleMouseMove)
       container.removeEventListener('mouseleave', handleMouseLeave)
     }
-  }, [])
+  }, [prefersReducedMotion])
 
   return (
     <div
       ref={containerRef}
+      role="img"
+      aria-label="Interactive 3D visualization showing AI observability trace data structure"
       className={cn(
         "relative w-full h-full min-h-[300px] md:min-h-[400px] flex items-center justify-center cursor-pointer",
         className

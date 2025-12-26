@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 interface BrokleLoaderProps {
   size?: "sm" | "md" | "lg" | "xl";
   className?: string;
@@ -24,13 +26,15 @@ export function BrokleLoader({
   if (forceTheme) {
     const suffix = forceTheme === "dark" ? "-white" : "";
     return (
-      <img
+      <Image
         src={`/logo/loading${suffix}.svg`}
         alt="Loading..."
         width={dimension}
         height={dimension}
         className={className}
         aria-label="Loading"
+        priority
+        unoptimized
       />
     );
   }
@@ -40,22 +44,26 @@ export function BrokleLoader({
   return (
     <span className={`inline-flex ${className}`}>
       {/* Light theme loader - visible by default, hidden in dark mode */}
-      <img
+      <Image
         src="/logo/loading.svg"
         alt="Loading..."
         width={dimension}
         height={dimension}
         className="block dark:hidden"
         aria-label="Loading"
+        priority
+        unoptimized
       />
       {/* Dark theme loader - hidden by default, visible in dark mode */}
-      <img
+      <Image
         src="/logo/loading-white.svg"
         alt="Loading..."
         width={dimension}
         height={dimension}
         className="hidden dark:block"
         aria-label="Loading"
+        priority
+        unoptimized
       />
     </span>
   );
