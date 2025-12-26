@@ -1,0 +1,93 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+
+type AuthState = 'loading' | 'authenticated' | 'unauthenticated';
+
+interface AuthButtonsProps {
+  className?: string;
+  mobile?: boolean;
+}
+
+// Environment-configurable URLs with production fallbacks
+const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.brokle.ai';
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.brokle.ai';
+
+export function AuthButtons({ className, mobile }: AuthButtonsProps) {
+  const [authState, setAuthState] = useState<AuthState>('loading');
+
+  useEffect(() => {
+    // Check auth state via /v1/auth/me endpoint
+    fetch(`${apiUrl}/v1/auth/me`, {
+      credentials: 'include', // Include httpOnly cookies
+    })
+      .then((res) => {
+        setAuthState(res.ok ? 'authenticated' : 'unauthenticated');
+      })
+      .catch(() => {
+        setAuthState('unauthenticated');
+      });
+  }, []);
+
+  if (authState === 'loading') {
+    // Show skeleton during loading
+    if (mobile) {
+      return (
+        <div className={className}>
+          <div className="h-10 w-full animate-pulse rounded-md bg-muted" />
+          <div className="h-10 w-full animate-pulse rounded-md bg-muted" />
+        </div>
+      );
+    }
+    return (
+      <div className={`flex items-center gap-2 ${className}`}>
+        <div className="h-9 w-16 animate-pulse rounded-md bg-muted" />
+        <div className="h-9 w-24 animate-pulse rounded-md bg-muted" />
+      </div>
+    );
+  }
+
+  if (authState === 'authenticated') {
+    if (mobile) {
+      return (
+        <div className={className}>
+          <Button className="w-full justify-center" asChild>
+            <Link href={appUrl}>Dashboard</Link>
+          </Button>
+        </div>
+      );
+    }
+    return (
+      <Button size="sm" asChild className={className}>
+        <Link href={appUrl}>Dashboard</Link>
+      </Button>
+    );
+  }
+
+  // Unauthenticated state
+  if (mobile) {
+    return (
+      <div className={`space-y-2 ${className}`}>
+        <Button variant="outline" className="w-full justify-center" asChild>
+          <Link href={`${appUrl}/login`}>Sign In</Link>
+        </Button>
+        <Button className="w-full justify-center" asChild>
+          <Link href={`${appUrl}/signup`}>Get Started</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <Button variant="ghost" size="sm" asChild>
+        <Link href={`${appUrl}/login`}>Sign In</Link>
+      </Button>
+      <Button size="sm" asChild>
+        <Link href={`${appUrl}/signup`}>Get Started</Link>
+      </Button>
+    </>
+  );
+}

@@ -6,6 +6,7 @@
 
 :root {
   --radius: 0.625rem;
+  --fd-nav-height: 56px;
 
   /* Base - Pure neutrals (0 chroma) */
   --background: oklch(1 0 0);
@@ -122,4 +123,62 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Navbar button styling - Get Started as solid primary, Sign In as ghost */
+/* Use high specificity to override Fumadocs buttonVariants */
+header#nd-nav a[href*="signup"].inline-flex,
+#nd-nav a[href*="signup"].inline-flex {
+  --tw-bg-opacity: 1 !important;
+  background-color: oklch(0.205 0 0) !important;
+  color: oklch(0.985 0 0) !important;
+  border-color: oklch(0.205 0 0) !important;
+  border-width: 0 !important;
+}
+
+header#nd-nav a[href*="signup"].inline-flex:hover,
+#nd-nav a[href*="signup"].inline-flex:hover {
+  background-color: oklch(0.3 0 0) !important;
+}
+
+.dark header#nd-nav a[href*="signup"].inline-flex,
+.dark #nd-nav a[href*="signup"].inline-flex {
+  background-color: oklch(0.985 0 0) !important;
+  color: oklch(0.145 0 0) !important;
+  border-color: oklch(0.985 0 0) !important;
+}
+
+.dark header#nd-nav a[href*="signup"].inline-flex:hover,
+.dark #nd-nav a[href*="signup"].inline-flex:hover {
+  background-color: oklch(0.9 0 0) !important;
+}
+
+header#nd-nav a[href*="login"].inline-flex,
+#nd-nav a[href*="login"].inline-flex {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  border-width: 0 !important;
+}
+
+header#nd-nav a[href*="login"].inline-flex:hover,
+#nd-nav a[href*="login"].inline-flex:hover {
+  background-color: oklch(0.97 0 0) !important;
+}
+
+.dark header#nd-nav a[href*="login"].inline-flex:hover,
+.dark #nd-nav a[href*="login"].inline-flex:hover {
+  background-color: oklch(0.269 0 0) !important;
+}
+
+/* Docs sidebar - match background color and remove border */
+#nd-sidebar {
+  background-color: var(--background) !important;
+  border-right: none !important;
+  border-inline-end: none !important;
+}
+
+.dark #nd-sidebar {
+  background-color: var(--background) !important;
+  border-right: none !important;
+  border-inline-end: none !important;
 }

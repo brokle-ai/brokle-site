@@ -5,13 +5,18 @@ import {
   DocsPage,
   DocsTitle,
 } from 'fumadocs-ui/layouts/docs/page';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getMDXComponents } from '@/mdx-components';
 import type { Metadata } from 'next';
-import { createRelativeLink } from 'fumadocs-ui/mdx';
 
 export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
   const params = await props.params;
+
+  // Redirect /docs to /docs/documentation
+  if (!params.slug || params.slug.length === 0) {
+    redirect('/docs/documentation');
+  }
+
   const page = source.getPage(params.slug);
   if (!page) notFound();
 
@@ -22,12 +27,7 @@ export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
       <DocsTitle>{page.data.title}</DocsTitle>
       <DocsDescription>{page.data.description}</DocsDescription>
       <DocsBody>
-        <MDX
-          components={getMDXComponents({
-            // this allows you to link to other pages with relative file paths
-            a: createRelativeLink(source, page),
-          })}
-        />
+        <MDX components={getMDXComponents()} />
       </DocsBody>
     </DocsPage>
   );

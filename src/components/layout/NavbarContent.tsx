@@ -5,8 +5,9 @@ import { Menu, Search, MessageSquare, CheckSquare, BarChart3, Blocks, Github, St
 import { Button } from '@/components/ui/button'
 import { BrokleLogo } from '@/components/ui/brokle-logo'
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { ModeToggle } from '@/components/custom/mode-toggle'
 import { Badge } from '@/components/ui/badge'
+import { AuthButtons } from './AuthButtons'
+import { SearchButton } from './SearchButton'
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -22,6 +23,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import { useEffect, useState } from 'react';
 
 interface NavbarContentProps {
   isScrolled: boolean
@@ -93,10 +95,45 @@ const resourceLinks = [
   },
 ]
 
+function GitHubStarsInline() {
+  const [stars, setStars] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('https://api.github.com/repos/brokle-ai/brokle')
+      .then((res) => res.json())
+      .then((data) => {
+        const count = data.stargazers_count;
+        if (typeof count === 'number') {
+          setStars(count >= 1000 ? `${(count / 1000).toFixed(1)}k` : String(count));
+        }
+      })
+      .catch(() => {
+        // Silently fail - just show icon without count
+      });
+  }, []);
+
+  return (
+    <Link
+      href="https://github.com/brokle-ai/brokle"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+    >
+      <Github className="h-4 w-4" />
+      {stars && (
+        <Badge variant="secondary" className="h-5 px-1.5 text-xs">
+          <Star className="h-3 w-3 mr-0.5 fill-current" />
+          {stars}
+        </Badge>
+      )}
+    </Link>
+  );
+}
+
 export default function NavbarContent({ isScrolled }: NavbarContentProps) {
   return (
     <header
-      className={`sticky top-0 z-50 w-full transition-all duration-300 ${
+      className={`sticky top-0 z-40 w-full transition-all duration-300 ${
         isScrolled
           ? "bg-background/80 backdrop-blur-md border-b shadow-sm"
           : "bg-transparent"
@@ -151,12 +188,9 @@ export default function NavbarContent({ isScrolled }: NavbarContentProps) {
                   </Link>
                 </NavigationMenuItem>
 
-                {/* Docs */}
+                {/* Docs - Internal (no ExternalLink icon) */}
                 <NavigationMenuItem>
-                  <Link
-                    href="/docs"
-                    className={navigationMenuTriggerStyle()}
-                  >
+                  <Link href="/docs" className={navigationMenuTriggerStyle()}>
                     Docs
                   </Link>
                 </NavigationMenuItem>
@@ -197,35 +231,14 @@ export default function NavbarContent({ isScrolled }: NavbarContentProps) {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-3">
-            {/* GitHub Stars */}
-            <Link
-              href="https://github.com/brokle-ai/brokle"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Github className="h-4 w-4" />
-              <span className="font-medium">Star</span>
-              <Badge variant="secondary" className="h-5 px-1.5 text-xs">
-                <Star className="h-3 w-3 mr-0.5 fill-current" />
-                1.2k
-              </Badge>
-            </Link>
-
-            <ModeToggle />
-
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="https://app.brokle.ai/login">Sign In</Link>
-            </Button>
-
-            <Button size="sm" asChild>
-              <Link href="https://app.brokle.ai/signup">Get Started</Link>
-            </Button>
+            <SearchButton />
+            {/* <GitHubStarsInline /> */}
+            <AuthButtons />
           </div>
 
           {/* Mobile Menu */}
           <div className="flex items-center md:hidden space-x-2">
-            <ModeToggle />
+            <SearchButton />
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-9 w-9">
@@ -273,7 +286,7 @@ export default function NavbarContent({ isScrolled }: NavbarContentProps) {
 
                     <Link
                       href="/docs"
-                      className="flex items-center px-4 py-3 text-sm font-medium hover:bg-muted rounded-md transition-colors"
+                      className="flex items-center gap-1 px-4 py-3 text-sm font-medium hover:bg-muted rounded-md transition-colors"
                     >
                       Docs
                     </Link>
@@ -304,30 +317,13 @@ export default function NavbarContent({ isScrolled }: NavbarContentProps) {
                   </Accordion>
 
                   {/* GitHub Link - Mobile */}
-                  <div className="px-4 py-3 border-t">
-                    <Link
-                      href="https://github.com/brokle-ai/brokle"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      <Github className="h-4 w-4" />
-                      <span>Star us on GitHub</span>
-                      <Badge variant="secondary" className="ml-auto h-5 px-1.5 text-xs">
-                        <Star className="h-3 w-3 mr-0.5 fill-current" />
-                        1.2k
-                      </Badge>
-                    </Link>
-                  </div>
+                  {/* <div className="px-4 py-3 border-t">
+                    <GitHubStarsInline />
+                  </div> */}
 
                   {/* Mobile CTAs */}
-                  <div className="mt-auto px-4 py-4 border-t space-y-2">
-                    <Button variant="outline" className="w-full justify-center" asChild>
-                      <Link href="https://app.brokle.ai/login">Sign In</Link>
-                    </Button>
-                    <Button className="w-full justify-center" asChild>
-                      <Link href="https://app.brokle.ai/signup">Get Started</Link>
-                    </Button>
+                  <div className="mt-auto px-4 py-4 border-t">
+                    <AuthButtons mobile />
                   </div>
                 </div>
               </SheetContent>

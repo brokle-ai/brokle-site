@@ -1,0 +1,12 @@
+{
+  "title": "Documentation",
+  "pages": [
+    "index",
+    "---Get Started---",
+    "quickstart",
+    "first-trace",
+    "---Observability---",
+    "tracing",
+    "evaluation"
+  ]
+}

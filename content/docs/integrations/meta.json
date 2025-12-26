@@ -1,0 +1,11 @@
+{
+  "title": "Integrations",
+  "pages": [
+    "index",
+    "---LLM Providers---",
+    "openai",
+    "anthropic",
+    "---Frameworks---",
+    "rag-frameworks"
+  ]
+}

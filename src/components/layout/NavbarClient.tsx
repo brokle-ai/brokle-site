@@ -1,19 +1,19 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from "react"
-import NavbarContent from "./NavbarContent"
+import { useState, useEffect } from 'react';
+import NavbarContent from './NavbarContent';
 
 export default function NavbarClient() {
-  const [isScrolled, setIsScrolled] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10)
-    }
+      setIsScrolled(window.scrollY > 10);
+    };
 
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
-  return <NavbarContent isScrolled={isScrolled} />
+  return <NavbarContent isScrolled={isScrolled} />;
 }

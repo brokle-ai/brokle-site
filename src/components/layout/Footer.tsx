@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Github, Twitter, Linkedin } from "lucide-react"
 import { BrokleLogo } from '@/components/ui/brokle-logo'
+import { ThemeToggle } from './ThemeToggle'
 
 const footerLinks = {
   product: [
@@ -145,17 +146,7 @@ export default function Footer() {
             <p className="text-sm text-muted-foreground">
               © {new Date().getFullYear()} Brokle, Inc. All rights reserved.
             </p>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <Link href="/privacy" className="hover:text-foreground transition-colors">
-                Privacy
-              </Link>
-              <Link href="/terms" className="hover:text-foreground transition-colors">
-                Terms
-              </Link>
-              <Link href="/security" className="hover:text-foreground transition-colors">
-                Security
-              </Link>
-            </div>
+            <ThemeToggle />
           </div>
         </div>
       </div>
