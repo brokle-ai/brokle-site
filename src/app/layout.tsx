@@ -6,6 +6,7 @@ import { CookieConsentProvider } from '@/providers/cookie-consent-provider';
 import { CookieConsent } from '@/components/cookie-consent';
 import { AnalyticsTracker } from '@/components/analytics-tracker';
 import { ScrollProvider } from '@/contexts/ScrollContext';
+import { OrganizationSchema, SoftwareApplicationSchema } from '@/components/seo';
 import { Toaster } from 'sonner';
 import type { Metadata } from 'next';
 import './global.css';
@@ -16,15 +17,19 @@ export const metadata: Metadata = {
     template: '%s | Brokle',
   },
   description:
-    'Debug and improve your AI applications with traces, evals, prompt management, and metrics. Open source, OpenTelemetry-native, enterprise-ready.',
+    'Open source LLM observability platform. Debug, evaluate, and optimize AI applications with traces, evals, prompt management, and analytics. Self-host or cloud. OpenTelemetry-native.',
   keywords: [
     'AI observability',
     'LLM observability',
+    'open source LLM',
     'LLM tracing',
     'prompt management',
     'AI monitoring',
     'LLM evaluation',
     'OpenTelemetry',
+    'langfuse alternative',
+    'langsmith alternative',
+    'self-hosted LLM monitoring',
   ],
   authors: [{ name: 'Brokle' }],
   icons: {
@@ -39,7 +44,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Brokle - Open Source AI Observability Platform',
     description:
-      'Debug and improve your AI applications with traces, evals, prompt management, and metrics.',
+      'Open source LLM observability. Debug, evaluate, and optimize AI applications. Self-host or cloud.',
     type: 'website',
     locale: 'en_US',
     siteName: 'Brokle',
@@ -48,7 +53,7 @@ export const metadata: Metadata = {
         url: '/images/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Brokle - AI Observability Platform',
+        alt: 'Brokle - Open Source AI Observability Platform',
       },
     ],
   },
@@ -56,7 +61,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Brokle - Open Source AI Observability Platform',
     description:
-      'Debug and improve your AI applications with traces, evals, prompt management, and metrics.',
+      'Open source LLM observability. Debug, evaluate, and optimize AI applications. Self-host or cloud.',
     images: ['/images/twitter-card.png'],
   },
 };
@@ -73,6 +78,8 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="flex min-h-screen flex-col antialiased">
+        <OrganizationSchema />
+        <SoftwareApplicationSchema />
         <CookieConsentProvider>
           <AnalyticsTracker />
           <ThemeProvider

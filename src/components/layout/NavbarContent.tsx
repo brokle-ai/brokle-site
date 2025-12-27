@@ -236,7 +236,7 @@ export default function NavbarContent({ isScrolled, variant = 'default' }: Navba
           {/* Desktop Actions */}
           <div className="hidden lg:flex items-center space-x-3">
             <SearchButton />
-            {/* <GitHubStarsInline /> */}
+            <GitHubStarsInline />
             <AuthButtons />
           </div>
 
@@ -321,9 +321,9 @@ export default function NavbarContent({ isScrolled, variant = 'default' }: Navba
                   </Accordion>
 
                   {/* GitHub Link - Mobile */}
-                  {/* <div className="px-4 py-3 border-t">
+                  <div className="px-4 py-3 border-t">
                     <GitHubStarsInline />
-                  </div> */}
+                  </div>
 
                   {/* Mobile CTAs */}
                   <div className="mt-auto px-4 py-4 border-t">

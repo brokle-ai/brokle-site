@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, Github } from "lucide-react"
 import { DisplayHeading, IsometricIllustration } from "@/components/shared"
 
 export function HeroSection() {
@@ -11,13 +11,13 @@ export function HeroSection() {
           {/* Left side: Content */}
           <div className="text-left">
             <DisplayHeading as="h1" className="mb-6 leading-[1.1]">
-              The observability platform{" "}
-              <span className="text-foreground/80">for AI teams</span>
+              Open source LLM observability{" "}
+              <span className="text-foreground/80">for production AI</span>
             </DisplayHeading>
 
             <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-xl leading-relaxed">
               Debug, evaluate, and optimize your LLM applications with complete visibility.
-              OpenTelemetry-native, enterprise-ready.
+              100% open source. OpenTelemetry-native. Self-host anywhere.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
@@ -26,9 +26,10 @@ export function HeroSection() {
                   Get Started Free <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" asChild>
-                <Link href="#demo">
-                  Take a Tour
+              <Button size="lg" variant="outline" className="gap-2" asChild>
+                <Link href="https://github.com/brokle-ai/brokle" target="_blank" rel="noopener noreferrer">
+                  <Github className="h-4 w-4" />
+                  Star on GitHub
                 </Link>
               </Button>
             </div>

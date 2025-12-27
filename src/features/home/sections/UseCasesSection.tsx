@@ -23,7 +23,7 @@ const useCases = [
     title: "RAG Applications",
     description:
       "Monitor retrieval quality, measure context relevance, and optimize your retrieval pipeline end-to-end.",
-    href: "/use-cases/rag",
+    href: "/use-cases/rag-applications",
   },
   {
     icon: Code2,

@@ -295,3 +295,25 @@ header#nd-nav a[href*="login"].inline-flex:hover,
 .dark #nd-toc .border-s {
   border-left-color: oklch(0.8 0 0 / 15%);
 }
+
+/* =====================================================
+   Shiki Syntax Highlighting - Dual Theme Support
+
+   Using defaultColor: false, Shiki outputs CSS variables only:
+   - --shiki-light / --shiki-dark (text colors)
+   - --shiki-light-bg / --shiki-dark-bg (backgrounds)
+   ===================================================== */
+
+/* Light mode (default) */
+.shiki,
+.shiki span {
+  color: var(--shiki-light);
+  background-color: transparent !important;
+}
+
+/* Dark mode */
+.dark .shiki,
+.dark .shiki span {
+  color: var(--shiki-dark);
+  background-color: transparent !important;
+}
