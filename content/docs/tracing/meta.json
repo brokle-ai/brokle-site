@@ -1,4 +1,11 @@
 {
   "title": "Tracing",
-  "pages": ["traces", "spans"]
+  "pages": [
+    "index",
+    "automatic",
+    "manual",
+    "spans",
+    "metadata",
+    "traces"
+  ]
 }

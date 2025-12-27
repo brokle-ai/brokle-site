@@ -1,0 +1,150 @@
+---
+title: Core Concepts
+description: Understand the fundamental concepts behind Brokle's AI observability platform
+---
+
+import { Cards, Card } from "fumadocs-ui/components/card";
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Core Concepts
+
+Before diving into implementation, it helps to understand the foundational concepts that power Brokle. These concepts form the building blocks for monitoring, evaluating, and improving your AI applications.
+
+## The Observability Stack
+
+Brokle provides a complete observability stack for AI applications:
+
+```mermaid
+graph TB
+    subgraph App["Your AI Application"]
+        direction LR
+        T[Traces] --- S[Spans] --- Sess[Sessions] --- E[Evaluations] --- C[Costs]
+    end
+
+    subgraph Platform["Brokle Platform"]
+        direction LR
+        Ing[Ingestion] --> Ana[Analytics] --> Dash[Dashboard]
+    end
+
+    App --> Platform
+```
+
+## Key Concepts
+
+<Cards>
+  <Card
+    title="Traces"
+    description="End-to-end request journeys through your AI application"
+    href="/docs/concepts/traces"
+  />
+  <Card
+    title="Spans"
+    description="Individual operations within a trace - LLM calls, retrievals, tools"
+    href="/docs/concepts/spans"
+  />
+  <Card
+    title="Sessions"
+    description="Group related traces for conversation and user journey tracking"
+    href="/docs/concepts/sessions"
+  />
+  <Card
+    title="Evaluations"
+    description="Quality scoring and feedback for AI outputs"
+    href="/docs/concepts/evaluations"
+  />
+  <Card
+    title="Cost Analytics"
+    description="Track spending across models, providers, and features"
+    href="/docs/concepts/cost-analytics"
+  />
+</Cards>
+
+## How They Connect
+
+Understanding how these concepts relate helps you design effective observability:
+
+```mermaid
+graph TD
+    subgraph Session["Session (User Conversation)"]
+        T1[Trace 1: First message]
+        T2[Trace 2: Follow-up]
+        T3[Trace 3: Final response]
+    end
+
+    subgraph Trace1["Trace 1 Details"]
+        S1[Span: Retrieve docs]
+        S2[Span: LLM call]
+        S3[Span: Format response]
+    end
+
+    T1 --> Trace1
+    S2 --> E1[Evaluation: Quality score]
+    S2 --> C1[Cost: $0.02]
+```
+
+### Hierarchy
+
+1. **Sessions** group multiple traces from the same user or conversation
+2. **Traces** capture complete request-response cycles
+3. **Spans** represent individual operations within a trace
+4. **Evaluations** attach quality metrics to spans or traces
+5. **Cost Analytics** aggregate spending across all levels
+
+## Core Principles
+
+### 1. Minimal Code Changes
+
+Brokle integrates with your existing code without major refactoring:
+
+```python
+from brokle import Brokle, wrap_openai
+import openai
+
+client = Brokle(api_key="bk_...")
+openai_client = wrap_openai(openai.OpenAI(), brokle=client)
+
+# Your existing code works unchanged
+response = openai_client.chat.completions.create(...)
+```
+
+### 2. OpenTelemetry Compatible
+
+Brokle is built on OpenTelemetry standards, ensuring:
+
+- Interoperability with existing observability tools
+- Standardized trace and span formats
+- Easy integration with your infrastructure
+
+### 3. Privacy First
+
+- Sensitive data masking options
+- On-premise deployment available
+- No data leaves your infrastructure (self-hosted)
+
+### 4. Real-Time Insights
+
+- Live trace streaming
+- Instant cost calculations
+- Real-time quality scoring
+
+<Callout type="info">
+  All concepts support both automatic instrumentation (via integrations) and manual instrumentation (via SDK) for maximum flexibility.
+</Callout>
+
+## Quick Start Path
+
+Based on your needs, here's where to start:
+
+| Goal | Start With |
+|------|------------|
+| Monitor LLM calls | [Traces](/docs/concepts/traces) |
+| Debug complex workflows | [Spans](/docs/concepts/spans) |
+| Track conversations | [Sessions](/docs/concepts/sessions) |
+| Measure AI quality | [Evaluations](/docs/concepts/evaluations) |
+| Control spending | [Cost Analytics](/docs/concepts/cost-analytics) |
+
+## Next Steps
+
+- [Create your first trace →](/docs/first-trace)
+- [View the quickstart guide →](/docs/quickstart)
+- [Explore integrations →](/docs/integrations)

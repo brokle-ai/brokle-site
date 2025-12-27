@@ -1,6 +1,115 @@
 ---
-title: Home
-description: Welcome to Brokle Documentation
+title: What is Brokle?
+description: Brokle is an open-source AI observability platform for tracing, evaluation, cost analytics, and prompt management
 ---
 
-Welcome to Brokle Documentation!
+import { Cards, Card } from "fumadocs-ui/components/card";
+
+# Welcome to Brokle
+
+Brokle is an **open-source AI observability platform** that helps you understand, debug, and improve your AI applications. Whether you're building chatbots, RAG systems, or AI agents, Brokle provides the visibility you need to ship with confidence.
+
+## Why Brokle?
+
+Building AI applications is hard. Understanding why they fail is harder. Brokle solves this by giving you complete visibility into every AI interaction:
+
+- **Trace every LLM call** - See exactly what goes in and out of your models
+- **Evaluate quality at scale** - Score outputs automatically with built-in and custom evaluators
+- **Track costs in real-time** - Know exactly how much you're spending per request
+- **Manage prompts** - Version, test, and deploy prompts with confidence
+- **Self-host or cloud** - Run on your infrastructure or use our managed service
+
+## Core Capabilities
+
+<Cards>
+  <Card
+    title="Tracing"
+    description="Capture every LLM call, retrieval, and tool use with distributed tracing"
+    href="/docs/tracing"
+  />
+  <Card
+    title="Evaluation"
+    description="Score your AI outputs with built-in metrics or custom evaluators"
+    href="/docs/evaluation"
+  />
+  <Card
+    title="Analytics"
+    description="Understand costs, latency, and usage patterns across your applications"
+    href="/docs/analytics"
+  />
+  <Card
+    title="Prompt Management"
+    description="Version control and test prompts before deploying to production"
+    href="/docs/prompt-management"
+  />
+</Cards>
+
+## Quick Start
+
+Get started with Brokle in under 5 minutes:
+
+```bash tab="Python"
+pip install brokle
+```
+
+```bash tab="JavaScript"
+npm install @brokle/sdk
+```
+
+Then start tracing your AI calls:
+
+```python tab="Python"
+from brokle import Brokle
+
+client = Brokle(api_key="your-api-key")
+
+with client.trace("my-first-trace") as trace:
+    # Your AI code automatically gets traced
+    response = openai.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": "Hello!"}]
+    )
+```
+
+```javascript tab="JavaScript"
+import { Brokle } from '@brokle/sdk';
+
+const client = new Brokle({ apiKey: 'your-api-key' });
+
+await client.trace('my-first-trace', async () => {
+  // Your AI code automatically gets traced
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4',
+    messages: [{ role: 'user', content: 'Hello!' }]
+  });
+});
+```
+
+[View the full quickstart guide →](/docs/quickstart)
+
+## Architecture
+
+Brokle is built as a **scalable monolith** designed for both self-hosting and cloud deployment:
+
+- **HTTP Server** - REST API for data ingestion and querying
+- **Background Workers** - Process telemetry streams asynchronously
+- **PostgreSQL** - Transactional data (projects, users, prompts)
+- **ClickHouse** - High-performance analytics and trace storage
+- **Redis** - Caching and job queues
+
+[Learn more about the architecture →](/docs/architecture)
+
+## Open Source
+
+Brokle is fully open source under the MIT license. We believe observability tools should be transparent, customizable, and free from vendor lock-in.
+
+- [GitHub Repository](https://github.com/brokle-ai/brokle)
+- [Contributing Guide](/docs/contributing)
+- [Self-Hosting Guide](/docs/self-hosting)
+
+## Get Help
+
+- **Documentation** - You're reading it!
+- **GitHub Issues** - Report bugs or request features
+- **Discord Community** - Chat with the team and other users
+- **Enterprise Support** - For organizations needing SLAs and dedicated support

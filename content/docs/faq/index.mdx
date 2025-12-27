@@ -1,0 +1,307 @@
+---
+title: FAQ
+description: Frequently asked questions about Brokle
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Cards, Card } from "fumadocs-ui/components/card";
+
+# Frequently Asked Questions
+
+Common questions about Brokle, organized by topic.
+
+## General
+
+### What is Brokle?
+
+Brokle is an open-source AI observability platform that helps you understand, monitor, and improve your AI applications. It provides:
+- **Tracing**: Track every LLM call, chain, and agent interaction
+- **Evaluation**: Score outputs for quality, accuracy, and safety
+- **Cost Analytics**: Monitor token usage and spending
+- **Prompt Management**: Version, test, and deploy prompts
+
+### Is Brokle open source?
+
+Yes! Brokle is fully open source under the MIT license. You can:
+- Self-host on your infrastructure
+- Modify the code for your needs
+- Contribute to the project
+
+Enterprise features are available under a commercial license.
+
+### How does Brokle compare to other observability tools?
+
+| Feature | Brokle | Others |
+|---------|--------|--------|
+| Open Source | Yes | Varies |
+| Self-Hosting | Full support | Limited |
+| Trace Storage | Unlimited | Often capped |
+| Pricing | Free tier + usage | Per-seat |
+| LLM Integrations | 15+ providers | Varies |
+
+### What LLM providers does Brokle support?
+
+Brokle supports all major LLM providers:
+- OpenAI (GPT-4, GPT-3.5)
+- Anthropic (Claude)
+- Google (Gemini, PaLM)
+- AWS Bedrock
+- Azure OpenAI
+- Mistral
+- Cohere
+- Local models (Ollama, vLLM)
+
+## Tracing
+
+### How do I add tracing to my application?
+
+Install the SDK and wrap your LLM client:
+
+```python
+from brokle import Brokle, wrap_openai
+import openai
+
+brokle = Brokle()
+client = wrap_openai(openai.OpenAI(), brokle=brokle)
+
+# All calls are now traced automatically
+response = client.chat.completions.create(...)
+```
+
+### Does tracing add latency?
+
+Tracing is designed to have minimal overhead:
+- Traces are batched and sent asynchronously
+- Typical overhead is less than 5ms per request
+- No blocking of your main application flow
+
+### Can I trace streaming responses?
+
+Yes! Streaming responses are fully supported:
+
+```python
+stream = client.chat.completions.create(..., stream=True)
+for chunk in stream:
+    # Each chunk is traced
+    print(chunk.choices[0].delta.content)
+```
+
+See the [Streaming Cookbook](/docs/cookbook/tracing-recipes/streaming) for details.
+
+### How do I filter sensitive data from traces?
+
+Use the `before_send` callback:
+
+```python
+def filter_sensitive(trace):
+    # Remove PII from trace data
+    if "ssn" in trace.input:
+        trace.input = "[REDACTED]"
+    return trace
+
+brokle = Brokle(before_send=filter_sensitive)
+```
+
+## Evaluation
+
+### What types of evaluation does Brokle support?
+
+Brokle supports multiple evaluation approaches:
+1. **Scores**: Numeric ratings (0-1)
+2. **Categorical**: Labels like "good", "needs_improvement"
+3. **Boolean**: Pass/fail evaluations
+4. **LLM-as-Judge**: Using AI to evaluate AI
+5. **User Feedback**: Thumbs up/down, ratings
+
+### Can I create custom evaluators?
+
+Yes! Define custom evaluation logic:
+
+```python
+from brokle.evaluation import Evaluator
+
+class MyEvaluator(Evaluator):
+    def evaluate(self, input, output, **kwargs):
+        # Your custom logic
+        score = calculate_score(output)
+        return {"score": score, "comment": "Explanation"}
+```
+
+### How accurate is LLM-as-Judge?
+
+LLM-as-Judge provides good accuracy for subjective evaluations:
+- Best for: relevance, helpfulness, tone
+- Use with caution for: factual accuracy, specialized domains
+- Always validate with human review for critical applications
+
+## Cost & Pricing
+
+### How is pricing calculated?
+
+Brokle Cloud pricing is based on:
+- **Traces ingested**: Per trace pricing
+- **Storage**: For retained data
+- **Evaluations**: Per evaluation run
+
+The free tier includes 10,000 traces/month.
+
+### How can I reduce costs?
+
+Strategies to optimize costs:
+1. Use sampling for high-volume applications
+2. Set appropriate retention periods
+3. Route simple tasks to cheaper models
+4. Implement response caching
+
+See the [Cost Optimization Tutorial](/docs/tutorials/cost-optimization).
+
+### Is self-hosting free?
+
+Yes, self-hosting is completely free. You only pay for your own infrastructure (servers, databases, storage).
+
+## Self-Hosting
+
+### What are the system requirements?
+
+Minimum requirements:
+- 4 CPU cores
+- 8 GB RAM
+- 50 GB SSD
+
+See [Self-Hosting Overview](/docs/self-hosting) for production recommendations.
+
+### What databases does Brokle use?
+
+- **PostgreSQL**: User data, settings, prompts
+- **ClickHouse**: Traces, analytics (high-volume)
+- **Redis**: Caching, job queues
+
+### How do I upgrade a self-hosted installation?
+
+```bash
+# Docker Compose
+docker compose pull
+docker compose up -d
+
+# Kubernetes
+helm upgrade brokle brokle/brokle
+```
+
+Migrations run automatically on startup.
+
+## SDK & Integrations
+
+### Which programming languages are supported?
+
+Official SDKs:
+- Python 3.9+
+- JavaScript/TypeScript (Node.js 18+)
+
+Community SDKs:
+- Go
+- Ruby
+- Java
+
+### Does Brokle work with LangChain?
+
+Yes! Use the callback handler:
+
+```python
+from brokle.integrations import BrokleCallbackHandler
+from langchain.llms import OpenAI
+
+handler = BrokleCallbackHandler()
+llm = OpenAI(callbacks=[handler])
+```
+
+### Can I use Brokle with async code?
+
+Yes, both sync and async are fully supported:
+
+```python
+from brokle import AsyncBrokle
+
+brokle = AsyncBrokle()
+async with brokle.start_as_current_span("operation"):
+    result = await some_async_function()
+```
+
+## Troubleshooting
+
+### Traces aren't appearing in the dashboard
+
+Common causes:
+1. **API key not set**: Check `BROKLE_API_KEY` environment variable
+2. **Flush not called**: Call `brokle.flush()` before exit
+3. **Network issues**: Check connectivity to Brokle API
+4. **Rate limiting**: Check if you've hit rate limits
+
+### SDK installation fails
+
+```bash
+# Python - try upgrading pip
+pip install --upgrade pip
+pip install brokle
+
+# Node.js - clear cache
+npm cache clean --force
+npm install brokle
+```
+
+### High latency in traces
+
+If you're seeing high latency:
+1. Check your flush settings (batch size, interval)
+2. Verify network connectivity
+3. Consider using async tracing
+
+See [Troubleshooting](/docs/troubleshooting) for more solutions.
+
+## Enterprise
+
+### What features are in the Enterprise tier?
+
+Enterprise includes:
+- SSO (SAML, OIDC)
+- Advanced RBAC
+- Audit logging
+- Priority support
+- Custom retention
+- SLA guarantees
+
+### How do I get Enterprise support?
+
+Contact us at enterprise@brokle.dev or schedule a demo at [brokle.dev/demo](https://brokle.dev/demo).
+
+### Is there a free trial for Enterprise?
+
+Yes, we offer a 14-day free trial of Enterprise features. Contact sales to get started.
+
+<Callout type="info">
+  Can't find what you're looking for? Ask in our [Discord community](https://discord.gg/brokle) or [GitHub Discussions](https://github.com/brokle-ai/brokle/discussions).
+</Callout>
+
+## Related
+
+<Cards>
+  <Card
+    title="Troubleshooting"
+    description="Common issues and solutions"
+    href="/docs/troubleshooting"
+  />
+  <Card
+    title="Quickstart"
+    description="Get started with Brokle in 5 minutes"
+    href="/docs/quickstart"
+  />
+  <Card
+    title="Security"
+    description="Security best practices and compliance"
+    href="/docs/security"
+  />
+  <Card
+    title="Self-Hosting"
+    description="Deploy Brokle on your infrastructure"
+    href="/docs/self-hosting"
+  />
+</Cards>

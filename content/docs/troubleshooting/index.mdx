@@ -1,0 +1,413 @@
+---
+title: Troubleshooting
+description: Common issues and solutions for Brokle
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Cards, Card } from "fumadocs-ui/components/card";
+
+# Troubleshooting
+
+Solutions for common issues when using Brokle.
+
+## SDK Issues
+
+### Traces not appearing in dashboard
+
+**Symptoms**: SDK runs without errors, but traces don't appear.
+
+**Solutions**:
+
+1. **Check API key configuration**
+   ```python
+   import os
+   print(os.getenv("BROKLE_API_KEY"))  # Should show your key
+   ```
+
+2. **Ensure flush is called**
+   ```python
+   # Always flush before exit
+   brokle.flush()
+   # Or use context manager
+   with brokle:
+       # Your code here
+       pass
+   # Auto-flushes on exit
+   ```
+
+3. **Check for errors**
+   ```python
+   brokle = Brokle(debug=True)  # Enable debug logging
+   ```
+
+4. **Verify network connectivity**
+   ```bash
+   curl https://api.brokle.dev/health
+   ```
+
+### Import errors
+
+**Error**: `ModuleNotFoundError: No module named 'brokle'`
+
+**Solutions**:
+
+```bash
+# Ensure correct Python environment
+which python
+pip show brokle
+
+# Reinstall
+pip uninstall brokle
+pip install brokle
+
+# Check virtual environment
+source venv/bin/activate  # or your venv path
+```
+
+### Async context issues
+
+**Error**: `RuntimeError: no running event loop`
+
+**Solution**: Use `AsyncBrokle` for async code:
+
+```python
+from brokle import AsyncBrokle
+
+brokle = AsyncBrokle()
+
+async def main():
+    async with brokle.start_as_current_span("operation"):
+        await some_async_function()
+```
+
+### Memory issues with large traces
+
+**Symptoms**: High memory usage with large batches
+
+**Solutions**:
+
+```python
+# Reduce batch size
+brokle = Brokle(
+    flush_at=20,        # Smaller batch size
+    flush_interval=2.0  # More frequent flushes
+)
+
+# Limit trace size
+with brokle.start_as_current_span("operation") as span:
+    # Truncate large outputs
+    span.update(output=large_output[:10000])
+```
+
+## Self-Hosting Issues
+
+### Server won't start
+
+**Check required environment variables:**
+
+```bash
+# These are required for server mode
+echo $JWT_SECRET              # Must be set
+echo $AI_KEY_ENCRYPTION_KEY   # Must be set
+echo $DATABASE_URL            # Must be valid
+echo $CLICKHOUSE_URL          # Must be valid
+echo $REDIS_URL               # Must be valid
+```
+
+**Check logs:**
+
+```bash
+# Docker
+docker logs brokle-server
+
+# Docker Compose
+docker compose logs server
+```
+
+### Database connection errors
+
+**PostgreSQL issues:**
+
+```bash
+# Test connection
+psql $DATABASE_URL -c "SELECT 1"
+
+# Common fixes:
+# - Check if PostgreSQL is running
+# - Verify credentials
+# - Check network/firewall
+# - Ensure database exists
+```
+
+**ClickHouse issues:**
+
+```bash
+# Test connection
+curl "http://localhost:8123/?query=SELECT%201"
+
+# Check ClickHouse is running
+docker ps | grep clickhouse
+```
+
+**Redis issues:**
+
+```bash
+# Test connection
+redis-cli -u $REDIS_URL ping
+
+# Should return: PONG
+```
+
+### Migration errors
+
+**Error**: `migration failed: dirty database`
+
+```bash
+# Check migration status
+./brokle migrate status
+
+# Force reset (CAUTION: for dev only)
+./brokle migrate drop
+./brokle migrate up
+```
+
+**Error**: `relation already exists`
+
+```bash
+# The migration may have partially run
+# Check the migration version
+./brokle migrate status
+
+# Force the version if needed
+./brokle migrate force <version>
+```
+
+### High memory usage
+
+**ClickHouse memory:**
+
+```yaml
+# Limit ClickHouse memory in docker-compose.yml
+clickhouse:
+  deploy:
+    resources:
+      limits:
+        memory: 4G
+```
+
+**Server memory:**
+
+```bash
+# Check what's using memory
+docker stats
+
+# Reduce worker concurrency
+WORKER_CONCURRENCY=5
+WORKER_BATCH_SIZE=50
+```
+
+### Slow queries
+
+**Check slow query logs:**
+
+```sql
+-- PostgreSQL
+SELECT * FROM pg_stat_statements
+ORDER BY total_time DESC
+LIMIT 10;
+
+-- ClickHouse
+SELECT * FROM system.query_log
+WHERE type = 'QueryFinish'
+ORDER BY query_duration_ms DESC
+LIMIT 10;
+```
+
+**Common optimizations:**
+- Add appropriate indexes
+- Reduce time range in queries
+- Enable query caching
+- Consider partitioning
+
+## API Issues
+
+### 401 Unauthorized
+
+**Causes:**
+- Invalid or expired API key
+- Wrong authentication header
+
+**Solutions:**
+
+```bash
+# Check API key format
+# Should be: bk_<40 characters>
+
+# Correct header format
+curl -H "Authorization: Bearer bk_..." \
+     https://api.brokle.dev/v1/traces
+
+# Or use X-API-Key header
+curl -H "X-API-Key: bk_..." \
+     https://api.brokle.dev/v1/traces
+```
+
+### 429 Too Many Requests
+
+**Cause**: Rate limit exceeded
+
+**Solutions:**
+
+```python
+# Implement exponential backoff
+import time
+
+def with_retry(func, max_retries=3):
+    for i in range(max_retries):
+        try:
+            return func()
+        except RateLimitError:
+            time.sleep(2 ** i)
+    raise Exception("Max retries exceeded")
+
+# Or reduce request rate
+brokle = Brokle(
+    flush_at=50,         # Smaller batches
+    flush_interval=5.0   # Less frequent
+)
+```
+
+### 500 Internal Server Error
+
+**For self-hosted:**
+
+```bash
+# Check server logs
+docker logs brokle-server 2>&1 | tail -100
+
+# Common causes:
+# - Database connection issues
+# - Out of memory
+# - Disk space full
+```
+
+**For Brokle Cloud:**
+- Check [status.brokle.dev](https://status.brokle.dev)
+- Report issues to support@brokle.dev
+
+## Dashboard Issues
+
+### Can't login
+
+**Clear browser data:**
+1. Clear cookies for the domain
+2. Clear local storage
+3. Try incognito mode
+
+**Check CORS (self-hosted):**
+
+```yaml
+# Ensure correct CORS settings
+CORS_ALLOWED_ORIGINS=https://your-dashboard-url.com
+```
+
+### Slow dashboard
+
+**Common causes:**
+- Large date range selected
+- Too many filters active
+- Network latency
+
+**Solutions:**
+- Reduce date range
+- Use pagination
+- Check network speed
+- Verify server resources
+
+### Charts not loading
+
+**Check browser console:**
+1. Open Developer Tools (F12)
+2. Check Console tab for errors
+3. Check Network tab for failed requests
+
+**Common fixes:**
+- Clear browser cache
+- Disable browser extensions
+- Try different browser
+
+## Performance Issues
+
+### High latency in traces
+
+**Check SDK configuration:**
+
+```python
+# Use async for better performance
+brokle = Brokle(
+    flush_at=100,       # Batch more traces
+    flush_interval=5.0  # Less frequent flushes
+)
+```
+
+**Network issues:**
+
+```bash
+# Test latency to Brokle API
+ping api.brokle.dev
+
+# Use self-hosted for lower latency
+# if you're in a region far from Brokle Cloud
+```
+
+### Worker falling behind
+
+**Symptoms**: Growing queue size, delayed traces
+
+**Solutions:**
+
+```bash
+# Scale workers
+docker compose up -d --scale worker=3
+
+# Or increase concurrency
+WORKER_CONCURRENCY=20
+WORKER_BATCH_SIZE=200
+```
+
+## Getting Help
+
+If you can't resolve your issue:
+
+1. **Search existing issues**: [GitHub Issues](https://github.com/brokle-ai/brokle/issues)
+2. **Ask the community**: [Discord](https://discord.gg/brokle) or [Discussions](https://github.com/brokle-ai/brokle/discussions)
+3. **Report a bug**: Open a [new issue](https://github.com/brokle-ai/brokle/issues/new)
+
+<Callout type="info">
+  When reporting issues, include: Brokle version, SDK version, error messages, and steps to reproduce.
+</Callout>
+
+## Related
+
+<Cards>
+  <Card
+    title="FAQ"
+    description="Frequently asked questions about Brokle"
+    href="/docs/faq"
+  />
+  <Card
+    title="Python SDK"
+    description="Python SDK reference and configuration"
+    href="/docs/sdk/python"
+  />
+  <Card
+    title="JavaScript SDK"
+    description="JavaScript SDK reference and configuration"
+    href="/docs/sdk/javascript"
+  />
+  <Card
+    title="Self-Hosting"
+    description="Self-hosted deployment configuration"
+    href="/docs/self-hosting"
+  />
+</Cards>

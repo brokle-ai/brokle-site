@@ -1,0 +1,516 @@
+---
+title: Kubernetes
+description: Production-grade Brokle deployment with Kubernetes
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Steps, Step } from "fumadocs-ui/components/steps";
+
+# Kubernetes Deployment
+
+Deploy Brokle on Kubernetes for production-grade scalability, high availability, and enterprise features.
+
+## Prerequisites
+
+- Kubernetes cluster (1.26+)
+- kubectl configured
+- Helm 3.x installed
+- Persistent storage provisioner
+- Ingress controller (nginx, Traefik, etc.)
+
+## Quick Start with Helm
+
+<Steps>
+  <Step>
+    ### Add Helm Repository
+
+    ```bash
+    helm repo add brokle https://charts.brokle.dev
+    helm repo update
+    ```
+  </Step>
+
+  <Step>
+    ### Create Namespace
+
+    ```bash
+    kubectl create namespace brokle
+    ```
+  </Step>
+
+  <Step>
+    ### Create Secrets
+
+    ```bash
+    # Generate secrets
+    JWT_SECRET=$(openssl rand -base64 32)
+    ENCRYPTION_KEY=$(openssl rand -base64 32)
+
+    # Create Kubernetes secret
+    kubectl create secret generic brokle-secrets \
+      --namespace brokle \
+      --from-literal=jwt-secret="$JWT_SECRET" \
+      --from-literal=encryption-key="$ENCRYPTION_KEY"
+    ```
+  </Step>
+
+  <Step>
+    ### Install Brokle
+
+    ```bash
+    helm install brokle brokle/brokle \
+      --namespace brokle \
+      --set global.domain=brokle.example.com \
+      --set postgresql.enabled=true \
+      --set clickhouse.enabled=true \
+      --set redis.enabled=true
+    ```
+  </Step>
+</Steps>
+
+## Helm Values
+
+### Minimal Production Configuration
+
+```yaml
+# values.yaml
+global:
+  domain: brokle.example.com
+
+server:
+  replicas: 2
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+
+worker:
+  replicas: 2
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+web:
+  replicas: 2
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+postgresql:
+  enabled: true
+  primary:
+    persistence:
+      size: 50Gi
+
+clickhouse:
+  enabled: true
+  persistence:
+    size: 100Gi
+
+redis:
+  enabled: true
+  master:
+    persistence:
+      size: 10Gi
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  tls:
+    - secretName: brokle-tls
+      hosts:
+        - brokle.example.com
+        - api.brokle.example.com
+```
+
+### External Databases
+
+```yaml
+# values.yaml - Using managed databases
+postgresql:
+  enabled: false
+
+clickhouse:
+  enabled: false
+
+redis:
+  enabled: false
+
+externalDatabase:
+  host: your-rds-instance.aws.com
+  port: 5432
+  database: brokle
+  username: brokle
+  existingSecret: brokle-db-credentials
+
+externalClickhouse:
+  host: your-clickhouse-cloud.com
+  port: 8443
+  database: default
+  existingSecret: brokle-ch-credentials
+
+externalRedis:
+  host: your-elasticache.aws.com
+  port: 6379
+  existingSecret: brokle-redis-credentials
+```
+
+## Manual Kubernetes Deployment
+
+### Namespace and Secrets
+
+```yaml
+# namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: brokle
+
+---
+# secrets.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: brokle-secrets
+  namespace: brokle
+type: Opaque
+stringData:
+  jwt-secret: "your-secure-jwt-secret"
+  encryption-key: "your-encryption-key"
+  postgres-password: "your-postgres-password"
+```
+
+### Server Deployment
+
+```yaml
+# server-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: brokle-server
+  namespace: brokle
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: brokle-server
+  template:
+    metadata:
+      labels:
+        app: brokle-server
+    spec:
+      containers:
+        - name: server
+          image: ghcr.io/brokle-ai/brokle-server:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: APP_MODE
+              value: server
+            - name: PORT
+              value: "8080"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: brokle-secrets
+                  key: database-url
+            - name: CLICKHOUSE_URL
+              value: http://clickhouse:8123
+            - name: REDIS_URL
+              value: redis://redis:6379
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: brokle-secrets
+                  key: jwt-secret
+            - name: AI_KEY_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: brokle-secrets
+                  key: encryption-key
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: brokle-server
+  namespace: brokle
+spec:
+  selector:
+    app: brokle-server
+  ports:
+    - port: 8080
+      targetPort: 8080
+```
+
+### Worker Deployment
+
+```yaml
+# worker-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: brokle-worker
+  namespace: brokle
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: brokle-worker
+  template:
+    metadata:
+      labels:
+        app: brokle-worker
+    spec:
+      containers:
+        - name: worker
+          image: ghcr.io/brokle-ai/brokle-worker:latest
+          env:
+            - name: APP_MODE
+              value: worker
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: brokle-secrets
+                  key: database-url
+            - name: CLICKHOUSE_URL
+              value: http://clickhouse:8123
+            - name: REDIS_URL
+              value: redis://redis:6379
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+```
+
+### Ingress
+
+```yaml
+# ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: brokle-ingress
+  namespace: brokle
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  tls:
+    - hosts:
+        - brokle.example.com
+        - api.brokle.example.com
+      secretName: brokle-tls
+  rules:
+    - host: brokle.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: brokle-web
+                port:
+                  number: 3000
+    - host: api.brokle.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: brokle-server
+                port:
+                  number: 8080
+```
+
+## High Availability
+
+### Pod Disruption Budget
+
+```yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: brokle-server-pdb
+  namespace: brokle
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: brokle-server
+```
+
+### Horizontal Pod Autoscaler
+
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: brokle-server-hpa
+  namespace: brokle
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: brokle-server
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+```
+
+### Pod Anti-Affinity
+
+```yaml
+spec:
+  template:
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: brokle-server
+                topologyKey: kubernetes.io/hostname
+```
+
+## Monitoring
+
+### ServiceMonitor for Prometheus
+
+```yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: brokle
+  namespace: brokle
+spec:
+  selector:
+    matchLabels:
+      app: brokle-server
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+```
+
+### Grafana Dashboard
+
+Import the Brokle dashboard:
+- Dashboard ID: `brokle-overview`
+- Or use the JSON from: `https://github.com/brokle-ai/brokle/tree/main/deploy/grafana`
+
+## Backup Strategy
+
+### Velero Backup
+
+```yaml
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: brokle-daily-backup
+  namespace: velero
+spec:
+  schedule: "0 2 * * *"
+  template:
+    includedNamespaces:
+      - brokle
+    storageLocation: default
+    volumeSnapshotLocations:
+      - default
+    ttl: 720h  # 30 days
+```
+
+## Troubleshooting
+
+### Check Pod Status
+
+```bash
+kubectl get pods -n brokle
+kubectl describe pod <pod-name> -n brokle
+```
+
+### View Logs
+
+```bash
+kubectl logs -f deployment/brokle-server -n brokle
+kubectl logs -f deployment/brokle-worker -n brokle
+```
+
+### Execute Commands
+
+```bash
+# Run migrations
+kubectl exec -it deployment/brokle-server -n brokle -- ./brokle migrate up
+
+# Access PostgreSQL
+kubectl exec -it sts/brokle-postgresql -n brokle -- psql -U brokle
+```
+
+### Common Issues
+
+| Issue | Solution |
+|-------|----------|
+| Pods pending | Check PVC and storage class |
+| Connection refused | Check service endpoints and network policies |
+| OOM killed | Increase memory limits |
+| High latency | Scale replicas or optimize queries |
+
+<Callout type="info">
+  For enterprise support with Kubernetes deployments, contact us at enterprise@brokle.dev.
+</Callout>
+
+## Next Steps
+
+- [Configuration](/docs/self-hosting/configuration) - All configuration options
+- [Security](/docs/security) - Security best practices
+- [Production Monitoring](/docs/tutorials/production-monitoring) - Set up monitoring

@@ -1,6 +1,334 @@
 ---
 title: SDK Overview
-description: Brokle SDK documentation
+description: Official Brokle SDKs for Python and JavaScript - comprehensive AI observability for your applications
 ---
 
-Official SDKs for JavaScript and Python.
+import { Cards, Card } from "fumadocs-ui/components/card";
+import { Callout } from "fumadocs-ui/components/callout";
+
+# SDK Overview
+
+Brokle provides official SDKs for Python and JavaScript, enabling you to add AI observability to your applications with minimal code changes.
+
+## Available SDKs
+
+<Cards>
+  <Card
+    title="Python SDK"
+    description="Full-featured SDK for Python 3.8+ with async support, decorators, and LLM integrations"
+    href="/docs/sdk/python"
+  />
+  <Card
+    title="JavaScript SDK"
+    description="TypeScript-first SDK for Node.js 18+ with ESM and CommonJS support"
+    href="/docs/sdk/javascript"
+  />
+</Cards>
+
+## Quick Comparison
+
+| Feature | Python | JavaScript |
+|---------|--------|------------|
+| **Installation** | `pip install brokle` | `npm install brokle` |
+| **Async Support** | ✅ Native async/await | ✅ Promise-based |
+| **Decorators** | ✅ `@observe` decorator | ✅ `observe()` wrapper |
+| **Type Safety** | ✅ Type hints | ✅ Full TypeScript |
+| **OpenAI Wrapper** | ✅ `wrap_openai()` | ✅ `wrapOpenAI()` |
+| **Anthropic Wrapper** | ✅ `wrap_anthropic()` | ✅ `wrapAnthropic()` |
+| **Context Propagation** | ✅ Automatic | ✅ Automatic |
+| **Batching** | ✅ Configurable | ✅ Configurable |
+
+## Installation
+
+### Python
+
+```bash
+# pip
+pip install brokle
+
+# Poetry
+poetry add brokle
+
+# Conda
+conda install -c conda-forge brokle
+```
+
+### JavaScript
+
+```bash
+# npm
+npm install brokle
+
+# pnpm
+pnpm add brokle
+
+# yarn
+yarn add brokle
+```
+
+## Quick Start
+
+### Python
+
+```python
+from brokle import Brokle, wrap_openai
+import openai
+
+# Initialize client
+client = Brokle(api_key="bk_...")
+
+# Wrap OpenAI for automatic tracing
+openai_client = wrap_openai(openai.OpenAI(), brokle=client)
+
+# All calls are now traced
+response = openai_client.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+
+# Ensure traces are sent
+client.flush()
+```
+
+### JavaScript
+
+```javascript
+import { Brokle } from 'brokle';
+import { wrapOpenAI } from 'brokle-openai';
+import OpenAI from 'openai';
+
+// Initialize client
+const client = new Brokle({ apiKey: 'bk_...' });
+
+// Wrap OpenAI for automatic tracing
+const openai = wrapOpenAI(new OpenAI(), { brokle: client });
+
+// All calls are now traced
+const response = await openai.chat.completions.create({
+  model: 'gpt-4',
+  messages: [{ role: 'user', content: 'Hello!' }]
+});
+
+// Ensure traces are sent
+await client.shutdown();
+```
+
+## Core Concepts
+
+### Client Initialization
+
+Both SDKs use a client pattern for configuration:
+
+```python
+# Python
+client = Brokle(
+    api_key="bk_...",           # Required
+    base_url="...",             # Optional: Custom API URL
+    environment="production",    # Optional: Environment name
+    sample_rate=1.0,            # Optional: Sampling rate (0.0-1.0)
+    flush_at=100,               # Optional: Batch size
+    flush_interval=5.0,         # Optional: Flush interval (seconds)
+    debug=False,                # Optional: Enable debug logging
+)
+```
+
+```javascript
+// JavaScript
+const client = new Brokle({
+  apiKey: 'bk_...',            // Required
+  baseUrl: '...',              // Optional: Custom API URL
+  environment: 'production',   // Optional: Environment name
+  sampleRate: 1.0,             // Optional: Sampling rate (0.0-1.0)
+  flushAt: 100,                // Optional: Batch size
+  flushInterval: 5000,         // Optional: Flush interval (ms)
+  debug: false,                // Optional: Enable debug logging
+});
+```
+
+### Tracing Patterns
+
+Both SDKs support multiple tracing patterns:
+
+| Pattern | Python | JavaScript |
+|---------|--------|------------|
+| Context Manager | `with client.start_as_current_span()` | `client.startSpan()` |
+| Decorator | `@observe(name="...")` | `observe({ name: "..." }, fn)` |
+| Manual | `span.update()`, `span.end()` | `span.end()` |
+| Integration | `wrap_openai()`, `wrap_anthropic()` | `wrapOpenAI()`, `wrapAnthropic()` |
+
+### Span Types
+
+Both SDKs support the same span types:
+
+| Type | Description | Python | JavaScript |
+|------|-------------|--------|------------|
+| `span` | General operation | `start_as_current_span()` | `startSpan()` |
+| `generation` | LLM calls | `start_as_current_generation()` | `startGeneration()` |
+| `retrieval` | Vector/doc search | `as_type="retrieval"` | `type: 'retrieval'` |
+| `tool` | Tool execution | `as_type="tool"` | `type: 'tool'` |
+| `agent` | Agent operations | `as_type="agent"` | `type: 'agent'` |
+| `event` | Discrete events | `create_event()` | `createEvent()` |
+
+## Configuration Options
+
+All options work the same across both SDKs:
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `api_key` / `apiKey` | string | Required | Your Brokle API key |
+| `base_url` / `baseUrl` | string | `https://api.brokle.ai` | API endpoint |
+| `environment` | string | `"default"` | Environment identifier |
+| `sample_rate` / `sampleRate` | float | `1.0` | Trace sampling rate |
+| `flush_at` / `flushAt` | int | `100` | Traces before auto-flush |
+| `flush_interval` / `flushInterval` | float/int | `5.0` / `5000` | Auto-flush interval |
+| `debug` | bool | `false` | Enable debug logging |
+| `compression` | string | `"gzip"` | Payload compression |
+
+## Environment Variables
+
+Configure the SDK using environment variables:
+
+| Variable | Description |
+|----------|-------------|
+| `BROKLE_API_KEY` | API key (overrides constructor) |
+| `BROKLE_BASE_URL` | Custom API endpoint |
+| `BROKLE_ENVIRONMENT` | Environment name |
+| `BROKLE_SAMPLE_RATE` | Sampling rate |
+| `BROKLE_DEBUG` | Enable debug mode |
+
+```bash
+# .env
+BROKLE_API_KEY=bk_...
+BROKLE_ENVIRONMENT=production
+```
+
+## Lifecycle Management
+
+### Flushing Traces
+
+Traces are batched and sent asynchronously. Always flush before exit:
+
+```python
+# Python - scripts
+client.flush()
+
+# Python - long-running
+import atexit
+atexit.register(client.shutdown)
+```
+
+```javascript
+// JavaScript - async contexts
+await client.shutdown();
+
+// JavaScript - process exit
+process.on('beforeExit', async () => {
+  await client.shutdown();
+});
+```
+
+### Graceful Shutdown
+
+For web servers, use graceful shutdown:
+
+```python
+# Python with FastAPI
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app):
+    yield
+    client.shutdown()
+
+app = FastAPI(lifespan=lifespan)
+```
+
+```javascript
+// JavaScript with Express
+process.on('SIGTERM', async () => {
+  await client.shutdown();
+  process.exit(0);
+});
+```
+
+## Integration Packages
+
+| Integration | Python | JavaScript |
+|-------------|--------|------------|
+| OpenAI | `brokle` (built-in) | `brokle-openai` |
+| Anthropic | `brokle` (built-in) | `brokle-anthropic` |
+| LangChain | `brokle-langchain` | `brokle-langchain` |
+| LlamaIndex | `brokle-llamaindex` | N/A |
+
+## Error Handling
+
+Both SDKs are designed to fail gracefully:
+
+```python
+# Python - SDK errors don't break your app
+try:
+    response = openai_client.chat.completions.create(...)
+except openai.APIError as e:
+    # OpenAI error - SDK still captures it
+    raise
+```
+
+```javascript
+// JavaScript - SDK errors don't break your app
+try {
+  const response = await openai.chat.completions.create(...);
+} catch (error) {
+  // OpenAI error - SDK still captures it
+  throw error;
+}
+```
+
+<Callout type="info">
+  Brokle SDKs are designed to never throw errors that would break your application. Tracing failures are logged but don't propagate.
+</Callout>
+
+## Best Practices
+
+### 1. Initialize Once
+
+Create the client once and reuse:
+
+```python
+# Good - single instance
+client = Brokle(api_key="bk_...")
+
+# Bad - multiple instances
+def process():
+    client = Brokle(api_key="bk_...")  # Creates new client each call
+```
+
+### 2. Use Environment Variables
+
+Keep API keys out of code:
+
+```python
+# Good - from environment
+client = Brokle()  # Uses BROKLE_API_KEY
+
+# Bad - hardcoded
+client = Brokle(api_key="bk_actual_key_here")
+```
+
+### 3. Always Flush
+
+Ensure traces are sent before exit:
+
+```python
+# Good - explicit flush
+client.flush()
+
+# Bad - may lose traces
+sys.exit(0)  # Traces might be lost
+```
+
+## Next Steps
+
+- [Python SDK Reference →](/docs/sdk/python)
+- [JavaScript SDK Reference →](/docs/sdk/javascript)
+- [OpenAI Integration →](/docs/integrations/openai)
+- [Anthropic Integration →](/docs/integrations/anthropic)

@@ -1,0 +1,373 @@
+---
+title: Authentication
+description: API key management, JWT authentication, and security best practices for the Brokle API
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+
+# Authentication
+
+Brokle uses two authentication methods depending on the API endpoint:
+
+| Method | Use Case | Endpoints |
+|--------|----------|-----------|
+| **API Keys** | SDK telemetry ingestion | `/v1/*` |
+| **JWT Tokens** | Dashboard operations | `/api/v1/*` |
+
+```mermaid
+sequenceDiagram
+    participant App as Your App
+    participant SDK as Brokle SDK
+    participant API as Brokle API
+    participant Dash as Dashboard
+
+    rect rgb(200, 220, 240)
+        Note over App,API: SDK Routes (API Key Auth)
+        App->>SDK: Initialize with API Key
+        SDK->>API: POST /v1/traces<br/>X-API-Key: bk_...
+        API-->>SDK: 200 OK
+    end
+
+    rect rgb(220, 240, 200)
+        Note over Dash,API: Dashboard Routes (JWT Auth)
+        Dash->>API: POST /api/v1/auth/login
+        API-->>Dash: JWT Token
+        Dash->>API: GET /api/v1/traces<br/>Authorization: Bearer ...
+        API-->>Dash: Trace Data
+    end
+```
+
+## API Key Authentication
+
+API keys are the primary authentication method for sending telemetry data from your applications.
+
+### API Key Format
+
+```
+bk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+- **Prefix**: `bk_` identifies Brokle API keys
+- **Length**: 40 random characters after prefix
+- **Storage**: SHA-256 hashed in database (O(1) lookup)
+
+### Creating API Keys
+
+1. Navigate to **Settings → API Keys** in the dashboard
+2. Click **Create API Key**
+3. Provide a descriptive name
+4. Copy and securely store the key (shown only once)
+
+### Using API Keys
+
+Include your API key in the request header:
+
+<Tabs>
+  <Tab value="header" label="X-API-Key Header">
+    ```bash
+    curl -X POST https://api.brokle.ai/v1/traces \
+      -H "Content-Type: application/json" \
+      -H "X-API-Key: bk_your_api_key" \
+      -d '{"resourceSpans": [...]}'
+    ```
+  </Tab>
+  <Tab value="bearer" label="Authorization Header">
+    ```bash
+    curl -X POST https://api.brokle.ai/v1/traces \
+      -H "Content-Type: application/json" \
+      -H "Authorization: Bearer bk_your_api_key" \
+      -d '{"resourceSpans": [...]}'
+    ```
+  </Tab>
+</Tabs>
+
+### API Key Scopes
+
+API keys can be scoped to specific permissions:
+
+| Scope | Description | Endpoints |
+|-------|-------------|-----------|
+| `traces:write` | Send trace data | `POST /v1/traces` |
+| `evaluations:write` | Submit evaluations | `POST /v1/evaluations` |
+| `prompts:read` | Fetch prompts | `GET /v1/prompts/*` |
+| `*` | Full access | All SDK endpoints |
+
+### Validating API Keys
+
+Validate an API key programmatically:
+
+```bash
+curl -X POST https://api.brokle.ai/v1/auth/validate-key \
+  -H "Content-Type: application/json" \
+  -d '{"api_key": "bk_your_api_key"}'
+```
+
+**Response:**
+
+```json
+{
+  "valid": true,
+  "projectId": "proj_abc123",
+  "scopes": ["traces:write", "evaluations:write"],
+  "expiresAt": null
+}
+```
+
+### Rotating API Keys
+
+1. Create a new API key with the same permissions
+2. Update your applications to use the new key
+3. Monitor for any requests using the old key
+4. Revoke the old key once migration is complete
+
+<Callout type="warning">
+  Revoking an API key is immediate and cannot be undone. Ensure all applications are updated before revoking.
+</Callout>
+
+## JWT Authentication
+
+JWT tokens are used for dashboard operations and user-authenticated requests.
+
+### Obtaining a Token
+
+#### Login
+
+```bash
+curl -X POST https://api.brokle.ai/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "your_password"
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "rt_abc123...",
+  "expiresIn": 3600,
+  "tokenType": "Bearer"
+}
+```
+
+#### Register
+
+```bash
+curl -X POST https://api.brokle.ai/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "secure_password",
+    "name": "John Doe"
+  }'
+```
+
+### Using JWT Tokens
+
+Include the token in the Authorization header:
+
+```bash
+curl -X GET https://api.brokle.ai/api/v1/projects \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+### Token Refresh
+
+Access tokens expire after 1 hour. Use the refresh token to obtain a new access token:
+
+```bash
+curl -X POST https://api.brokle.ai/api/v1/auth/refresh \
+  -H "Content-Type: application/json" \
+  -d '{
+    "refreshToken": "rt_abc123..."
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expiresIn": 3600
+}
+```
+
+### Logout
+
+Invalidate tokens:
+
+```bash
+curl -X POST https://api.brokle.ai/api/v1/auth/logout \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+## OAuth 2.0 / SSO (Enterprise)
+
+Enterprise customers can configure SSO providers:
+
+### Supported Providers
+
+- **SAML 2.0**: Okta, OneLogin, Azure AD
+- **OIDC**: Google, GitHub, custom providers
+- **OAuth 2.0**: Standard OAuth flows
+
+### SSO Login Flow
+
+1. Redirect user to SSO initiation:
+   ```
+   GET /api/v1/auth/sso/initiate?provider=okta&organizationId=org_123
+   ```
+
+2. User authenticates with identity provider
+
+3. Callback returns JWT tokens:
+   ```
+   GET /api/v1/auth/sso/callback?code=abc123&state=xyz789
+   ```
+
+### SSO Configuration
+
+Configure SSO in **Organization Settings → Authentication**:
+
+```json
+{
+  "provider": "saml",
+  "entityId": "https://your-idp.com/saml",
+  "ssoUrl": "https://your-idp.com/sso",
+  "certificate": "-----BEGIN CERTIFICATE-----..."
+}
+```
+
+## Security Best Practices
+
+### API Key Security
+
+<Callout type="error">
+  Never commit API keys to version control or expose them in client-side code.
+</Callout>
+
+**Do:**
+- Store API keys in environment variables
+- Use secrets managers (AWS Secrets Manager, Vault, etc.)
+- Rotate keys periodically
+- Use scoped keys with minimal permissions
+
+**Don't:**
+- Hardcode keys in source code
+- Share keys via email or chat
+- Use the same key across environments
+- Log API keys in application logs
+
+### Environment Variable Example
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    import os
+    from brokle import Brokle
+
+    # Read from environment
+    client = Brokle(api_key=os.environ.get("BROKLE_API_KEY"))
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    import { Brokle } from 'brokle';
+
+    // Read from environment
+    const client = new Brokle({
+      apiKey: process.env.BROKLE_API_KEY
+    });
+    ```
+  </Tab>
+  <Tab value="env" label=".env">
+    ```bash
+    # .env file (add to .gitignore)
+    BROKLE_API_KEY=bk_your_api_key
+    ```
+  </Tab>
+</Tabs>
+
+### Token Security
+
+- Store refresh tokens securely (httpOnly cookies, secure storage)
+- Implement token refresh before expiration
+- Clear tokens on logout
+- Use HTTPS for all requests
+
+### IP Allowlisting
+
+Enterprise customers can restrict API access by IP:
+
+```json
+{
+  "allowedIPs": [
+    "192.168.1.0/24",
+    "10.0.0.0/8"
+  ],
+  "denyByDefault": true
+}
+```
+
+## Authentication Errors
+
+| Error Code | HTTP Status | Description |
+|------------|-------------|-------------|
+| `UNAUTHORIZED` | 401 | Missing or invalid credentials |
+| `INVALID_API_KEY` | 401 | API key is invalid or revoked |
+| `TOKEN_EXPIRED` | 401 | JWT token has expired |
+| `INVALID_TOKEN` | 401 | JWT token is malformed |
+| `FORBIDDEN` | 403 | Valid credentials but insufficient permissions |
+
+### Error Response Example
+
+```json
+{
+  "error": {
+    "code": "INVALID_API_KEY",
+    "message": "The provided API key is invalid or has been revoked",
+    "hint": "Verify your API key in the dashboard settings"
+  },
+  "meta": {
+    "requestId": "req_abc123"
+  }
+}
+```
+
+## SDK Authentication
+
+The SDKs handle authentication automatically:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    from brokle import Brokle
+
+    # API key from parameter
+    client = Brokle(api_key="bk_your_api_key")
+
+    # Or from environment variable (BROKLE_API_KEY)
+    client = Brokle()
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    import { Brokle } from 'brokle';
+
+    // API key from parameter
+    const client = new Brokle({ apiKey: 'bk_your_api_key' });
+
+    // Or from environment variable (BROKLE_API_KEY)
+    const client = new Brokle({});
+    ```
+  </Tab>
+</Tabs>
+
+## Next Steps
+
+- [Traces API →](/docs/api/endpoints/traces)
+- [Error Reference →](/docs/api/errors)
+- [Python SDK →](/docs/sdk/python)

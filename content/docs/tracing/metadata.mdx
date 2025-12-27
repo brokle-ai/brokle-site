@@ -1,0 +1,363 @@
+---
+title: Trace Metadata
+description: Add context to traces with users, sessions, and custom attributes
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+
+# Trace Metadata
+
+Metadata enriches your traces with context that helps you filter, analyze, and understand your AI application's behavior.
+
+## Types of Metadata
+
+| Type | Purpose | Examples |
+|------|---------|----------|
+| **User ID** | Track per-user behavior | `user_123`, `auth0|abc123` |
+| **Session ID** | Group conversation turns | `session_456`, `conv_xyz` |
+| **Attributes** | Custom key-value pairs | `feature`, `environment`, `version` |
+| **Tags** | Categorical labels | `production`, `experiment_a` |
+
+## Setting User and Session
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    from brokle import Brokle
+
+    client = Brokle(api_key="bk_...")
+
+    with client.start_as_current_span(name="chat_response") as span:
+        # Set user and session at the trace level
+        span.update_trace(
+            user_id="user_123",
+            session_id="session_456"
+        )
+
+        response = generate_response(message)
+        span.update(output=response)
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    import { Brokle } from 'brokle';
+
+    const client = new Brokle({ apiKey: 'bk_...' });
+
+    const span = client.startSpan({
+      name: 'chat_response',
+      attributes: {
+        userId: 'user_123',
+        sessionId: 'session_456'
+      }
+    });
+
+    const response = await generateResponse(message);
+    span.end({ output: response });
+    ```
+  </Tab>
+</Tabs>
+
+### Session Patterns
+
+```python
+# Pattern 1: UUID-based
+import uuid
+session_id = str(uuid.uuid4())
+
+# Pattern 2: User + timestamp
+session_id = f"user_{user_id}_{int(time.time())}"
+
+# Pattern 3: External system
+session_id = f"zendesk_ticket_{ticket_id}"
+
+# Pattern 4: Conversation-based
+session_id = f"conv_{conversation_id}"
+```
+
+## Custom Attributes
+
+### Setting Attributes
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    with client.start_as_current_span(name="process_request") as span:
+        # Individual attributes
+        span.set_attribute("environment", "production")
+        span.set_attribute("version", "2.1.0")
+        span.set_attribute("region", "us-west-2")
+
+        # Or via metadata
+        span.update(metadata={
+            "feature": "chatbot",
+            "experiment": "new_prompt_v2",
+            "customer_tier": "enterprise"
+        })
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    const span = client.startSpan({
+      name: 'process_request',
+      attributes: {
+        environment: 'production',
+        version: '2.1.0',
+        region: 'us-west-2',
+        feature: 'chatbot',
+        experiment: 'new_prompt_v2',
+        customerTier: 'enterprise'
+      }
+    });
+    ```
+  </Tab>
+</Tabs>
+
+### Attribute Categories
+
+| Category | Attributes | Purpose |
+|----------|------------|---------|
+| **Identity** | `user_id`, `session_id`, `request_id` | Link traces to users/sessions |
+| **Environment** | `environment`, `region`, `version` | Deployment context |
+| **Business** | `customer_tier`, `feature`, `product` | Business segmentation |
+| **Experiment** | `experiment_id`, `variant`, `cohort` | A/B testing |
+| **Technical** | `model`, `cache_hit`, `retry_count` | Debugging |
+
+## Filtering in Dashboard
+
+Once metadata is set, filter traces in the dashboard:
+
+```
+Filters:
+├── user_id = "user_123"
+├── environment = "production"
+├── customer_tier = "enterprise"
+└── Time: Last 7 days
+```
+
+### Query Examples
+
+| Query | Finds |
+|-------|-------|
+| `user_id:user_123` | All traces for a specific user |
+| `session_id:session_456` | Complete conversation |
+| `customer_tier:enterprise AND environment:production` | Enterprise production traces |
+| `error:* AND feature:chatbot` | Failed chatbot traces |
+
+## Best Practices
+
+### 1. Consistent Keys
+
+Use consistent attribute names across your application:
+
+```python
+# Good - consistent naming
+span.set_attribute("customer_tier", tier)  # Always "customer_tier"
+
+# Bad - inconsistent naming
+span.set_attribute("customerTier", tier)   # Sometimes camelCase
+span.set_attribute("tier", tier)           # Sometimes abbreviated
+span.set_attribute("customer_type", tier)  # Sometimes different key
+```
+
+<Callout type="info">
+  Define your attribute schema in a shared constants file to ensure consistency across your codebase.
+</Callout>
+
+### 2. Avoid Sensitive Data
+
+Never include sensitive information in metadata:
+
+```python
+# Good - use opaque identifiers
+span.set_attribute("user_id", user.id)  # "user_123"
+
+# Bad - sensitive data
+span.set_attribute("user_email", user.email)  # PII!
+span.set_attribute("api_key", api_key)        # Secret!
+span.set_attribute("password", password)      # Never!
+```
+
+### 3. Use Appropriate Data Types
+
+```python
+# Strings
+span.set_attribute("user_id", "user_123")
+span.set_attribute("model", "gpt-4")
+
+# Numbers
+span.set_attribute("item_count", 5)
+span.set_attribute("confidence", 0.95)
+
+# Booleans
+span.set_attribute("cache_hit", True)
+span.set_attribute("is_premium", user.is_premium)
+```
+
+### 4. Avoid High Cardinality
+
+Limit unique values for better querying:
+
+```python
+# Good - bounded cardinality
+span.set_attribute("customer_tier", "enterprise")  # ~3-5 values
+
+# Bad - unbounded cardinality
+span.set_attribute("timestamp", str(datetime.now()))  # Millions of values
+span.set_attribute("request_body_hash", hash(body))   # Unique per request
+```
+
+## Common Patterns
+
+### Web Application
+
+```python
+from flask import request, g
+
+@app.before_request
+def setup_tracing():
+    g.trace_context = {
+        "user_id": get_current_user_id(),
+        "session_id": request.cookies.get("session_id"),
+        "request_id": request.headers.get("X-Request-ID"),
+        "ip_country": get_country_from_ip(request.remote_addr),
+    }
+
+@app.route("/chat", methods=["POST"])
+def chat():
+    with client.start_as_current_span(name="chat_endpoint") as span:
+        span.update_trace(**g.trace_context)
+        span.set_attribute("endpoint", "/chat")
+        span.set_attribute("method", "POST")
+
+        result = process_chat(request.json)
+        span.update(output=result)
+        return result
+```
+
+### API Gateway
+
+```python
+def api_middleware(handler):
+    async def wrapper(request):
+        with client.start_as_current_span(name="api_request") as span:
+            # Extract context from headers
+            span.update_trace(
+                user_id=request.headers.get("X-User-ID"),
+                session_id=request.headers.get("X-Session-ID"),
+            )
+
+            # API context
+            span.set_attribute("api_version", request.headers.get("X-API-Version", "v1"))
+            span.set_attribute("client_id", request.headers.get("X-Client-ID"))
+            span.set_attribute("endpoint", request.path)
+
+            response = await handler(request)
+
+            span.set_attribute("status_code", response.status_code)
+            return response
+
+    return wrapper
+```
+
+### Chat Application
+
+```python
+class ChatSession:
+    def __init__(self, user_id: str):
+        self.user_id = user_id
+        self.session_id = f"chat_{uuid.uuid4()}"
+        self.message_count = 0
+
+    def send_message(self, message: str):
+        self.message_count += 1
+
+        with client.start_as_current_span(
+            name=f"chat_message_{self.message_count}"
+        ) as span:
+            span.update_trace(
+                user_id=self.user_id,
+                session_id=self.session_id
+            )
+            span.set_attribute("message_number", self.message_count)
+            span.set_attribute("message_length", len(message))
+
+            response = generate_response(message, self.history)
+
+            span.update(output=response)
+            return response
+```
+
+### A/B Testing
+
+```python
+def get_response(user_id: str, message: str):
+    # Determine experiment variant
+    variant = get_experiment_variant(user_id, "prompt_optimization")
+
+    with client.start_as_current_span(name="experiment_response") as span:
+        span.update_trace(user_id=user_id)
+        span.set_attribute("experiment_id", "prompt_optimization")
+        span.set_attribute("variant", variant)
+        span.set_attribute("cohort", get_user_cohort(user_id))
+
+        # Use variant-specific prompt
+        prompt = get_prompt_for_variant(variant)
+        response = generate(prompt, message)
+
+        span.update(output=response)
+        return response
+```
+
+## Dynamic Metadata
+
+Add metadata that changes during execution:
+
+```python
+with client.start_as_current_span(name="multi_step_process") as span:
+    span.set_attribute("step", "initialization")
+
+    # Step 1
+    span.set_attribute("step", "data_loading")
+    data = load_data()
+    span.set_attribute("data_size", len(data))
+
+    # Step 2
+    span.set_attribute("step", "processing")
+    results = process(data)
+    span.set_attribute("result_count", len(results))
+
+    # Step 3
+    span.set_attribute("step", "finalization")
+    final = finalize(results)
+    span.set_attribute("final_status", "success")
+
+    span.update(output=final)
+```
+
+## Propagating Context
+
+Ensure context flows through your application:
+
+```python
+# Request handler sets context
+with client.start_as_current_span(name="handle_request") as span:
+    span.update_trace(user_id=user_id, session_id=session_id)
+
+    # Context automatically propagates to child spans
+    with client.start_as_current_span(name="process"):
+        # This span inherits user_id and session_id
+        result = process_data()
+
+    with client.start_as_current_span(name="store"):
+        # This span also inherits the context
+        store_result(result)
+```
+
+## Related Topics
+
+- [Traces Overview](/docs/concepts/traces) - Understanding traces
+- [Sessions](/docs/concepts/sessions) - Session-based analysis
+- [Working with Spans](/docs/tracing/spans) - Advanced span usage
+- [Cost Analytics](/docs/concepts/cost-analytics) - Cost by user/feature

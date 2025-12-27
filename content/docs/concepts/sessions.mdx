@@ -1,0 +1,375 @@
+---
+title: Sessions
+description: Group related traces together to track conversations and user journeys
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+
+# Sessions
+
+A **session** groups related traces together, enabling you to track complete conversations, user journeys, or multi-turn interactions as a single unit.
+
+## What is a Session?
+
+While traces capture individual request-response cycles, sessions connect multiple traces that belong together:
+
+```
+Session: "support_conversation_789"
+│
+├── Trace 1: "greeting" (09:00:00)
+│   └── "Hi, I need help with billing"
+│   └── "Hello! I'd be happy to help..."
+│
+├── Trace 2: "billing_inquiry" (09:00:15)
+│   └── "Can you show me my invoices?"
+│   └── "Here are your recent invoices..."
+│
+├── Trace 3: "payment_update" (09:01:30)
+│   └── "I want to update my payment method"
+│   └── "I've updated your payment method..."
+│
+└── Trace 4: "farewell" (09:02:00)
+    └── "Thanks for your help!"
+    └── "You're welcome! Is there anything else?"
+```
+
+## Why Use Sessions?
+
+### 1. Conversation Context
+
+Track how context flows across multiple turns:
+
+```
+Session metrics:
+├── Total turns: 4
+├── Duration: 2 minutes
+├── Context quality: Did the AI remember previous context?
+├── Resolution: Was the user's issue resolved?
+└── Satisfaction: How did the conversation end?
+```
+
+### 2. User Journey Analysis
+
+Understand complete user workflows:
+
+```
+Session: "product_research_journey"
+├── Search: "best laptops 2024"
+├── Compare: "MacBook vs ThinkPad"
+├── Details: "MacBook Pro specifications"
+├── Reviews: "MacBook Pro user reviews"
+└── Purchase: "Add to cart"
+```
+
+### 3. Aggregated Metrics
+
+Roll up metrics across related traces:
+
+| Metric | Per-Trace | Per-Session |
+|--------|-----------|-------------|
+| Tokens | 500 | 2,500 (total) |
+| Cost | $0.015 | $0.075 (total) |
+| Latency | 1.2s | 6.5s (total) |
+| Quality | 0.85 | 0.82 (average) |
+
+## Creating Sessions
+
+### Assign Session ID to Traces
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    from brokle import Brokle
+    import uuid
+
+    client = Brokle(api_key="bk_...")
+
+    # Generate or retrieve session ID
+    session_id = str(uuid.uuid4())  # Or from your session store
+
+    with client.start_as_current_span(name="chat_turn") as span:
+        # Associate trace with session
+        span.update_trace(
+            session_id=session_id,
+            user_id="user_123"
+        )
+
+        response = process_message(user_message)
+        span.update(output=response)
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    import { Brokle } from 'brokle';
+    import { v4 as uuidv4 } from 'uuid';
+
+    const client = new Brokle({ apiKey: 'bk_...' });
+
+    // Generate or retrieve session ID
+    const sessionId = uuidv4(); // Or from your session store
+
+    const span = client.startSpan({
+      name: 'chat_turn',
+      attributes: {
+        sessionId,
+        userId: 'user_123'
+      }
+    });
+
+    const response = await processMessage(userMessage);
+    span.end({ output: response });
+    ```
+  </Tab>
+</Tabs>
+
+### Session ID Strategies
+
+| Strategy | Format | Use Case |
+|----------|--------|----------|
+| UUID | `550e8400-e29b-41d4-a716-446655440000` | General purpose |
+| Prefixed | `session_abc123` | Easy identification |
+| Composite | `user_123_1704067200` | User + timestamp |
+| External | `conv_xyz789` | From external system |
+
+<Callout type="info">
+  Session IDs are strings with no format requirements. Use whatever format works best for your application.
+</Callout>
+
+## Multi-Turn Conversations
+
+### Chat Application Example
+
+```python
+from brokle import Brokle, wrap_openai
+
+client = Brokle(api_key="bk_...")
+openai_client = wrap_openai(openai.OpenAI(), brokle=client)
+
+class ChatSession:
+    def __init__(self, user_id: str):
+        self.session_id = f"chat_{uuid.uuid4()}"
+        self.user_id = user_id
+        self.messages = []
+
+    def send_message(self, user_message: str) -> str:
+        self.messages.append({"role": "user", "content": user_message})
+
+        with client.start_as_current_span(
+            name=f"chat_turn_{len(self.messages)}"
+        ) as span:
+            span.update_trace(
+                session_id=self.session_id,
+                user_id=self.user_id
+            )
+            span.set_attribute("turn_number", len(self.messages))
+
+            response = openai_client.chat.completions.create(
+                model="gpt-4",
+                messages=self.messages
+            )
+
+            assistant_message = response.choices[0].message.content
+            self.messages.append({"role": "assistant", "content": assistant_message})
+
+            span.update(output=assistant_message)
+            return assistant_message
+
+# Usage
+session = ChatSession(user_id="user_456")
+session.send_message("Hello!")
+session.send_message("What's the weather like?")
+session.send_message("Thanks, goodbye!")
+# All three traces are linked by session_id
+```
+
+### Agent Workflow Example
+
+```python
+class AgentSession:
+    def __init__(self, task: str, user_id: str):
+        self.session_id = f"agent_{uuid.uuid4()}"
+        self.task = task
+        self.user_id = user_id
+        self.step = 0
+
+    def execute_step(self, action: str):
+        self.step += 1
+
+        with client.start_as_current_span(name=f"agent_step_{self.step}") as span:
+            span.update_trace(
+                session_id=self.session_id,
+                user_id=self.user_id
+            )
+            span.set_attribute("step_number", self.step)
+            span.set_attribute("action", action)
+            span.set_attribute("task", self.task)
+
+            result = perform_action(action)
+            span.update(output=result)
+            return result
+
+# Agent executing a multi-step task
+agent = AgentSession(task="research_competitors", user_id="user_789")
+agent.execute_step("search_market")
+agent.execute_step("analyze_results")
+agent.execute_step("generate_report")
+# All steps linked as one session
+```
+
+## Session Metadata
+
+Add session-level context that applies to all traces:
+
+```python
+# Create a session context
+session_context = {
+    "session_id": "session_123",
+    "user_id": "user_456",
+    "channel": "web",
+    "intent": "product_inquiry",
+    "started_at": datetime.now().isoformat()
+}
+
+# Apply to each trace in the session
+with client.start_as_current_span(name="interaction") as span:
+    span.update_trace(
+        session_id=session_context["session_id"],
+        user_id=session_context["user_id"]
+    )
+    span.set_attribute("channel", session_context["channel"])
+    span.set_attribute("session_intent", session_context["intent"])
+```
+
+### Recommended Session Metadata
+
+| Attribute | Purpose | Example |
+|-----------|---------|---------|
+| `channel` | Where session originated | `web`, `mobile`, `api` |
+| `intent` | Session goal/intent | `support`, `purchase` |
+| `customer_tier` | User segment | `enterprise`, `free` |
+| `experiment_id` | A/B test variant | `exp_abc123` |
+| `agent_version` | Bot/agent version | `v2.1.0` |
+
+## Viewing Sessions
+
+### Session List
+
+In the Brokle dashboard:
+
+1. Navigate to **Sessions** in the sidebar
+2. Filter by time range, user, or metadata
+3. View session summaries with aggregated metrics
+
+### Session Detail View
+
+Click on a session to see:
+
+- **Timeline**: All traces in chronological order
+- **Aggregated Metrics**: Total tokens, cost, duration
+- **Quality Trend**: How quality scores changed across turns
+- **User Journey**: Visual flow of the conversation
+
+```
+Session: support_conversation_789
+├── Duration: 2m 15s
+├── Total Traces: 4
+├── Total Tokens: 2,847
+├── Total Cost: $0.0892
+├── Avg Quality: 0.87
+│
+├── Timeline:
+│   ├── 09:00:00 - greeting (245 tokens, $0.01)
+│   ├── 09:00:15 - billing_inquiry (892 tokens, $0.03)
+│   ├── 09:01:30 - payment_update (1,210 tokens, $0.04)
+│   └── 09:02:00 - farewell (500 tokens, $0.01)
+```
+
+## Session Analytics
+
+### Conversation Metrics
+
+Track conversation-level performance:
+
+| Metric | Description | Goal |
+|--------|-------------|------|
+| **Turn Count** | Messages in conversation | Lower = efficient |
+| **Resolution Rate** | Issues resolved | Higher = better |
+| **Escalation Rate** | Handed to human | Lower = better |
+| **Session Duration** | Total time | Depends on use case |
+| **Quality Trend** | Quality over turns | Stable or improving |
+
+### Cohort Analysis
+
+Compare sessions across dimensions:
+
+```
+By Channel:
+├── Web: 3.2 avg turns, 85% resolution
+├── Mobile: 4.1 avg turns, 78% resolution
+└── API: 2.8 avg turns, 92% resolution
+
+By Customer Tier:
+├── Enterprise: 2.5 avg turns, 95% resolution
+├── Pro: 3.0 avg turns, 88% resolution
+└── Free: 4.5 avg turns, 72% resolution
+```
+
+## Best Practices
+
+### 1. Consistent Session IDs
+
+Use the same session ID format throughout your application:
+
+```python
+# Good - consistent format
+session_id = f"session_{uuid.uuid4()}"
+
+# Avoid - inconsistent formats
+session_id = uuid.uuid4()  # Sometimes UUID
+session_id = "abc123"      # Sometimes short string
+```
+
+### 2. Include User Context
+
+Always associate users with sessions:
+
+```python
+span.update_trace(
+    session_id=session_id,
+    user_id=user_id  # Don't forget this
+)
+```
+
+### 3. Handle Session Boundaries
+
+Know when to start new sessions:
+
+```python
+def should_start_new_session(last_activity: datetime) -> bool:
+    """Start new session if inactive for 30 minutes"""
+    return datetime.now() - last_activity > timedelta(minutes=30)
+```
+
+### 4. Meaningful Session Names
+
+When sessions represent specific workflows:
+
+```python
+# For specific flows, use descriptive session IDs
+session_id = f"checkout_{order_id}"
+session_id = f"onboarding_{user_id}"
+session_id = f"support_ticket_{ticket_id}"
+```
+
+## Related Concepts
+
+- [Traces](/docs/concepts/traces) - Individual traces within sessions
+- [Evaluations](/docs/concepts/evaluations) - Score session quality
+- [Cost Analytics](/docs/concepts/cost-analytics) - Track session costs
+
+## Next Steps
+
+- [Create your first trace →](/docs/first-trace)
+- [Add evaluations →](/docs/concepts/evaluations)
+- [Explore the dashboard →](/docs/quickstart)

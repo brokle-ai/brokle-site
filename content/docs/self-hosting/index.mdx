@@ -1,6 +1,238 @@
 ---
-title: Self Hosting
-description: Deploy on your infrastructure
+title: Self-Hosting
+description: Deploy Brokle on your own infrastructure
 ---
 
-Deploy Brokle yourself.
+import { Cards, Card } from "fumadocs-ui/components/card";
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Self-Hosting
+
+Deploy Brokle on your own infrastructure for complete control over your data and customization options.
+
+## Why Self-Host?
+
+- **Data Privacy**: Keep all traces and data within your infrastructure
+- **Compliance**: Meet regulatory requirements (GDPR, HIPAA, SOC 2)
+- **Customization**: Modify and extend Brokle for your needs
+- **Cost Control**: Predictable infrastructure costs at scale
+- **Network Isolation**: Run in air-gapped or private networks
+
+## Deployment Options
+
+<Cards>
+  <Card
+    title="Docker"
+    description="Single-server deployment with Docker"
+    href="/docs/self-hosting/docker"
+  />
+  <Card
+    title="Docker Compose"
+    description="Multi-container deployment for development and small teams"
+    href="/docs/self-hosting/docker-compose"
+  />
+  <Card
+    title="Kubernetes"
+    description="Production-grade deployment with Kubernetes"
+    href="/docs/self-hosting/kubernetes"
+  />
+  <Card
+    title="Configuration"
+    description="Environment variables and configuration options"
+    href="/docs/self-hosting/configuration"
+  />
+</Cards>
+
+## Architecture Overview
+
+Brokle consists of several components:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                       Brokle Architecture                        │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│    ┌──────────────┐     ┌──────────────┐     ┌──────────────┐  │
+│    │  Web UI      │     │  API Server  │     │  Worker      │  │
+│    │  (Next.js)   │────▶│  (Go)        │     │  (Go)        │  │
+│    └──────────────┘     └──────────────┘     └──────────────┘  │
+│                               │                     │           │
+│                               ▼                     ▼           │
+│    ┌──────────────────────────────────────────────────────────┐│
+│    │                      Redis Streams                        ││
+│    └──────────────────────────────────────────────────────────┘│
+│                               │                                 │
+│         ┌─────────────────────┼─────────────────────┐          │
+│         ▼                     ▼                     ▼          │
+│    ┌──────────────┐     ┌──────────────┐     ┌──────────────┐  │
+│    │  PostgreSQL  │     │  ClickHouse  │     │    Redis     │  │
+│    │  (Metadata)  │     │  (Analytics) │     │   (Cache)    │  │
+│    └──────────────┘     └──────────────┘     └──────────────┘  │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Components
+
+| Component | Purpose | Port |
+|-----------|---------|------|
+| **API Server** | HTTP API, authentication, routing | 8080 |
+| **Worker** | Background processing, telemetry ingestion | - |
+| **Web UI** | Dashboard interface | 3000 |
+| **PostgreSQL** | Transactional data, users, projects | 5432 |
+| **ClickHouse** | Analytics, traces, high-volume data | 8123/9000 |
+| **Redis** | Cache, queues, pub/sub | 6379 |
+
+## System Requirements
+
+### Minimum (Development/Small Teams)
+
+| Resource | Requirement |
+|----------|-------------|
+| CPU | 4 cores |
+| RAM | 8 GB |
+| Storage | 50 GB SSD |
+| Network | 100 Mbps |
+
+### Recommended (Production)
+
+| Resource | Requirement |
+|----------|-------------|
+| CPU | 8+ cores |
+| RAM | 32+ GB |
+| Storage | 500 GB+ SSD |
+| Network | 1 Gbps |
+
+<Callout type="info">
+  Storage requirements depend heavily on trace volume. Plan for approximately 1 KB per trace average.
+</Callout>
+
+## Quick Start
+
+The fastest way to get started is with Docker Compose:
+
+```bash
+# Clone the repository
+git clone https://github.com/brokle-ai/brokle.git
+cd brokle
+
+# Start all services
+docker compose up -d
+
+# Access the dashboard
+open http://localhost:3000
+```
+
+See the [Docker Compose guide](/docs/self-hosting/docker-compose) for detailed instructions.
+
+## Database Setup
+
+### PostgreSQL
+
+PostgreSQL stores transactional data:
+- Users and authentication
+- Organizations and projects
+- API keys and settings
+- Prompt versions
+
+```bash
+# Create database
+createdb brokle
+
+# Run migrations
+./brokle migrate up
+```
+
+### ClickHouse
+
+ClickHouse stores high-volume analytics data:
+- Traces and spans
+- Metrics and events
+- Cost data
+
+```bash
+# ClickHouse migrations run automatically on startup
+# Or run manually:
+./brokle migrate up --db clickhouse
+```
+
+### Redis
+
+Redis handles:
+- Session caching
+- Rate limiting
+- Background job queues
+- Real-time updates
+
+## Security Considerations
+
+### Network Security
+
+- Run behind a reverse proxy (nginx, Traefik)
+- Use TLS/SSL for all connections
+- Restrict database access to internal networks
+- Use firewall rules to limit exposure
+
+### Authentication
+
+- Configure strong JWT secrets
+- Enable rate limiting
+- Set up SSO for enterprise (SAML, OIDC)
+- Use API key rotation policies
+
+### Data Security
+
+- Encrypt data at rest
+- Use encrypted connections to databases
+- Implement backup strategies
+- Configure retention policies
+
+## Monitoring
+
+Brokle exposes metrics for monitoring:
+
+```yaml
+# Prometheus metrics
+/metrics              # Application metrics
+/health               # Health check endpoint
+/ready                # Readiness probe
+```
+
+### Key Metrics
+
+| Metric | Description |
+|--------|-------------|
+| `brokle_traces_total` | Total traces ingested |
+| `brokle_api_requests_total` | API request count |
+| `brokle_api_latency_seconds` | API response latency |
+| `brokle_worker_queue_size` | Worker queue depth |
+
+## Upgrading
+
+```bash
+# Pull latest images
+docker compose pull
+
+# Restart with new version
+docker compose up -d
+
+# Run migrations
+docker compose exec server ./brokle migrate up
+```
+
+<Callout type="warning">
+  Always backup your databases before upgrading. Check the [changelog](/docs/changelog) for breaking changes.
+</Callout>
+
+## Support
+
+For self-hosting support:
+- [GitHub Issues](https://github.com/brokle-ai/brokle/issues) - Bug reports and feature requests
+- [GitHub Discussions](https://github.com/brokle-ai/brokle/discussions) - Questions and community support
+- [Discord](https://discord.gg/brokle) - Real-time community chat
+
+## Next Steps
+
+- [Docker Deployment](/docs/self-hosting/docker) - Simple single-node setup
+- [Configuration Reference](/docs/self-hosting/configuration) - All configuration options
+- [Kubernetes](/docs/self-hosting/kubernetes) - Production deployment

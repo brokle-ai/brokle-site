@@ -1,0 +1,8 @@
+{
+  "title": "Integration Recipes",
+  "pages": [
+    "index",
+    "nextjs-app",
+    "fastapi-service"
+  ]
+}

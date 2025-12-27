@@ -1,0 +1,481 @@
+---
+title: Automatic Tracing
+description: Zero-code tracing for LLM calls using Brokle's integration wrappers
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+
+# Automatic Tracing
+
+Automatic tracing captures LLM calls without modifying your existing code. Wrap your LLM client once, and all calls are traced automatically.
+
+## How It Works
+
+```
+┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
+│  Your Code       │     │  Wrapped Client  │     │  Original Client │
+│                  │     │  (Brokle)        │     │  (OpenAI, etc.)  │
+│  client.chat()   │ ──▶ │  - Start span    │ ──▶ │  - API call      │
+│                  │     │  - Capture I/O   │     │  - Response      │
+│                  │ ◀── │  - Record tokens │ ◀── │                  │
+│                  │     │  - End span      │     │                  │
+└──────────────────┘     └──────────────────┘     └──────────────────┘
+```
+
+## Supported Providers
+
+| Provider | Wrapper | Package |
+|----------|---------|---------|
+| OpenAI | `wrap_openai` | `brokle` |
+| Anthropic | `wrap_anthropic` | `brokle` |
+| Azure OpenAI | `wrap_openai` | `brokle` |
+| Google AI | `wrap_google` | `brokle` |
+| Cohere | `wrap_cohere` | `brokle` |
+
+## OpenAI Integration
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    from brokle import Brokle, wrap_openai
+    import openai
+
+    # Initialize Brokle
+    client = Brokle(api_key="bk_...")
+
+    # Wrap OpenAI client
+    openai_client = wrap_openai(openai.OpenAI(), brokle=client)
+
+    # Use as normal - tracing is automatic
+    response = openai_client.chat.completions.create(
+        model="gpt-4",
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": "What is Python?"}
+        ]
+    )
+
+    print(response.choices[0].message.content)
+    client.flush()
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    import { Brokle } from 'brokle';
+    import { wrapOpenAI } from 'brokle-openai';
+    import OpenAI from 'openai';
+
+    // Initialize Brokle
+    const brokle = new Brokle({ apiKey: 'bk_...' });
+
+    // Wrap OpenAI client
+    const openai = wrapOpenAI(new OpenAI(), { brokle });
+
+    // Use as normal - tracing is automatic
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        { role: 'system', content: 'You are a helpful assistant.' },
+        { role: 'user', content: 'What is Python?' }
+      ]
+    });
+
+    console.log(response.choices[0].message.content);
+    await brokle.shutdown();
+    ```
+  </Tab>
+</Tabs>
+
+### What Gets Captured
+
+For each OpenAI call, Brokle automatically captures:
+
+| Data | Example |
+|------|---------|
+| **Model** | `gpt-4`, `gpt-3.5-turbo` |
+| **Messages** | Full input messages array |
+| **Response** | Complete response with choices |
+| **Prompt Tokens** | 150 |
+| **Completion Tokens** | 89 |
+| **Total Tokens** | 239 |
+| **Cost** | $0.0124 |
+| **Latency** | 1,245ms |
+| **Status** | success / error |
+
+## Anthropic Integration
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    from brokle import Brokle, wrap_anthropic
+    import anthropic
+
+    client = Brokle(api_key="bk_...")
+    claude = wrap_anthropic(anthropic.Anthropic(), brokle=client)
+
+    response = claude.messages.create(
+        model="claude-3-sonnet-20240229",
+        max_tokens=1024,
+        messages=[
+            {"role": "user", "content": "Explain quantum computing"}
+        ]
+    )
+
+    print(response.content[0].text)
+    client.flush()
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    import { Brokle } from 'brokle';
+    import { wrapAnthropic } from 'brokle-anthropic';
+    import Anthropic from '@anthropic-ai/sdk';
+
+    const brokle = new Brokle({ apiKey: 'bk_...' });
+    const claude = wrapAnthropic(new Anthropic(), { brokle });
+
+    const response = await claude.messages.create({
+      model: 'claude-3-sonnet-20240229',
+      max_tokens: 1024,
+      messages: [
+        { role: 'user', content: 'Explain quantum computing' }
+      ]
+    });
+
+    console.log(response.content[0].text);
+    await brokle.shutdown();
+    ```
+  </Tab>
+</Tabs>
+
+## Streaming Support
+
+Automatic tracing works seamlessly with streaming responses:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    from brokle import Brokle, wrap_openai
+    import openai
+
+    client = Brokle(api_key="bk_...")
+    openai_client = wrap_openai(openai.OpenAI(), brokle=client)
+
+    # Streaming is automatically traced
+    stream = openai_client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": "Tell me a story"}],
+        stream=True
+    )
+
+    for chunk in stream:
+        if chunk.choices[0].delta.content:
+            print(chunk.choices[0].delta.content, end="")
+
+    client.flush()
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    const stream = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [{ role: 'user', content: 'Tell me a story' }],
+      stream: true
+    });
+
+    for await (const chunk of stream) {
+      if (chunk.choices[0]?.delta?.content) {
+        process.stdout.write(chunk.choices[0].delta.content);
+      }
+    }
+
+    await brokle.shutdown();
+    ```
+  </Tab>
+</Tabs>
+
+Brokle captures:
+- **Time to first token**: When the first chunk arrived
+- **Complete response**: Assembled from all chunks
+- **Token counts**: From the final chunk (if provided)
+- **Total duration**: Stream start to end
+
+## Async Support
+
+Both sync and async clients are supported:
+
+<Tabs>
+  <Tab value="python" label="Python (Async)">
+    ```python
+    from brokle import Brokle, wrap_openai
+    import openai
+    import asyncio
+
+    client = Brokle(api_key="bk_...")
+    openai_client = wrap_openai(openai.AsyncOpenAI(), brokle=client)
+
+    async def main():
+        response = await openai_client.chat.completions.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": "Hello!"}]
+        )
+        print(response.choices[0].message.content)
+
+    asyncio.run(main())
+    client.flush()
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    // JavaScript is async by default
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [{ role: 'user', content: 'Hello!' }]
+    });
+    ```
+  </Tab>
+</Tabs>
+
+## Combining with Manual Tracing
+
+Use automatic tracing within manual spans for additional context:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    from brokle import Brokle, wrap_openai
+    import openai
+
+    client = Brokle(api_key="bk_...")
+    openai_client = wrap_openai(openai.OpenAI(), brokle=client)
+
+    # Manual span for the overall operation
+    with client.start_as_current_span(name="customer_inquiry") as span:
+        # Add business context
+        span.set_attribute("customer_tier", "enterprise")
+        span.set_attribute("inquiry_type", "billing")
+        span.update_trace(
+            user_id="user_123",
+            session_id="session_456"
+        )
+
+        # LLM call is automatically traced as a child span
+        response = openai_client.chat.completions.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": user_question}]
+        )
+
+        span.update(output=response.choices[0].message.content)
+
+    client.flush()
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    const span = brokle.startSpan({
+      name: 'customer_inquiry',
+      attributes: {
+        customerTier: 'enterprise',
+        inquiryType: 'billing',
+        userId: 'user_123',
+        sessionId: 'session_456'
+      }
+    });
+
+    // LLM call is automatically traced as a child span
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [{ role: 'user', content: userQuestion }]
+    });
+
+    span.end({ output: response.choices[0].message.content });
+    await brokle.shutdown();
+    ```
+  </Tab>
+</Tabs>
+
+### Resulting Trace Structure
+
+```
+Trace: customer_inquiry
+├── customer_tier: enterprise
+├── inquiry_type: billing
+├── user_id: user_123
+├── session_id: session_456
+│
+└── Span: gpt-4 (generation) [auto-captured]
+    ├── model: gpt-4
+    ├── prompt_tokens: 156
+    ├── completion_tokens: 89
+    ├── cost: $0.0124
+    └── duration: 1,245ms
+```
+
+## Function Calling
+
+Tool calls are automatically traced:
+
+```python
+tools = [
+    {
+        "type": "function",
+        "function": {
+            "name": "get_weather",
+            "description": "Get the current weather",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {"type": "string"}
+                },
+                "required": ["location"]
+            }
+        }
+    }
+]
+
+response = openai_client.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "What's the weather in Paris?"}],
+    tools=tools
+)
+
+# Brokle captures:
+# - Tool definitions
+# - Tool call arguments
+# - Tool call IDs
+```
+
+## Embeddings
+
+Embedding calls are also traced:
+
+```python
+embeddings = openai_client.embeddings.create(
+    model="text-embedding-3-small",
+    input=["Hello world", "Goodbye world"]
+)
+
+# Brokle captures:
+# - Model
+# - Input texts
+# - Dimensions
+# - Token count
+```
+
+## Configuration Options
+
+Customize what gets captured:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    from brokle import Brokle, wrap_openai
+    from brokle.integrations.openai import OpenAIConfig
+
+    config = OpenAIConfig(
+        capture_input=True,       # Log prompts (default: True)
+        capture_output=True,      # Log completions (default: True)
+        capture_tokens=True,      # Track token usage (default: True)
+        capture_cost=True,        # Calculate costs (default: True)
+        mask_pii=False,           # Mask PII in logs (default: False)
+    )
+
+    openai_client = wrap_openai(
+        openai.OpenAI(),
+        brokle=client,
+        config=config
+    )
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    const openai = wrapOpenAI(new OpenAI(), {
+      brokle,
+      config: {
+        captureInput: true,
+        captureOutput: true,
+        captureTokens: true,
+        captureCost: true,
+        maskPii: false
+      }
+    });
+    ```
+  </Tab>
+</Tabs>
+
+### Privacy Options
+
+| Option | Description |
+|--------|-------------|
+| `capture_input=False` | Don't log prompts (useful for sensitive data) |
+| `capture_output=False` | Don't log completions |
+| `mask_pii=True` | Automatically mask emails, phone numbers, etc. |
+
+## Error Handling
+
+Errors are automatically captured:
+
+```python
+try:
+    response = openai_client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": "Hello!"}]
+    )
+except openai.RateLimitError as e:
+    # Error is automatically captured in the trace
+    # with error message, type, and status code
+    pass
+```
+
+<Callout type="info">
+  Even when errors occur, the trace is still sent to Brokle with error details, helping you debug issues.
+</Callout>
+
+## Performance Impact
+
+Automatic tracing adds minimal overhead:
+
+| Metric | Impact |
+|--------|--------|
+| **Latency** | Under 1ms per call |
+| **Memory** | Negligible |
+| **CPU** | Negligible |
+| **Network** | Async batched uploads |
+
+Traces are sent in the background using batched uploads, so they don't block your application.
+
+## Troubleshooting
+
+### Traces Not Appearing
+
+1. **Check the wrapper**: Ensure you're using the wrapped client, not the original
+2. **Flush before exit**: Always call `client.flush()` or `await client.shutdown()`
+3. **Verify API key**: Check that `BROKLE_API_KEY` is set correctly
+
+### Missing Token Counts
+
+Some OpenAI responses (especially streaming) may not include usage data. Brokle estimates tokens when not provided.
+
+### Azure OpenAI
+
+For Azure, use the same `wrap_openai` wrapper:
+
+```python
+from openai import AzureOpenAI
+
+azure_client = AzureOpenAI(
+    api_key="your-azure-key",
+    api_version="2024-02-01",
+    azure_endpoint="https://your-resource.openai.azure.com"
+)
+
+wrapped_client = wrap_openai(azure_client, brokle=client)
+```
+
+## Next Steps
+
+- [Manual Tracing](/docs/tracing/manual) - For custom operations
+- [Trace Metadata](/docs/tracing/metadata) - Add context to traces
+- [OpenAI Integration](/docs/integrations/openai) - Full OpenAI guide
+- [Anthropic Integration](/docs/integrations/anthropic) - Full Anthropic guide

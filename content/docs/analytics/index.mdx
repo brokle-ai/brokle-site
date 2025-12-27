@@ -1,0 +1,371 @@
+---
+title: Analytics
+description: Gain insights into your AI application with comprehensive dashboards, metrics, and cost tracking
+---
+
+import { Cards, Card } from "fumadocs-ui/components/card";
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Analytics
+
+Brokle Analytics provides comprehensive visibility into your AI application's performance, costs, and quality. Track usage patterns, monitor costs, and identify optimization opportunities.
+
+## Dashboard Overview
+
+### Key Metrics
+
+| Metric | Description | Location |
+|--------|-------------|----------|
+| **Total Traces** | Number of traces recorded | Overview |
+| **Token Usage** | Input/output tokens consumed | Usage |
+| **Total Cost** | Estimated spending | Cost Analytics |
+| **Average Latency** | Response time P50/P95/P99 | Performance |
+| **Error Rate** | Failed requests percentage | Reliability |
+| **Quality Score** | Average evaluation scores | Quality |
+
+### Time Range Selection
+
+View metrics across different periods:
+- Last 1 hour (real-time monitoring)
+- Last 24 hours
+- Last 7 days
+- Last 30 days
+- Custom range
+
+## Metric Categories
+
+### Usage Analytics
+
+Track how your AI is being used:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Daily Usage                          │
+├─────────────────────────────────────────────────────────┤
+│  Traces: 12,450 (+15% vs last week)                     │
+│  Tokens: 8.2M input / 2.1M output                       │
+│  Active Users: 1,234                                    │
+│  Peak Hour: 2:00 PM UTC                                 │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Key dimensions:**
+- Traces over time
+- Token consumption patterns
+- User activity distribution
+- Feature usage breakdown
+
+### Cost Analytics
+
+Understand and optimize spending:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                  Cost Breakdown                         │
+├─────────────────────────────────────────────────────────┤
+│  Total (30 days): $2,450                                │
+│                                                         │
+│  By Model:                                              │
+│    GPT-4o:         $1,800 (73%)                         │
+│    GPT-4o-mini:    $450 (18%)                           │
+│    Claude Sonnet:  $200 (9%)                            │
+│                                                         │
+│  By Feature:                                            │
+│    Chat:           $1,500 (61%)                         │
+│    Search:         $650 (27%)                           │
+│    Summarization:  $300 (12%)                           │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Tracking includes:**
+- Cost per model
+- Cost per feature/endpoint
+- Cost per user segment
+- Daily/weekly/monthly trends
+
+### Performance Analytics
+
+Monitor response times and reliability:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│               Latency Distribution                       │
+├─────────────────────────────────────────────────────────┤
+│  P50: 1.2s    P95: 2.8s    P99: 4.5s                    │
+│                                                         │
+│  Time to First Token (TTFT):                            │
+│    P50: 180ms   P95: 450ms                              │
+│                                                         │
+│  Error Rate: 0.8%                                       │
+│    - Rate limits: 0.5%                                  │
+│    - Timeouts: 0.2%                                     │
+│    - Other: 0.1%                                        │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Quality Analytics
+
+Track evaluation results:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                 Quality Metrics                         │
+├─────────────────────────────────────────────────────────┤
+│  Average Scores (7 days):                               │
+│    Relevance:    0.87                                   │
+│    Helpfulness:  0.82                                   │
+│    Accuracy:     0.91                                   │
+│                                                         │
+│  User Feedback:                                         │
+│    Satisfaction: 92%                                    │
+│    Response Rate: 4.2%                                  │
+└─────────────────────────────────────────────────────────┘
+```
+
+## Filtering & Segmentation
+
+### Filter Dimensions
+
+Slice data by multiple dimensions:
+
+| Dimension | Examples |
+|-----------|----------|
+| **Model** | gpt-4o, claude-3-sonnet |
+| **User Segment** | Free, Pro, Enterprise |
+| **Feature** | Chat, Search, Summary |
+| **Environment** | Production, Staging |
+| **Prompt Version** | v1, v2, v3 |
+| **Status** | Success, Error |
+
+### Example Filters
+
+```sql
+-- View GPT-4o costs for enterprise users
+model = "gpt-4o" AND user.tier = "enterprise"
+
+-- Find slow traces in production
+environment = "production" AND latency > 3000
+
+-- Quality issues in chat feature
+feature = "chat" AND quality.relevance < 0.7
+```
+
+## Programmatic Access
+
+Query analytics data via SDK:
+
+```python
+from brokle import Brokle
+from datetime import datetime, timedelta
+
+client = Brokle()
+
+# Get usage stats
+usage = client.analytics.get_usage(
+    start_time=datetime.now() - timedelta(days=7),
+    group_by="day"
+)
+
+for day in usage:
+    print(f"{day.date}: {day.trace_count} traces, {day.token_count} tokens")
+
+# Get cost breakdown
+costs = client.analytics.get_costs(
+    start_time=datetime.now() - timedelta(days=30),
+    group_by="model"
+)
+
+for model in costs:
+    print(f"{model.name}: ${model.total_cost:.2f}")
+
+# Get latency percentiles
+latency = client.analytics.get_latency_stats(
+    start_time=datetime.now() - timedelta(days=1)
+)
+
+print(f"P50: {latency.p50}ms, P95: {latency.p95}ms, P99: {latency.p99}ms")
+```
+
+## Exporting Data
+
+### CSV Export
+
+Export analytics data for external analysis:
+
+1. Navigate to any dashboard
+2. Click **Export** → **CSV**
+3. Select date range and dimensions
+4. Download file
+
+### API Export
+
+```python
+# Export to DataFrame
+df = client.analytics.export(
+    metrics=["traces", "tokens", "cost"],
+    start_time=datetime.now() - timedelta(days=30),
+    group_by=["day", "model"]
+)
+
+# Save to CSV
+df.to_csv("analytics_export.csv")
+
+# Analyze with pandas
+import pandas as pd
+print(df.groupby("model")["cost"].sum())
+```
+
+### Webhook Integration
+
+Send analytics data to external systems:
+
+```python
+# Configure webhook
+client.analytics.configure_webhook(
+    url="https://your-system.com/analytics",
+    events=["daily_summary", "cost_alert"],
+    format="json"
+)
+```
+
+## Alerts
+
+### Setting Up Alerts
+
+Create alerts for important thresholds:
+
+```python
+# Cost alert
+client.alerts.create(
+    name="High daily cost",
+    condition="daily_cost > 500",
+    channels=["slack", "email"],
+    message="Daily AI cost exceeded $500"
+)
+
+# Quality alert
+client.alerts.create(
+    name="Quality degradation",
+    condition="avg(relevance) < 0.7 over 1h",
+    channels=["email"],
+    message="Relevance score dropped below threshold"
+)
+
+# Error rate alert
+client.alerts.create(
+    name="High error rate",
+    condition="error_rate > 5% over 15m",
+    channels=["slack", "pagerduty"],
+    message="Error rate spike detected"
+)
+```
+
+### Alert Channels
+
+| Channel | Use Case |
+|---------|----------|
+| **Email** | Daily summaries, non-urgent alerts |
+| **Slack** | Team notifications |
+| **PagerDuty** | Critical production issues |
+| **Webhook** | Custom integrations |
+
+## Dashboard Features
+
+### Custom Dashboards
+
+Create dashboards for different audiences:
+
+**Engineering Dashboard:**
+- Latency percentiles
+- Error rates by type
+- Model performance comparison
+
+**Product Dashboard:**
+- Feature usage trends
+- User engagement metrics
+- Quality scores
+
+**Finance Dashboard:**
+- Cost trends
+- Cost per user
+- Budget utilization
+
+### Sharing
+
+Share dashboards with team members:
+
+```
+https://app.brokle.ai/analytics/dashboards/engineering?
+  date_range=7d
+  &share_token=abc123
+```
+
+<Callout type="info">
+  Shared dashboard links are read-only and can be revoked at any time.
+</Callout>
+
+## Best Practices
+
+### 1. Set Up Cost Alerts Early
+
+```python
+# Alert before you get a surprise bill
+client.alerts.create(
+    name="Cost warning",
+    condition="daily_cost > (monthly_budget / 30) * 1.5",
+    channels=["email", "slack"]
+)
+```
+
+### 2. Monitor Quality Continuously
+
+Don't just track costs—track quality:
+
+```python
+# Monitor quality alongside usage
+quality_trend = client.analytics.get_quality_trend(
+    metrics=["relevance", "helpfulness"],
+    group_by="day"
+)
+```
+
+### 3. Compare Models
+
+Use analytics to make model decisions:
+
+```python
+# Compare model performance
+comparison = client.analytics.compare_models(
+    models=["gpt-4o", "gpt-4o-mini"],
+    metrics=["latency", "cost", "quality"]
+)
+
+print(comparison.to_table())
+```
+
+### 4. Review Weekly
+
+Schedule regular analytics reviews:
+- Weekly: Cost trends, quality scores
+- Monthly: Model mix optimization
+- Quarterly: Feature usage patterns
+
+## Next Steps
+
+<Cards>
+  <Card
+    title="Dashboards"
+    description="Build custom analytics views"
+    href="/docs/analytics/dashboards"
+  />
+  <Card
+    title="Cost Tracking"
+    description="Monitor and optimize costs"
+    href="/docs/analytics/cost-tracking"
+  />
+  <Card
+    title="Tracing"
+    description="Deep-dive into individual traces"
+    href="/docs/tracing"
+  />
+</Cards>

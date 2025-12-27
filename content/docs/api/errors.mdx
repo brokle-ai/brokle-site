@@ -1,0 +1,582 @@
+---
+title: Error Reference
+description: Complete reference for Brokle API error codes, HTTP status codes, and troubleshooting
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+
+# Error Reference
+
+This reference documents all error codes returned by the Brokle API, their meanings, and how to resolve them.
+
+## Error Response Format
+
+All API errors follow a consistent format:
+
+```json
+{
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human-readable error message",
+    "details": [
+      {
+        "field": "fieldName",
+        "message": "Specific field error"
+      }
+    ],
+    "hint": "Suggestion for resolution"
+  },
+  "meta": {
+    "requestId": "req_abc123def456",
+    "timestamp": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `code` | string | Machine-readable error code |
+| `message` | string | Human-readable description |
+| `details` | array | Field-level validation errors (optional) |
+| `hint` | string | Suggested resolution (optional) |
+| `requestId` | string | Unique request identifier for support |
+
+## HTTP Status Codes
+
+| Status | Category | Description |
+|--------|----------|-------------|
+| `200` | Success | Request completed successfully |
+| `201` | Success | Resource created successfully |
+| `204` | Success | Request completed, no content |
+| `400` | Client Error | Invalid request |
+| `401` | Client Error | Authentication required |
+| `403` | Client Error | Permission denied |
+| `404` | Client Error | Resource not found |
+| `409` | Client Error | Resource conflict |
+| `422` | Client Error | Validation error |
+| `429` | Client Error | Rate limit exceeded |
+| `500` | Server Error | Internal server error |
+| `502` | Server Error | Bad gateway |
+| `503` | Server Error | Service unavailable |
+
+## Error Codes Reference
+
+### Authentication Errors (401)
+
+#### UNAUTHORIZED
+
+Missing authentication credentials.
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Authentication required",
+    "hint": "Include an API key or JWT token in your request"
+  }
+}
+```
+
+**Resolution:** Add the `X-API-Key` header or `Authorization: Bearer {token}` header.
+
+#### INVALID_API_KEY
+
+The provided API key is invalid.
+
+```json
+{
+  "error": {
+    "code": "INVALID_API_KEY",
+    "message": "The provided API key is invalid or has been revoked",
+    "hint": "Verify your API key in the dashboard settings"
+  }
+}
+```
+
+**Resolution:**
+- Verify the API key is correct (check for typos)
+- Ensure the key hasn't been revoked
+- Create a new API key if needed
+
+#### TOKEN_EXPIRED
+
+JWT access token has expired.
+
+```json
+{
+  "error": {
+    "code": "TOKEN_EXPIRED",
+    "message": "Access token has expired",
+    "hint": "Use your refresh token to obtain a new access token"
+  }
+}
+```
+
+**Resolution:** Use the `/api/v1/auth/refresh` endpoint with your refresh token.
+
+#### INVALID_TOKEN
+
+JWT token is malformed or invalid.
+
+```json
+{
+  "error": {
+    "code": "INVALID_TOKEN",
+    "message": "The provided token is invalid",
+    "hint": "Ensure the token is properly formatted and not corrupted"
+  }
+}
+```
+
+**Resolution:** Re-authenticate to obtain a new valid token.
+
+### Authorization Errors (403)
+
+#### FORBIDDEN
+
+Valid credentials but insufficient permissions.
+
+```json
+{
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "You do not have permission to access this resource",
+    "hint": "Contact your organization administrator to request access"
+  }
+}
+```
+
+**Resolution:**
+- Verify your role has the required permissions
+- Use an API key with appropriate scopes
+- Contact your admin for elevated access
+
+#### SCOPE_INSUFFICIENT
+
+API key lacks required scope.
+
+```json
+{
+  "error": {
+    "code": "SCOPE_INSUFFICIENT",
+    "message": "API key does not have the required scope",
+    "details": [
+      {
+        "required": "traces:write",
+        "provided": ["prompts:read"]
+      }
+    ]
+  }
+}
+```
+
+**Resolution:** Create a new API key with the required scopes.
+
+### Validation Errors (400, 422)
+
+#### VALIDATION_ERROR
+
+Request body contains invalid data.
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Request validation failed",
+    "details": [
+      {
+        "field": "name",
+        "message": "Name is required"
+      },
+      {
+        "field": "email",
+        "message": "Invalid email format"
+      }
+    ]
+  }
+}
+```
+
+**Resolution:** Fix the indicated fields according to the error messages.
+
+#### INVALID_JSON
+
+Request body is not valid JSON.
+
+```json
+{
+  "error": {
+    "code": "INVALID_JSON",
+    "message": "Request body contains invalid JSON",
+    "hint": "Check for syntax errors in your JSON payload"
+  }
+}
+```
+
+**Resolution:** Validate your JSON using a linter before sending.
+
+#### MISSING_REQUIRED_FIELD
+
+A required field is missing.
+
+```json
+{
+  "error": {
+    "code": "MISSING_REQUIRED_FIELD",
+    "message": "Required field is missing",
+    "details": [
+      {
+        "field": "projectId",
+        "message": "projectId is required"
+      }
+    ]
+  }
+}
+```
+
+**Resolution:** Include all required fields in your request.
+
+#### INVALID_FIELD_TYPE
+
+Field has wrong data type.
+
+```json
+{
+  "error": {
+    "code": "INVALID_FIELD_TYPE",
+    "message": "Field has invalid type",
+    "details": [
+      {
+        "field": "pageSize",
+        "expected": "integer",
+        "received": "string"
+      }
+    ]
+  }
+}
+```
+
+**Resolution:** Ensure fields have the correct data types.
+
+### Resource Errors (404, 409)
+
+#### NOT_FOUND
+
+Requested resource does not exist.
+
+```json
+{
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Resource not found",
+    "details": [
+      {
+        "resource": "Trace",
+        "id": "trace_nonexistent"
+      }
+    ]
+  }
+}
+```
+
+**Resolution:**
+- Verify the resource ID is correct
+- Ensure you have access to the resource's project
+
+#### RESOURCE_EXISTS
+
+Attempting to create a resource that already exists.
+
+```json
+{
+  "error": {
+    "code": "RESOURCE_EXISTS",
+    "message": "Resource already exists",
+    "details": [
+      {
+        "resource": "ApiKey",
+        "field": "name",
+        "value": "Production Key"
+      }
+    ]
+  }
+}
+```
+
+**Resolution:** Use a unique value or update the existing resource.
+
+#### CONFLICT
+
+Resource conflict (concurrent modification).
+
+```json
+{
+  "error": {
+    "code": "CONFLICT",
+    "message": "Resource was modified by another request",
+    "hint": "Fetch the latest version and retry your update"
+  }
+}
+```
+
+**Resolution:** Implement optimistic locking or retry logic.
+
+### Rate Limiting (429)
+
+#### RATE_LIMITED
+
+Too many requests in a given time period.
+
+```json
+{
+  "error": {
+    "code": "RATE_LIMITED",
+    "message": "Rate limit exceeded",
+    "retryAfter": 60,
+    "hint": "Wait 60 seconds before retrying"
+  }
+}
+```
+
+**Resolution:**
+- Implement exponential backoff
+- Batch requests where possible
+- Upgrade your plan for higher limits
+
+### Server Errors (5xx)
+
+#### INTERNAL_ERROR
+
+Unexpected server error.
+
+```json
+{
+  "error": {
+    "code": "INTERNAL_ERROR",
+    "message": "An unexpected error occurred",
+    "hint": "Please try again. If the problem persists, contact support."
+  }
+}
+```
+
+**Resolution:**
+- Retry the request with exponential backoff
+- Include the `requestId` when contacting support
+
+#### SERVICE_UNAVAILABLE
+
+Service temporarily unavailable.
+
+```json
+{
+  "error": {
+    "code": "SERVICE_UNAVAILABLE",
+    "message": "Service temporarily unavailable",
+    "retryAfter": 30,
+    "hint": "The service is under maintenance. Please try again soon."
+  }
+}
+```
+
+**Resolution:** Wait and retry. Check status page for updates.
+
+#### DEPENDENCY_ERROR
+
+External service dependency failed.
+
+```json
+{
+  "error": {
+    "code": "DEPENDENCY_ERROR",
+    "message": "External service temporarily unavailable",
+    "hint": "A third-party service is experiencing issues. Please retry."
+  }
+}
+```
+
+**Resolution:** Retry with exponential backoff.
+
+## Handling Errors
+
+### Python SDK
+
+```python
+from brokle import Brokle
+from brokle.exceptions import (
+    BrokleError,
+    AuthenticationError,
+    ValidationError,
+    RateLimitError,
+    NotFoundError
+)
+
+client = Brokle(api_key="bk_...")
+
+try:
+    result = await client.traces.get("trace_123")
+except AuthenticationError as e:
+    print(f"Auth failed: {e.message}")
+    # Re-authenticate or check API key
+except ValidationError as e:
+    print(f"Validation failed: {e.message}")
+    for detail in e.details:
+        print(f"  {detail['field']}: {detail['message']}")
+except RateLimitError as e:
+    print(f"Rate limited. Retry after {e.retry_after} seconds")
+    time.sleep(e.retry_after)
+    # Retry request
+except NotFoundError as e:
+    print(f"Resource not found: {e.message}")
+except BrokleError as e:
+    print(f"Brokle error: {e.message} (code: {e.code})")
+```
+
+### JavaScript SDK
+
+```javascript
+import { Brokle } from 'brokle';
+import {
+  BrokleError,
+  AuthenticationError,
+  ValidationError,
+  RateLimitError,
+  NotFoundError
+} from 'brokle/errors';
+
+const client = new Brokle({ apiKey: 'bk_...' });
+
+try {
+  const result = await client.traces.get('trace_123');
+} catch (error) {
+  if (error instanceof AuthenticationError) {
+    console.error('Auth failed:', error.message);
+    // Re-authenticate or check API key
+  } else if (error instanceof ValidationError) {
+    console.error('Validation failed:', error.message);
+    error.details?.forEach(detail => {
+      console.error(`  ${detail.field}: ${detail.message}`);
+    });
+  } else if (error instanceof RateLimitError) {
+    console.error(`Rate limited. Retry after ${error.retryAfter} seconds`);
+    await new Promise(r => setTimeout(r, error.retryAfter * 1000));
+    // Retry request
+  } else if (error instanceof NotFoundError) {
+    console.error('Resource not found:', error.message);
+  } else if (error instanceof BrokleError) {
+    console.error(`Brokle error: ${error.message} (code: ${error.code})`);
+  }
+}
+```
+
+### cURL / Direct API
+
+<Tabs>
+  <Tab value="retry" label="Retry Logic">
+    ```bash
+    #!/bin/bash
+
+    MAX_RETRIES=3
+    RETRY_DELAY=1
+
+    for i in $(seq 1 $MAX_RETRIES); do
+      response=$(curl -s -w "\n%{http_code}" \
+        -X POST https://api.brokle.ai/v1/traces \
+        -H "Content-Type: application/json" \
+        -H "X-API-Key: $BROKLE_API_KEY" \
+        -d '{"resourceSpans": [...]}')
+
+      http_code=$(echo "$response" | tail -n1)
+      body=$(echo "$response" | sed '$d')
+
+      if [ "$http_code" = "200" ] || [ "$http_code" = "201" ]; then
+        echo "Success: $body"
+        break
+      elif [ "$http_code" = "429" ]; then
+        retry_after=$(echo "$body" | jq -r '.error.retryAfter // 60')
+        echo "Rate limited. Waiting ${retry_after}s..."
+        sleep $retry_after
+      elif [ "$http_code" -ge 500 ]; then
+        echo "Server error. Retry $i/$MAX_RETRIES..."
+        sleep $((RETRY_DELAY * i))
+      else
+        echo "Client error ($http_code): $body"
+        break
+      fi
+    done
+    ```
+  </Tab>
+  <Tab value="parse" label="Parse Errors">
+    ```bash
+    response=$(curl -s \
+      -X POST https://api.brokle.ai/v1/traces \
+      -H "Content-Type: application/json" \
+      -H "X-API-Key: $BROKLE_API_KEY" \
+      -d '{"invalid": "payload"}')
+
+    # Parse error response
+    error_code=$(echo "$response" | jq -r '.error.code')
+    error_message=$(echo "$response" | jq -r '.error.message')
+    request_id=$(echo "$response" | jq -r '.meta.requestId')
+
+    if [ "$error_code" != "null" ]; then
+      echo "Error [$error_code]: $error_message"
+      echo "Request ID: $request_id"
+    fi
+    ```
+  </Tab>
+</Tabs>
+
+## Retry Strategies
+
+### Exponential Backoff
+
+For transient errors (5xx, rate limits), implement exponential backoff:
+
+```python
+import time
+import random
+
+def retry_with_backoff(func, max_retries=5, base_delay=1):
+    for attempt in range(max_retries):
+        try:
+            return func()
+        except (RateLimitError, InternalError) as e:
+            if attempt == max_retries - 1:
+                raise
+
+            delay = base_delay * (2 ** attempt) + random.uniform(0, 1)
+            time.sleep(delay)
+```
+
+### Which Errors to Retry
+
+| Error Code | Retry? | Strategy |
+|------------|--------|----------|
+| `UNAUTHORIZED` | No | Fix credentials |
+| `FORBIDDEN` | No | Fix permissions |
+| `VALIDATION_ERROR` | No | Fix request |
+| `NOT_FOUND` | No | Resource doesn't exist |
+| `RATE_LIMITED` | Yes | Wait for `retryAfter` |
+| `INTERNAL_ERROR` | Yes | Exponential backoff |
+| `SERVICE_UNAVAILABLE` | Yes | Wait for `retryAfter` |
+| `DEPENDENCY_ERROR` | Yes | Exponential backoff |
+
+## Getting Help
+
+If you encounter persistent errors:
+
+1. **Check the request ID**: Include it when contacting support
+2. **Review logs**: Look for patterns in error responses
+3. **Check status page**: [status.brokle.ai](https://status.brokle.ai)
+4. **Contact support**: support@brokle.ai with request ID and reproduction steps
+
+<Callout type="info">
+  Always include the `requestId` from the error response when contacting support. This helps us quickly locate and diagnose the issue.
+</Callout>
+
+## Next Steps
+
+- [API Overview →](/docs/api)
+- [Authentication →](/docs/api/authentication)
+- [Python SDK →](/docs/sdk/python)

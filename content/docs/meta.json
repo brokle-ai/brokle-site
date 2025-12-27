@@ -1,15 +1,27 @@
 {
-  "title": "Docs",
+  "title": "Documentation",
+  "root": true,
   "pages": [
     "index",
     "---Get Started---",
     "quickstart",
     "first-trace",
-    "---Observability---",
+    "---Core Concepts---",
+    "concepts",
     "tracing",
     "evaluation",
+    "---Features---",
+    "prompt-management",
+    "analytics",
+    "---Reference---",
+    "api",
+    "---Support---",
+    "security",
+    "faq",
+    "troubleshooting",
     "integrations",
     "sdk",
-    "self-hosting"
+    "self-hosting",
+    "cookbook"
   ]
 }

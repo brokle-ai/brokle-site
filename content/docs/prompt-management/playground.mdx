@@ -1,0 +1,421 @@
+---
+title: Playground
+description: Test, iterate, and compare prompts interactively before deploying to production
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+import { Steps, Step } from "fumadocs-ui/components/steps";
+
+# Playground
+
+The Playground is an interactive environment for testing prompts, comparing outputs across models, and iterating quickly before deploying changes to production.
+
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| **Live Testing** | Run prompts with custom variables instantly |
+| **Model Comparison** | Compare outputs across different models |
+| **Variable Exploration** | Test with different input combinations |
+| **Cost Estimation** | See token usage and estimated cost |
+| **Save as Test Case** | Convert successful tests to evaluation datasets |
+
+## Getting Started
+
+<Steps>
+  <Step>
+    ### Open the Playground
+
+    Navigate to **Prompts** → Select a prompt → **Playground** tab
+
+    Or access directly: `/prompts/{prompt_name}/playground`
+  </Step>
+
+  <Step>
+    ### Enter Variables
+
+    Fill in the template variables required by your prompt:
+
+    ```
+    Prompt: "Hello {{user_name}}, welcome to {{company}}!"
+
+    Variables:
+    - user_name: Alice
+    - company: Brokle
+    ```
+  </Step>
+
+  <Step>
+    ### Run and Iterate
+
+    Click **Run** to execute the prompt. View the output, adjust, and re-run until satisfied.
+  </Step>
+</Steps>
+
+## Testing Prompts
+
+### Basic Execution
+
+```python
+# What happens when you click "Run" in the playground:
+
+# 1. Variables are compiled
+compiled_messages = prompt.to_openai_messages({
+    "user_name": "Alice",
+    "topic": "billing"
+})
+
+# 2. LLM call is made
+response = openai.chat.completions.create(
+    model=selected_model,
+    messages=compiled_messages,
+    temperature=temperature_setting
+)
+
+# 3. Results displayed with metrics
+# - Output text
+# - Token counts (input/output)
+# - Latency
+# - Estimated cost
+```
+
+### Variable Sets
+
+Save and reuse variable combinations:
+
+```yaml
+# Test Set: Happy Path
+user_name: "Alice"
+request_type: "general_inquiry"
+tone: "friendly"
+
+# Test Set: Edge Case - Empty Name
+user_name: ""
+request_type: "complaint"
+tone: "formal"
+
+# Test Set: Long Input
+user_name: "Dr. Alexander Hamilton III"
+request_type: "complex_technical_issue_requiring_detailed_explanation"
+tone: "professional"
+```
+
+### Quick Variable Switching
+
+Toggle between variable sets to test different scenarios:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Variable Sets:  [Happy Path ▼]  [Edge Cases]  [Long Input] │
+├─────────────────────────────────────────────────────────────┤
+│  user_name: Alice                                           │
+│  request_type: general_inquiry                              │
+│  tone: friendly                                             │
+├─────────────────────────────────────────────────────────────┤
+│  [Run]  [Compare Models]  [Save as Test Case]               │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## Model Comparison
+
+### Side-by-Side Comparison
+
+Compare outputs from different models:
+
+```
+┌──────────────────────────┬──────────────────────────┐
+│       GPT-4o             │    Claude 3.5 Sonnet     │
+├──────────────────────────┼──────────────────────────┤
+│ Hello Alice! I'd be      │ Hi Alice! Welcome to     │
+│ happy to help with       │ Brokle. How may I        │
+│ your billing question... │ assist you today?...     │
+├──────────────────────────┼──────────────────────────┤
+│ Tokens: 245              │ Tokens: 198              │
+│ Latency: 1.2s            │ Latency: 0.8s            │
+│ Cost: $0.012             │ Cost: $0.008             │
+└──────────────────────────┴──────────────────────────┘
+```
+
+### Multi-Model Testing
+
+Test the same prompt across multiple models:
+
+```python
+# Playground equivalent - test across models
+models = ["gpt-4o", "gpt-4o-mini", "claude-3-sonnet", "claude-3-haiku"]
+
+for model in models:
+    result = playground.run(
+        prompt="customer-support",
+        variables={"user_name": "Alice"},
+        model=model
+    )
+    print(f"{model}: {result.output[:100]}...")
+```
+
+## Temperature & Parameter Exploration
+
+### Temperature Slider
+
+Experiment with different temperature values:
+
+| Temperature | Effect | Best For |
+|-------------|--------|----------|
+| 0.0 | Deterministic, consistent | Factual, structured outputs |
+| 0.3-0.5 | Slightly varied | Customer support, Q&A |
+| 0.7-0.9 | Creative, diverse | Marketing copy, brainstorming |
+| 1.0+ | Highly random | Creative writing, ideation |
+
+### Parameter Controls
+
+Adjust model parameters in real-time:
+
+```yaml
+# Playground settings panel
+model: gpt-4o
+temperature: 0.7
+max_tokens: 500
+top_p: 1.0
+frequency_penalty: 0.0
+presence_penalty: 0.0
+```
+
+## Metrics & Analysis
+
+### Response Metrics
+
+Each playground run captures:
+
+| Metric | Description |
+|--------|-------------|
+| **Input Tokens** | Tokens in the prompt |
+| **Output Tokens** | Tokens in the response |
+| **Total Tokens** | Combined token count |
+| **Latency** | Time to first token / total time |
+| **Estimated Cost** | Based on model pricing |
+
+### Quality Signals
+
+Quick quality indicators:
+
+```
+✅ Output length: 245 tokens (within expected range)
+⚠️ Latency: 2.3s (above target of 2s)
+✅ No error detected
+⚠️ Possible formatting issue in response
+```
+
+## Saving Test Cases
+
+Convert successful playground runs into evaluation datasets:
+
+<Steps>
+  <Step>
+    ### Run the Prompt
+
+    Execute with your test variables and review the output.
+  </Step>
+
+  <Step>
+    ### Mark as Expected Output
+
+    If the output is correct, click **Save as Test Case**
+  </Step>
+
+  <Step>
+    ### Add to Dataset
+
+    ```python
+    # The playground creates an evaluation item:
+    dataset.add_item(
+        input="Hello {{user_name}}!",
+        variables={"user_name": "Alice"},
+        expected_output="Hello Alice! How can I help you today?",
+        metadata={
+            "source": "playground",
+            "created_at": "2024-01-15",
+            "model_used": "gpt-4o"
+        }
+    )
+    ```
+  </Step>
+</Steps>
+
+## Sharing & Collaboration
+
+### Share Playground State
+
+Generate shareable links with pre-filled variables:
+
+```
+https://app.brokle.ai/prompts/customer-support/playground?
+  vars={"user_name":"Alice","topic":"billing"}
+  &model=gpt-4o
+  &temperature=0.7
+```
+
+### Export Results
+
+Export playground results for documentation or review:
+
+```json
+{
+  "prompt_name": "customer-support",
+  "prompt_version": 5,
+  "variables": {
+    "user_name": "Alice",
+    "topic": "billing"
+  },
+  "model": "gpt-4o",
+  "temperature": 0.7,
+  "output": "Hello Alice! I see you have a question about billing...",
+  "metrics": {
+    "input_tokens": 125,
+    "output_tokens": 156,
+    "latency_ms": 1250,
+    "estimated_cost": 0.0089
+  }
+}
+```
+
+## Advanced Features
+
+### Streaming Preview
+
+See outputs as they're generated:
+
+```
+Output: Hello Alice! I see you have a question about bi|
+        (streaming...)
+```
+
+### Multi-Turn Conversations
+
+Test chat prompts with multi-turn conversations:
+
+```yaml
+# Turn 1
+User: How do I reset my password?
+Assistant: To reset your password, click "Forgot Password"...
+
+# Turn 2
+User: I didn't receive the email
+Assistant: Let me help you with that. Can you check your spam folder?
+
+# Turn 3
+User: Found it, thanks!
+Assistant: Great! Let me know if you need anything else.
+```
+
+### Diff View
+
+Compare outputs between prompt versions:
+
+```diff
+Version 4:
+- Hello! How can I assist you?
+
+Version 5:
++ Hello {{user_name}}! Welcome to {{company}}. How can I assist you today?
+```
+
+## Programmatic Access
+
+Use the playground programmatically:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    from brokle import Brokle
+
+    client = Brokle()
+
+    # Run prompt like playground
+    result = client.prompts.test(
+        name="customer-support",
+        variables={"user_name": "Alice"},
+        model="gpt-4o",
+        temperature=0.7
+    )
+
+    print(f"Output: {result.output}")
+    print(f"Tokens: {result.usage.total_tokens}")
+    print(f"Latency: {result.latency_ms}ms")
+    print(f"Cost: ${result.estimated_cost:.4f}")
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    import { Brokle } from 'brokle';
+
+    const client = new Brokle();
+
+    // Run prompt like playground
+    const result = await client.prompts.test({
+      name: 'customer-support',
+      variables: { user_name: 'Alice' },
+      model: 'gpt-4o',
+      temperature: 0.7
+    });
+
+    console.log(`Output: ${result.output}`);
+    console.log(`Tokens: ${result.usage.totalTokens}`);
+    console.log(`Latency: ${result.latencyMs}ms`);
+    console.log(`Cost: $${result.estimatedCost.toFixed(4)}`);
+    ```
+  </Tab>
+</Tabs>
+
+## Best Practices
+
+### 1. Test Edge Cases
+
+Always test with:
+- Empty values: `{"user_name": ""}`
+- Long values: `{"user_name": "Very long name..."}`
+- Special characters: `{"user_name": "O'Brien <script>"}`
+- Unicode: `{"user_name": "日本語"}`
+
+### 2. Document Test Results
+
+Add notes to successful test cases:
+
+```python
+dataset.add_item(
+    input="...",
+    expected_output="...",
+    metadata={
+        "notes": "Verified correct behavior for billing inquiry",
+        "edge_case": False,
+        "approved_by": "alice@company.com"
+    }
+)
+```
+
+### 3. Compare Before Deploying
+
+Always compare new prompt version against production before promoting:
+
+```
+┌─────────────────────────┬─────────────────────────┐
+│   Current Production    │      New Version        │
+│   (version 4)           │      (version 5)        │
+├─────────────────────────┼─────────────────────────┤
+│   [Output A]            │   [Output B]            │
+├─────────────────────────┼─────────────────────────┤
+│   Quality: Similar      │   Quality: Improved     │
+│   Tokens: -5%           │   Tokens: +10%          │
+│   Cost: -$0.001         │   Cost: +$0.002         │
+└─────────────────────────┴─────────────────────────┘
+```
+
+<Callout type="info">
+  The playground saves your recent test runs automatically. You can access your history from the **History** tab.
+</Callout>
+
+## Next Steps
+
+- [Versioning](/docs/prompt-management/versioning) - Manage prompt versions
+- [Evaluation](/docs/evaluation) - Systematic quality testing
+- [Tracing](/docs/tracing) - Link prompts to production traces

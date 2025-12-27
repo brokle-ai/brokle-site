@@ -1,6 +1,600 @@
 ---
-title: LlamaIndex
-description: LlamaIndex integration
+title: LlamaIndex Integration
+description: Integrate Brokle with LlamaIndex for comprehensive tracing of RAG applications, query engines, and indexes
 ---
 
-Integrate Brokle with LlamaIndex for RAG applications.
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+import { Steps, Step } from "fumadocs-ui/components/steps";
+
+# LlamaIndex Integration
+
+Integrate Brokle with LlamaIndex to trace query engines, indexes, retrievers, and all LLM interactions within your RAG applications.
+
+## Supported Features
+
+| Feature | Supported | Notes |
+|---------|-----------|-------|
+| Query Engines | ✅ | All query engine types |
+| Indexes | ✅ | Vector, list, tree, keyword |
+| Retrievers | ✅ | With relevance scores |
+| LLM Calls | ✅ | All LLM providers |
+| Embeddings | ✅ | Embedding generation |
+| Node Postprocessing | ✅ | Reranking, filtering |
+| Agents | ✅ | ReAct, OpenAI agents |
+
+## Quick Start
+
+<Steps>
+  <Step>
+    ### Install Dependencies
+
+    ```bash
+    pip install brokle llama-index llama-index-llms-openai
+    ```
+  </Step>
+
+  <Step>
+    ### Set Up Callback Handler
+
+    ```python
+    from brokle import Brokle
+    from brokle.integrations.llamaindex import BrokleCallbackHandler
+    from llama_index.core import Settings
+    from llama_index.llms.openai import OpenAI
+
+    # Initialize Brokle
+    brokle = Brokle(api_key="bk_...")
+
+    # Create callback handler
+    handler = BrokleCallbackHandler(brokle=brokle)
+
+    # Set as global callback
+    Settings.callback_manager.add_handler(handler)
+    ```
+  </Step>
+
+  <Step>
+    ### Build and Query Index
+
+    ```python
+    from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+
+    # Load documents
+    documents = SimpleDirectoryReader("data").load_data()
+
+    # Build index (traced)
+    index = VectorStoreIndex.from_documents(documents)
+
+    # Query (traced)
+    query_engine = index.as_query_engine()
+    response = query_engine.query("What is the main topic?")
+
+    print(response)
+    brokle.flush()
+    ```
+  </Step>
+</Steps>
+
+## Integration Methods
+
+### Method 1: Global Callback (Recommended)
+
+Set callbacks globally for all LlamaIndex operations:
+
+```python
+from llama_index.core import Settings
+from llama_index.core.callbacks import CallbackManager
+
+# Create callback manager with Brokle handler
+callback_manager = CallbackManager([handler])
+Settings.callback_manager = callback_manager
+
+# All operations are now traced
+index = VectorStoreIndex.from_documents(documents)
+response = index.as_query_engine().query("question")
+```
+
+### Method 2: Per-Index Callback
+
+Set callbacks for specific indexes:
+
+```python
+from llama_index.core.callbacks import CallbackManager
+
+callback_manager = CallbackManager([handler])
+
+index = VectorStoreIndex.from_documents(
+    documents,
+    callback_manager=callback_manager
+)
+```
+
+### Method 3: Context Manager
+
+Use within a specific context:
+
+```python
+from brokle.integrations.llamaindex import BrokleTracer
+
+with BrokleTracer(brokle=brokle, name="rag_query") as tracer:
+    response = query_engine.query("What is AI?")
+```
+
+## Tracing Query Engines
+
+### Basic Query Engine
+
+```python
+from llama_index.core import VectorStoreIndex
+
+# Build index
+index = VectorStoreIndex.from_documents(documents)
+
+# Create query engine
+query_engine = index.as_query_engine(
+    similarity_top_k=5,
+    response_mode="compact"
+)
+
+# Query is fully traced
+response = query_engine.query("Explain the key concepts")
+```
+
+Trace structure:
+```
+query
+├── retriever
+│   ├── embedding (embed query)
+│   └── vector_search
+├── node_postprocessor (if any)
+├── response_synthesizer
+│   └── llm_call (generation)
+└── response
+```
+
+### Chat Engine
+
+```python
+from llama_index.core.chat_engine import SimpleChatEngine
+
+chat_engine = index.as_chat_engine(
+    chat_mode="condense_question",
+    verbose=True
+)
+
+# Multi-turn conversation traced
+response = chat_engine.chat("Hello, what can you help me with?")
+response = chat_engine.chat("Tell me more about that")
+```
+
+### Custom Query Engine
+
+```python
+from llama_index.core.query_engine import CustomQueryEngine
+
+class MyQueryEngine(CustomQueryEngine):
+    def custom_query(self, query_str: str):
+        # Custom logic - all LLM calls are traced
+        nodes = self.retriever.retrieve(query_str)
+        response = self.llm.complete(f"Answer: {query_str}\nContext: {nodes}")
+        return response
+
+query_engine = MyQueryEngine(retriever=retriever, llm=llm)
+response = query_engine.query("My question")
+```
+
+## Tracing Indexes
+
+### Index Building
+
+Index construction is traced:
+
+```python
+from llama_index.core import VectorStoreIndex
+
+# Document loading traced
+documents = SimpleDirectoryReader("data").load_data()
+
+# Index building traced (including embeddings)
+index = VectorStoreIndex.from_documents(
+    documents,
+    show_progress=True
+)
+```
+
+Build traces include:
+- Document parsing
+- Chunking/node creation
+- Embedding generation
+- Vector store insertion
+
+### Different Index Types
+
+```python
+from llama_index.core import (
+    VectorStoreIndex,
+    ListIndex,
+    TreeIndex,
+    KeywordTableIndex
+)
+
+# Vector index (with embeddings)
+vector_index = VectorStoreIndex.from_documents(docs)
+
+# List index (sequential)
+list_index = ListIndex.from_documents(docs)
+
+# Tree index (hierarchical)
+tree_index = TreeIndex.from_documents(docs)
+
+# Keyword index (text-based)
+keyword_index = KeywordTableIndex.from_documents(docs)
+```
+
+## Tracing Retrievers
+
+### Vector Retriever
+
+```python
+from llama_index.core.retrievers import VectorIndexRetriever
+
+retriever = VectorIndexRetriever(
+    index=index,
+    similarity_top_k=10
+)
+
+# Retrieval traced with scores
+nodes = retriever.retrieve("What is the topic?")
+
+for node in nodes:
+    print(f"Score: {node.score}, Text: {node.text[:100]}")
+```
+
+Retrieval traces capture:
+- Query embedding
+- Vector similarity search
+- Retrieved nodes with scores
+- Retrieval latency
+
+### Hybrid Retriever
+
+```python
+from llama_index.core.retrievers import BM25Retriever
+from llama_index.core.retrievers.fusion_retriever import QueryFusionRetriever
+
+# Combine vector and keyword search
+vector_retriever = index.as_retriever(similarity_top_k=5)
+bm25_retriever = BM25Retriever.from_defaults(nodes=nodes, similarity_top_k=5)
+
+fusion_retriever = QueryFusionRetriever(
+    [vector_retriever, bm25_retriever],
+    similarity_top_k=10,
+    num_queries=4
+)
+
+# All retrievers traced
+nodes = fusion_retriever.retrieve("complex query")
+```
+
+## Node Processing
+
+### Reranking
+
+```python
+from llama_index.core.postprocessor import SentenceTransformerRerank
+
+reranker = SentenceTransformerRerank(
+    model="cross-encoder/ms-marco-MiniLM-L-6-v2",
+    top_n=3
+)
+
+query_engine = index.as_query_engine(
+    node_postprocessors=[reranker]
+)
+
+# Reranking traced
+response = query_engine.query("What is important?")
+```
+
+### Filtering
+
+```python
+from llama_index.core.postprocessor import MetadataReplacementPostProcessor
+
+processor = MetadataReplacementPostProcessor(
+    target_metadata_key="window"
+)
+
+query_engine = index.as_query_engine(
+    node_postprocessors=[processor]
+)
+```
+
+## Tracing Agents
+
+### ReAct Agent
+
+```python
+from llama_index.core.agent import ReActAgent
+from llama_index.core.tools import QueryEngineTool
+
+# Create tools
+query_tool = QueryEngineTool.from_defaults(
+    query_engine=query_engine,
+    name="knowledge_base",
+    description="Search the knowledge base"
+)
+
+# Create agent
+agent = ReActAgent.from_tools(
+    [query_tool],
+    llm=llm,
+    verbose=True
+)
+
+# Agent execution fully traced
+response = agent.chat("Find information about X and summarize it")
+```
+
+Agent traces include:
+- Thought process
+- Tool selection
+- Tool execution
+- Observation processing
+- Final answer
+
+### OpenAI Agent
+
+```python
+from llama_index.agent.openai import OpenAIAgent
+
+agent = OpenAIAgent.from_tools(
+    tools,
+    llm=llm,
+    verbose=True
+)
+
+response = agent.chat("Complex multi-step task")
+```
+
+## Streaming
+
+Streaming responses are traced:
+
+```python
+query_engine = index.as_query_engine(streaming=True)
+
+# Stream response
+streaming_response = query_engine.query("Tell me about...")
+
+for text in streaming_response.response_gen:
+    print(text, end="", flush=True)
+```
+
+## Adding Context
+
+### User Context
+
+```python
+handler = BrokleCallbackHandler(
+    brokle=brokle,
+    user_id="user_123",
+    session_id="session_456"
+)
+```
+
+### Trace Metadata
+
+```python
+handler = BrokleCallbackHandler(
+    brokle=brokle,
+    metadata={
+        "application": "document_qa",
+        "index_name": "company_docs",
+        "version": "2.0"
+    }
+)
+```
+
+### Dynamic Context
+
+```python
+# Update context before query
+handler.set_trace_context(
+    user_id="user_789",
+    metadata={"query_type": "summarization"}
+)
+
+response = query_engine.query("Summarize the document")
+```
+
+## LLM Configuration
+
+### Using Different LLMs
+
+```python
+from llama_index.llms.openai import OpenAI
+from llama_index.llms.anthropic import Anthropic
+
+# OpenAI
+llm_openai = OpenAI(model="gpt-4", temperature=0.7)
+
+# Anthropic
+llm_anthropic = Anthropic(model="claude-3-sonnet")
+
+# Set globally
+Settings.llm = llm_openai
+
+# Or per-query engine
+query_engine = index.as_query_engine(llm=llm_anthropic)
+```
+
+### Embedding Models
+
+```python
+from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+
+# OpenAI embeddings (traced)
+embed_model = OpenAIEmbedding(model="text-embedding-3-small")
+
+# Local embeddings (traced)
+embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
+
+Settings.embed_model = embed_model
+```
+
+## Async Support
+
+Full async support:
+
+```python
+import asyncio
+
+async def async_query():
+    response = await query_engine.aquery("Async question")
+    return response
+
+# Run async
+response = asyncio.run(async_query())
+```
+
+### Async Streaming
+
+```python
+async def async_stream():
+    streaming_response = await query_engine.aquery("Tell me about...")
+
+    async for text in streaming_response.async_response_gen():
+        print(text, end="", flush=True)
+```
+
+## Error Handling
+
+Errors are captured with context:
+
+```python
+try:
+    response = query_engine.query("Question")
+except Exception as e:
+    # Error captured in trace:
+    # - Exception type
+    # - Error message
+    # - Stack trace
+    # - Query that caused error
+    print(f"Query failed: {e}")
+```
+
+## Configuration Options
+
+```python
+handler = BrokleCallbackHandler(
+    brokle=brokle,
+
+    # Trace configuration
+    trace_name="llamaindex_app",
+    capture_input=True,
+    capture_output=True,
+
+    # Context
+    user_id="user_123",
+    session_id="session_456",
+
+    # Metadata
+    metadata={
+        "environment": "production"
+    },
+
+    # What to trace
+    trace_embeddings=True,      # Trace embedding calls
+    trace_retrievals=True,      # Trace retrieval operations
+    trace_llm_calls=True,       # Trace LLM calls
+
+    # Privacy
+    mask_node_content=False,    # Mask retrieved node content
+)
+```
+
+## Best Practices
+
+### 1. Set Global Callbacks Early
+
+```python
+# At application startup
+from llama_index.core import Settings
+
+Settings.callback_manager = CallbackManager([handler])
+```
+
+### 2. Add Index Metadata
+
+```python
+# Tag traces by index
+handler = BrokleCallbackHandler(
+    brokle=brokle,
+    metadata={
+        "index_name": "product_docs",
+        "index_version": "2024-01"
+    }
+)
+```
+
+### 3. Handle Shutdown
+
+```python
+import atexit
+atexit.register(brokle.shutdown)
+```
+
+### 4. Monitor Embedding Costs
+
+Embedding generation can be expensive. Track with:
+
+```python
+handler = BrokleCallbackHandler(
+    brokle=brokle,
+    trace_embeddings=True,
+    metadata={"track_embedding_cost": True}
+)
+```
+
+## Troubleshooting
+
+### Traces Not Appearing
+
+1. Verify callback is in Settings.callback_manager
+2. Call `brokle.flush()` before exit
+3. Enable debug: `Brokle(debug=True)`
+
+### Missing Embedding Traces
+
+Ensure embeddings are traced:
+
+```python
+handler = BrokleCallbackHandler(
+    brokle=brokle,
+    trace_embeddings=True
+)
+```
+
+### Incomplete Node Content
+
+By default, only node metadata is captured. For full content:
+
+```python
+handler = BrokleCallbackHandler(
+    brokle=brokle,
+    capture_node_content=True
+)
+```
+
+<Callout type="warning">
+  Capturing full node content can significantly increase trace size. Enable only when needed for debugging.
+</Callout>
+
+## Next Steps
+
+- [LangChain Integration →](/docs/integrations/rag-frameworks/langchain)
+- [Tracing Guide →](/docs/tracing)
+- [Evaluation →](/docs/evaluation)

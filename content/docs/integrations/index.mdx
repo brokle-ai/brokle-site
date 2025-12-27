@@ -1,6 +1,301 @@
 ---
 title: Integrations
-description: Connect Brokle with your stack
+description: Connect Brokle with your LLM stack - OpenAI, Anthropic, LangChain, LlamaIndex, and more
 ---
 
-Integrate Brokle with your LLM frameworks.
+import { Cards, Card } from "fumadocs-ui/components/card";
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Integrations
+
+Brokle integrates with popular LLM providers and frameworks to provide comprehensive observability with minimal code changes.
+
+## How Integrations Work
+
+Brokle integrations use wrapper functions that intercept LLM calls and automatically:
+
+1. **Capture request data**: Model, messages, parameters
+2. **Record timing**: Latency, time to first token
+3. **Track usage**: Token counts, costs
+4. **Capture responses**: Full output, streaming chunks
+5. **Handle errors**: Exception details, retry attempts
+
+```python
+# Before: No observability
+response = openai.chat.completions.create(...)
+
+# After: Full observability with one line
+openai = wrap_openai(openai, brokle=client)
+response = openai.chat.completions.create(...)  # Automatically traced
+```
+
+## LLM Providers
+
+Integrate directly with LLM provider APIs for the most control.
+
+<Cards>
+  <Card
+    title="OpenAI"
+    description="GPT-4, GPT-3.5, embeddings, and more"
+    href="/docs/integrations/openai"
+  />
+  <Card
+    title="Anthropic"
+    description="Claude 3 Opus, Sonnet, Haiku models"
+    href="/docs/integrations/anthropic"
+  />
+</Cards>
+
+### Supported Providers
+
+| Provider | Python | JavaScript | Features |
+|----------|--------|------------|----------|
+| OpenAI | ✅ | ✅ | Chat, embeddings, streaming |
+| Anthropic | ✅ | ✅ | Messages, streaming |
+| Azure OpenAI | ✅ | ✅ | Same as OpenAI |
+| Google AI | 🔜 | 🔜 | Coming soon |
+| AWS Bedrock | 🔜 | 🔜 | Coming soon |
+
+## Framework Integrations
+
+For higher-level frameworks that orchestrate multiple LLM calls.
+
+<Cards>
+  <Card
+    title="LangChain"
+    description="Chains, agents, and retrieval workflows"
+    href="/docs/integrations/rag-frameworks/langchain"
+  />
+  <Card
+    title="LlamaIndex"
+    description="Data indexing and RAG applications"
+    href="/docs/integrations/rag-frameworks/llamaindex"
+  />
+</Cards>
+
+### Framework Support
+
+| Framework | Python | JavaScript | Features |
+|-----------|--------|------------|----------|
+| LangChain | ✅ | ✅ | Chains, agents, callbacks |
+| LlamaIndex | ✅ | ❌ | Query engines, indexes |
+| Vercel AI SDK | ❌ | 🔜 | Coming soon |
+| DSPy | 🔜 | ❌ | Coming soon |
+
+## Integration Patterns
+
+### Pattern 1: Wrapper Functions
+
+The simplest approach - wrap your client once, use everywhere:
+
+```python
+from brokle import Brokle, wrap_openai
+import openai
+
+client = Brokle(api_key="bk_...")
+openai = wrap_openai(openai.OpenAI(), brokle=client)
+
+# All calls are now traced
+response = openai.chat.completions.create(...)
+```
+
+### Pattern 2: Callback Handlers
+
+For frameworks like LangChain that support callbacks:
+
+```python
+from brokle.integrations.langchain import BrokleCallbackHandler
+
+handler = BrokleCallbackHandler(brokle=client)
+chain.invoke(input, callbacks=[handler])
+```
+
+### Pattern 3: Manual Instrumentation
+
+For custom integrations or unsupported providers:
+
+```python
+with client.start_as_current_generation(
+    name="custom_llm_call",
+    model="custom-model"
+) as gen:
+    response = custom_llm.generate(prompt)
+    gen.update(
+        output=response.text,
+        usage={"prompt_tokens": 100, "completion_tokens": 50}
+    )
+```
+
+## What Gets Captured
+
+### Request Data
+
+| Field | Description |
+|-------|-------------|
+| `model` | Model identifier |
+| `messages` | Chat messages array |
+| `temperature` | Temperature setting |
+| `max_tokens` | Token limit |
+| `tools` | Function/tool definitions |
+| `system` | System prompt |
+
+### Response Data
+
+| Field | Description |
+|-------|-------------|
+| `output` | Generated text |
+| `finish_reason` | Why generation stopped |
+| `tool_calls` | Function calls made |
+| `usage` | Token counts |
+
+### Metadata
+
+| Field | Description |
+|-------|-------------|
+| `latency` | Total request time |
+| `time_to_first_token` | Streaming TTFT |
+| `cost` | Calculated cost |
+| `provider` | Provider name |
+| `error` | Error details if failed |
+
+## Privacy Controls
+
+Control what data is captured:
+
+```python
+from brokle import Brokle
+
+client = Brokle(
+    api_key="bk_...",
+    privacy={
+        "mask_inputs": True,      # Mask message contents
+        "mask_outputs": True,     # Mask response contents
+        "mask_patterns": [        # Custom PII patterns
+            r"\b\d{3}-\d{2}-\d{4}\b",  # SSN
+            r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"  # Email
+        ]
+    }
+)
+```
+
+<Callout type="info">
+  When masking is enabled, Brokle still captures metadata (tokens, cost, latency) but not the actual content.
+</Callout>
+
+## Streaming Support
+
+All integrations support streaming:
+
+```python
+stream = openai.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "Hello!"}],
+    stream=True
+)
+
+for chunk in stream:
+    print(chunk.choices[0].delta.content, end="")
+# Trace is automatically finalized when stream completes
+```
+
+Streaming traces capture:
+- Time to first token
+- Total streaming duration
+- All chunks aggregated
+- Token usage (when available)
+
+## Error Handling
+
+Errors are automatically captured:
+
+```python
+try:
+    response = openai.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": "Hello!"}]
+    )
+except openai.RateLimitError as e:
+    # Error is captured in the trace with details
+    # status: "error"
+    # error: "Rate limit exceeded"
+    raise
+```
+
+## Best Practices
+
+### 1. Initialize Once
+
+```python
+# Good: Single client instance
+client = Brokle(api_key="bk_...")
+openai = wrap_openai(openai.OpenAI(), brokle=client)
+
+# Bad: Multiple instances
+def process():
+    client = Brokle(...)  # Don't do this
+```
+
+### 2. Use Environment Variables
+
+```bash
+export BROKLE_API_KEY=bk_...
+export OPENAI_API_KEY=sk_...
+```
+
+```python
+client = Brokle()  # Reads from env
+```
+
+### 3. Add Context
+
+```python
+with client.start_as_current_span(name="chat") as span:
+    span.update_trace(user_id="user_123", session_id="session_456")
+    response = openai.chat.completions.create(...)
+```
+
+### 4. Graceful Shutdown
+
+```python
+import atexit
+atexit.register(client.shutdown)
+```
+
+## Troubleshooting
+
+### Traces Not Appearing
+
+1. Verify API key is correct
+2. Check network connectivity
+3. Enable debug mode: `Brokle(debug=True)`
+4. Ensure `client.flush()` is called before exit
+
+### Missing Token Counts
+
+Some providers don't return usage in streaming mode. Brokle estimates when needed.
+
+### High Latency
+
+The integration adds less than 1ms overhead. If experiencing latency:
+- Enable sampling: `Brokle(sample_rate=0.1)`
+- Reduce batch size: `Brokle(flush_at=20)`
+
+## Next Steps
+
+<Cards>
+  <Card
+    title="OpenAI Integration"
+    description="Complete OpenAI setup guide"
+    href="/docs/integrations/openai"
+  />
+  <Card
+    title="Anthropic Integration"
+    description="Claude models integration"
+    href="/docs/integrations/anthropic"
+  />
+  <Card
+    title="LangChain Integration"
+    description="Trace chains and agents"
+    href="/docs/integrations/rag-frameworks/langchain"
+  />
+</Cards>

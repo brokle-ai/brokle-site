@@ -1,0 +1,8 @@
+{
+  "title": "Evaluation Recipes",
+  "pages": [
+    "index",
+    "hallucination-detection",
+    "response-quality"
+  ]
+}

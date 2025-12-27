@@ -1,0 +1,582 @@
+---
+title: Custom Evaluators
+description: Build domain-specific evaluators to measure quality metrics unique to your application
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+import { Steps, Step } from "fumadocs-ui/components/steps";
+
+# Custom Evaluators
+
+Custom evaluators let you define quality metrics specific to your domain, use case, or business requirements. Build evaluators that check for brand voice, domain accuracy, or any custom criteria.
+
+## Evaluator Types
+
+| Type | Best For | Speed | Cost |
+|------|----------|-------|------|
+| **Programmatic** | Format, structure, patterns | Fast | Free |
+| **LLM-based** | Subjective quality, complex criteria | Moderate | API cost |
+| **Model-based** | Classification, embeddings | Fast | Low |
+| **Hybrid** | Combining multiple approaches | Variable | Variable |
+
+## Creating Evaluators
+
+### Programmatic Evaluators
+
+For rule-based checks with no external dependencies:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    from brokle.evaluation import Evaluator, EvaluationResult
+
+    class WordCountEvaluator(Evaluator):
+        """Check if response has appropriate word count."""
+
+        name = "word_count"
+
+        def __init__(self, min_words: int = 10, max_words: int = 500):
+            self.min_words = min_words
+            self.max_words = max_words
+
+        def evaluate(self, output: str, **kwargs) -> EvaluationResult:
+            word_count = len(output.split())
+
+            if word_count < self.min_words:
+                score = word_count / self.min_words
+                reasoning = f"Too short: {word_count} words (minimum: {self.min_words})"
+            elif word_count > self.max_words:
+                score = self.max_words / word_count
+                reasoning = f"Too long: {word_count} words (maximum: {self.max_words})"
+            else:
+                score = 1.0
+                reasoning = f"Word count ({word_count}) is within acceptable range"
+
+            return EvaluationResult(
+                score=score,
+                reasoning=reasoning,
+                metadata={"word_count": word_count}
+            )
+
+    # Usage
+    evaluator = WordCountEvaluator(min_words=50, max_words=200)
+    result = evaluator.evaluate(output="This is a response...")
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    import { Evaluator, EvaluationResult } from 'brokle/evaluation';
+
+    class WordCountEvaluator extends Evaluator {
+      name = 'word_count';
+
+      constructor(minWords = 10, maxWords = 500) {
+        super();
+        this.minWords = minWords;
+        this.maxWords = maxWords;
+      }
+
+      evaluate(output, options = {}) {
+        const wordCount = output.split(/\s+/).length;
+        let score, reasoning;
+
+        if (wordCount < this.minWords) {
+          score = wordCount / this.minWords;
+          reasoning = `Too short: ${wordCount} words (minimum: ${this.minWords})`;
+        } else if (wordCount > this.maxWords) {
+          score = this.maxWords / wordCount;
+          reasoning = `Too long: ${wordCount} words (maximum: ${this.maxWords})`;
+        } else {
+          score = 1.0;
+          reasoning = `Word count (${wordCount}) is within acceptable range`;
+        }
+
+        return new EvaluationResult({
+          score,
+          reasoning,
+          metadata: { wordCount }
+        });
+      }
+    }
+
+    // Usage
+    const evaluator = new WordCountEvaluator(50, 200);
+    const result = evaluator.evaluate('This is a response...');
+    ```
+  </Tab>
+</Tabs>
+
+### LLM-Based Evaluators
+
+For complex, subjective quality assessments:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    from brokle.evaluation import LLMEvaluator
+
+    class BrandVoiceEvaluator(LLMEvaluator):
+        """Check if response matches brand voice guidelines."""
+
+        name = "brand_voice"
+
+        system_prompt = """You are evaluating whether a response matches brand voice guidelines.
+
+    Brand Voice Guidelines:
+    - Friendly but professional
+    - Clear and concise
+    - Empathetic to customer concerns
+    - Avoid jargon unless necessary
+    - Use active voice
+
+    Evaluate the response and provide:
+    1. A score from 0-1 (1 = perfect brand voice match)
+    2. Specific reasoning about what matches or doesn't match"""
+
+        user_prompt_template = """
+    Input: {input}
+    Response to evaluate: {output}
+
+    Evaluate how well this response matches our brand voice guidelines.
+    """
+
+    # Usage
+    evaluator = BrandVoiceEvaluator(model="gpt-4o")
+    result = evaluator.evaluate(
+        input="I can't log in to my account",
+        output="I understand how frustrating login issues can be. Let me help you get back into your account quickly..."
+    )
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    import { LLMEvaluator } from 'brokle/evaluation';
+
+    class BrandVoiceEvaluator extends LLMEvaluator {
+      name = 'brand_voice';
+
+      systemPrompt = `You are evaluating whether a response matches brand voice guidelines.
+
+    Brand Voice Guidelines:
+    - Friendly but professional
+    - Clear and concise
+    - Empathetic to customer concerns
+    - Avoid jargon unless necessary
+    - Use active voice
+
+    Evaluate the response and provide:
+    1. A score from 0-1 (1 = perfect brand voice match)
+    2. Specific reasoning about what matches or doesn't match`;
+
+      userPromptTemplate = `
+    Input: {input}
+    Response to evaluate: {output}
+
+    Evaluate how well this response matches our brand voice guidelines.
+    `;
+    }
+
+    // Usage
+    const evaluator = new BrandVoiceEvaluator({ model: 'gpt-4o' });
+    const result = await evaluator.evaluate({
+      input: "I can't log in to my account",
+      output: "I understand how frustrating login issues can be. Let me help you get back into your account quickly..."
+    });
+    ```
+  </Tab>
+</Tabs>
+
+### Model-Based Evaluators
+
+Use specialized models for classification or similarity:
+
+```python
+from brokle.evaluation import Evaluator, EvaluationResult
+import numpy as np
+
+class SemanticSimilarityEvaluator(Evaluator):
+    """Check semantic similarity between expected and actual output."""
+
+    name = "semantic_similarity"
+
+    def __init__(self, embed_model: str = "text-embedding-3-small"):
+        self.embed_model = embed_model
+        self.embeddings_client = OpenAI()
+
+    def _get_embedding(self, text: str) -> list[float]:
+        response = self.embeddings_client.embeddings.create(
+            model=self.embed_model,
+            input=text
+        )
+        return response.data[0].embedding
+
+    def evaluate(
+        self,
+        output: str,
+        expected: str = None,
+        **kwargs
+    ) -> EvaluationResult:
+        if not expected:
+            return EvaluationResult(
+                score=0.0,
+                reasoning="No expected output provided for comparison"
+            )
+
+        # Get embeddings
+        output_embedding = self._get_embedding(output)
+        expected_embedding = self._get_embedding(expected)
+
+        # Cosine similarity
+        similarity = np.dot(output_embedding, expected_embedding) / (
+            np.linalg.norm(output_embedding) * np.linalg.norm(expected_embedding)
+        )
+
+        return EvaluationResult(
+            score=float(similarity),
+            reasoning=f"Semantic similarity score: {similarity:.2f}",
+            metadata={"similarity": float(similarity)}
+        )
+```
+
+## Registering Custom Evaluators
+
+Register evaluators for use throughout your application:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    from brokle import Brokle
+    from brokle.evaluation import register_evaluator
+
+    client = Brokle()
+
+    # Register your custom evaluator
+    register_evaluator(BrandVoiceEvaluator())
+    register_evaluator(WordCountEvaluator(min_words=50, max_words=300))
+
+    # Now use like built-in evaluators
+    from brokle.evaluation import evaluate
+
+    result = evaluate(
+        evaluator="brand_voice",
+        input="...",
+        output="..."
+    )
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    import { Brokle, registerEvaluator, evaluate } from 'brokle';
+
+    const client = new Brokle();
+
+    // Register your custom evaluator
+    registerEvaluator(new BrandVoiceEvaluator());
+    registerEvaluator(new WordCountEvaluator(50, 300));
+
+    // Now use like built-in evaluators
+    const result = await evaluate({
+      evaluator: 'brand_voice',
+      input: '...',
+      output: '...'
+    });
+    ```
+  </Tab>
+</Tabs>
+
+## Common Patterns
+
+### Domain-Specific Accuracy
+
+```python
+class MedicalAccuracyEvaluator(LLMEvaluator):
+    """Evaluate medical information accuracy."""
+
+    name = "medical_accuracy"
+
+    system_prompt = """You are a medical accuracy evaluator. Check if the response:
+    1. Contains accurate medical information
+    2. Includes appropriate disclaimers
+    3. Recommends consulting healthcare providers when appropriate
+    4. Avoids giving specific diagnoses or treatment plans
+
+    Score from 0-1 based on these criteria."""
+
+    def evaluate(self, output: str, **kwargs) -> EvaluationResult:
+        # Check for required disclaimers
+        has_disclaimer = any(
+            phrase in output.lower()
+            for phrase in ["consult your doctor", "healthcare provider", "medical professional"]
+        )
+
+        # Get LLM evaluation
+        llm_result = super().evaluate(output=output, **kwargs)
+
+        # Combine checks
+        if not has_disclaimer:
+            return EvaluationResult(
+                score=min(llm_result.score, 0.5),
+                reasoning=f"Missing medical disclaimer. {llm_result.reasoning}"
+            )
+
+        return llm_result
+```
+
+### Multi-Criteria Evaluator
+
+```python
+class CustomerSupportEvaluator(Evaluator):
+    """Evaluate customer support response quality."""
+
+    name = "customer_support_quality"
+
+    criteria = {
+        "acknowledgment": 0.2,      # Acknowledges the customer's issue
+        "solution": 0.4,            # Provides a solution or next steps
+        "empathy": 0.2,             # Shows empathy
+        "clarity": 0.2,             # Clear and easy to understand
+    }
+
+    def evaluate(self, input: str, output: str, **kwargs) -> EvaluationResult:
+        scores = {}
+        reasoning_parts = []
+
+        # Check acknowledgment
+        ack_phrases = ["i understand", "i see", "thank you for", "sorry to hear"]
+        scores["acknowledgment"] = 1.0 if any(p in output.lower() for p in ack_phrases) else 0.3
+        reasoning_parts.append(f"Acknowledgment: {scores['acknowledgment']:.1f}")
+
+        # Check for solution/next steps
+        solution_phrases = ["to fix", "you can", "try", "here's how", "steps"]
+        scores["solution"] = 1.0 if any(p in output.lower() for p in solution_phrases) else 0.3
+        reasoning_parts.append(f"Solution: {scores['solution']:.1f}")
+
+        # Check empathy
+        empathy_phrases = ["frustrating", "apologize", "understand", "concern"]
+        scores["empathy"] = 1.0 if any(p in output.lower() for p in empathy_phrases) else 0.5
+        reasoning_parts.append(f"Empathy: {scores['empathy']:.1f}")
+
+        # Check clarity (simple heuristic: sentence length)
+        avg_sentence_length = len(output.split()) / max(output.count('.'), 1)
+        scores["clarity"] = 1.0 if avg_sentence_length < 20 else 0.7
+        reasoning_parts.append(f"Clarity: {scores['clarity']:.1f}")
+
+        # Weighted average
+        total_score = sum(
+            scores[criterion] * weight
+            for criterion, weight in self.criteria.items()
+        )
+
+        return EvaluationResult(
+            score=total_score,
+            reasoning=" | ".join(reasoning_parts),
+            metadata={"criteria_scores": scores}
+        )
+```
+
+### Regex-Based Evaluator
+
+```python
+import re
+
+class FormatComplianceEvaluator(Evaluator):
+    """Check if response follows required format."""
+
+    name = "format_compliance"
+
+    def __init__(self, required_sections: list[str]):
+        self.required_sections = required_sections
+        self.patterns = [
+            re.compile(rf"#{1,3}\s*{section}", re.IGNORECASE)
+            for section in required_sections
+        ]
+
+    def evaluate(self, output: str, **kwargs) -> EvaluationResult:
+        found_sections = []
+        missing_sections = []
+
+        for section, pattern in zip(self.required_sections, self.patterns):
+            if pattern.search(output):
+                found_sections.append(section)
+            else:
+                missing_sections.append(section)
+
+        score = len(found_sections) / len(self.required_sections)
+
+        if missing_sections:
+            reasoning = f"Missing sections: {', '.join(missing_sections)}"
+        else:
+            reasoning = "All required sections present"
+
+        return EvaluationResult(
+            score=score,
+            reasoning=reasoning,
+            metadata={
+                "found": found_sections,
+                "missing": missing_sections
+            }
+        )
+
+# Usage
+evaluator = FormatComplianceEvaluator(
+    required_sections=["Summary", "Details", "Next Steps"]
+)
+```
+
+## Testing Evaluators
+
+<Steps>
+  <Step>
+    ### Create Test Cases
+
+    ```python
+    test_cases = [
+        {
+            "input": "I can't login",
+            "output": "I understand that's frustrating. Here's how to fix it...",
+            "expected_score_min": 0.8
+        },
+        {
+            "input": "I can't login",
+            "output": "Try again later.",
+            "expected_score_max": 0.4
+        }
+    ]
+    ```
+  </Step>
+
+  <Step>
+    ### Run Tests
+
+    ```python
+    def test_evaluator(evaluator, test_cases):
+        for i, case in enumerate(test_cases):
+            result = evaluator.evaluate(
+                input=case["input"],
+                output=case["output"]
+            )
+
+            if "expected_score_min" in case:
+                assert result.score >= case["expected_score_min"], \
+                    f"Case {i}: Score {result.score} below minimum {case['expected_score_min']}"
+
+            if "expected_score_max" in case:
+                assert result.score <= case["expected_score_max"], \
+                    f"Case {i}: Score {result.score} above maximum {case['expected_score_max']}"
+
+            print(f"Case {i}: score={result.score:.2f} ✓")
+
+    test_evaluator(CustomerSupportEvaluator(), test_cases)
+    ```
+  </Step>
+
+  <Step>
+    ### Iterate on Criteria
+
+    Refine your evaluator based on test results until it matches your quality expectations.
+  </Step>
+</Steps>
+
+## Hybrid Evaluators
+
+Combine multiple evaluation approaches:
+
+```python
+class HybridQualityEvaluator(Evaluator):
+    """Combine programmatic checks with LLM evaluation."""
+
+    name = "hybrid_quality"
+
+    def __init__(self):
+        self.format_evaluator = FormatComplianceEvaluator(["Summary", "Details"])
+        self.llm_evaluator = BrandVoiceEvaluator()
+
+    async def evaluate(self, input: str, output: str, **kwargs) -> EvaluationResult:
+        # Run programmatic checks first (fast, free)
+        format_result = self.format_evaluator.evaluate(output=output)
+
+        # Skip LLM if format fails badly
+        if format_result.score < 0.5:
+            return EvaluationResult(
+                score=format_result.score * 0.5,
+                reasoning=f"Format failed: {format_result.reasoning}",
+                metadata={"format_score": format_result.score, "skipped_llm": True}
+            )
+
+        # Run LLM evaluation
+        llm_result = await self.llm_evaluator.evaluate(input=input, output=output)
+
+        # Combine scores
+        combined_score = (format_result.score * 0.3) + (llm_result.score * 0.7)
+
+        return EvaluationResult(
+            score=combined_score,
+            reasoning=f"Format: {format_result.score:.2f}, Quality: {llm_result.score:.2f}",
+            metadata={
+                "format_score": format_result.score,
+                "llm_score": llm_result.score
+            }
+        )
+```
+
+## Best Practices
+
+### 1. Start Simple
+
+Begin with programmatic checks before adding LLM evaluation:
+
+```python
+# Phase 1: Simple checks
+class V1Evaluator(Evaluator):
+    def evaluate(self, output, **kwargs):
+        score = 1.0 if len(output) > 50 else 0.5
+        return EvaluationResult(score=score, reasoning="Length check")
+
+# Phase 2: Add LLM evaluation
+class V2Evaluator(LLMEvaluator):
+    ...
+```
+
+### 2. Document Scoring Criteria
+
+```python
+class WellDocumentedEvaluator(LLMEvaluator):
+    """Evaluate response quality.
+
+    Scoring Criteria:
+    - 0.9-1.0: Exceeds all requirements
+    - 0.7-0.9: Meets requirements with minor issues
+    - 0.5-0.7: Partially meets requirements
+    - 0.0-0.5: Fails to meet requirements
+
+    Requirements:
+    1. Answers the question directly
+    2. Provides actionable next steps
+    3. Uses appropriate tone
+    """
+```
+
+### 3. Version Your Evaluators
+
+```python
+class BrandVoiceEvaluatorV2(LLMEvaluator):
+    name = "brand_voice_v2"
+    version = "2.0.0"
+
+    # Track version in scores
+    def evaluate(self, **kwargs) -> EvaluationResult:
+        result = super().evaluate(**kwargs)
+        result.metadata["evaluator_version"] = self.version
+        return result
+```
+
+<Callout type="info">
+  Versioning helps track how evaluation criteria evolve and compare scores across different evaluator versions.
+</Callout>
+
+## Next Steps
+
+- [LLM-as-Judge](/docs/evaluation/llm-as-judge) - Advanced AI-based evaluation patterns
+- [Datasets](/docs/evaluation/datasets) - Batch evaluation with test sets
+- [Scores](/docs/evaluation/scores) - Recording evaluation results

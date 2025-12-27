@@ -1,6 +1,295 @@
 ---
 title: Docker
-description: Docker deployment
+description: Deploy Brokle with Docker for single-server setups
 ---
 
-Deploy with Docker.
+import { Callout } from "fumadocs-ui/components/callout";
+import { Steps, Step } from "fumadocs-ui/components/steps";
+
+# Docker Deployment
+
+Deploy Brokle using Docker containers for simple single-server setups.
+
+## Prerequisites
+
+- Docker 24.0+ installed
+- Docker Compose v2+ installed
+- 4 GB RAM minimum (8 GB recommended)
+- 20 GB disk space
+
+## Quick Start
+
+<Steps>
+  <Step>
+    ### Pull Images
+
+    ```bash
+    docker pull ghcr.io/brokle-ai/brokle-server:latest
+    docker pull ghcr.io/brokle-ai/brokle-worker:latest
+    docker pull ghcr.io/brokle-ai/brokle-web:latest
+    ```
+  </Step>
+
+  <Step>
+    ### Start Dependencies
+
+    ```bash
+    # PostgreSQL
+    docker run -d \
+      --name brokle-postgres \
+      -e POSTGRES_USER=brokle \
+      -e POSTGRES_PASSWORD=your-password \
+      -e POSTGRES_DB=brokle \
+      -p 5432:5432 \
+      -v brokle-postgres-data:/var/lib/postgresql/data \
+      postgres:15-alpine
+
+    # ClickHouse
+    docker run -d \
+      --name brokle-clickhouse \
+      -p 8123:8123 \
+      -p 9000:9000 \
+      -v brokle-clickhouse-data:/var/lib/clickhouse \
+      clickhouse/clickhouse-server:24-alpine
+
+    # Redis
+    docker run -d \
+      --name brokle-redis \
+      -p 6379:6379 \
+      -v brokle-redis-data:/data \
+      redis:7-alpine redis-server --appendonly yes
+    ```
+  </Step>
+
+  <Step>
+    ### Start Brokle Server
+
+    ```bash
+    docker run -d \
+      --name brokle-server \
+      --link brokle-postgres:postgres \
+      --link brokle-clickhouse:clickhouse \
+      --link brokle-redis:redis \
+      -e APP_MODE=server \
+      -e DATABASE_URL="postgresql://brokle:your-password@postgres:5432/brokle" \
+      -e CLICKHOUSE_URL="http://clickhouse:8123" \
+      -e REDIS_URL="redis://redis:6379" \
+      -e JWT_SECRET="your-secure-jwt-secret-min-32-chars" \
+      -e AI_KEY_ENCRYPTION_KEY="base64-encoded-32-byte-key" \
+      -p 8080:8080 \
+      ghcr.io/brokle-ai/brokle-server:latest
+    ```
+  </Step>
+
+  <Step>
+    ### Start Brokle Worker
+
+    ```bash
+    docker run -d \
+      --name brokle-worker \
+      --link brokle-postgres:postgres \
+      --link brokle-clickhouse:clickhouse \
+      --link brokle-redis:redis \
+      -e APP_MODE=worker \
+      -e DATABASE_URL="postgresql://brokle:your-password@postgres:5432/brokle" \
+      -e CLICKHOUSE_URL="http://clickhouse:8123" \
+      -e REDIS_URL="redis://redis:6379" \
+      ghcr.io/brokle-ai/brokle-worker:latest
+    ```
+  </Step>
+
+  <Step>
+    ### Start Web UI
+
+    ```bash
+    docker run -d \
+      --name brokle-web \
+      --link brokle-server:api \
+      -e NEXT_PUBLIC_API_URL="http://api:8080" \
+      -p 3000:3000 \
+      ghcr.io/brokle-ai/brokle-web:latest
+    ```
+  </Step>
+</Steps>
+
+## Verify Installation
+
+```bash
+# Check all containers are running
+docker ps
+
+# Check server health
+curl http://localhost:8080/health
+
+# Check web UI
+curl http://localhost:3000
+```
+
+## Environment Variables
+
+### Server
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `APP_MODE` | Yes | Must be `server` |
+| `DATABASE_URL` | Yes | PostgreSQL connection string |
+| `CLICKHOUSE_URL` | Yes | ClickHouse HTTP URL |
+| `REDIS_URL` | Yes | Redis connection string |
+| `JWT_SECRET` | Yes | Secret for JWT tokens (min 32 chars) |
+| `AI_KEY_ENCRYPTION_KEY` | Yes | Base64-encoded 32-byte key |
+| `PORT` | No | HTTP port (default: 8080) |
+
+### Worker
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `APP_MODE` | Yes | Must be `worker` |
+| `DATABASE_URL` | Yes | PostgreSQL connection string |
+| `CLICKHOUSE_URL` | Yes | ClickHouse HTTP URL |
+| `REDIS_URL` | Yes | Redis connection string |
+
+### Web UI
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `NEXT_PUBLIC_API_URL` | Yes | URL to the Brokle API server |
+
+## Running Migrations
+
+Migrations run automatically on server startup. To run manually:
+
+```bash
+# PostgreSQL migrations
+docker exec brokle-server ./brokle migrate up
+
+# ClickHouse migrations
+docker exec brokle-server ./brokle migrate up --db clickhouse
+
+# Check migration status
+docker exec brokle-server ./brokle migrate status
+```
+
+## Data Persistence
+
+Use Docker volumes for data persistence:
+
+```bash
+# Create named volumes
+docker volume create brokle-postgres-data
+docker volume create brokle-clickhouse-data
+docker volume create brokle-redis-data
+
+# Backup volumes
+docker run --rm \
+  -v brokle-postgres-data:/data \
+  -v $(pwd):/backup \
+  alpine tar cvf /backup/postgres-backup.tar /data
+```
+
+## Networking
+
+For production, use a dedicated Docker network:
+
+```bash
+# Create network
+docker network create brokle-network
+
+# Run containers with --network brokle-network instead of --link
+docker run -d \
+  --name brokle-postgres \
+  --network brokle-network \
+  -e POSTGRES_USER=brokle \
+  -e POSTGRES_PASSWORD=your-password \
+  -e POSTGRES_DB=brokle \
+  -v brokle-postgres-data:/var/lib/postgresql/data \
+  postgres:15-alpine
+```
+
+## Resource Limits
+
+Set resource limits for production:
+
+```bash
+docker run -d \
+  --name brokle-server \
+  --memory="2g" \
+  --cpus="2" \
+  # ... other options
+  ghcr.io/brokle-ai/brokle-server:latest
+```
+
+## Health Checks
+
+Add health checks to containers:
+
+```bash
+docker run -d \
+  --name brokle-server \
+  --health-cmd="curl -f http://localhost:8080/health || exit 1" \
+  --health-interval=30s \
+  --health-timeout=10s \
+  --health-retries=3 \
+  # ... other options
+  ghcr.io/brokle-ai/brokle-server:latest
+```
+
+## Logs
+
+View container logs:
+
+```bash
+# View server logs
+docker logs -f brokle-server
+
+# View last 100 lines
+docker logs --tail 100 brokle-server
+
+# View logs since timestamp
+docker logs --since 2024-01-01T00:00:00 brokle-server
+```
+
+## Troubleshooting
+
+### Container won't start
+
+```bash
+# Check container status
+docker ps -a
+
+# View logs
+docker logs brokle-server
+
+# Check resource usage
+docker stats
+```
+
+### Database connection errors
+
+```bash
+# Verify PostgreSQL is running
+docker exec brokle-postgres pg_isready
+
+# Test connection from server container
+docker exec brokle-server \
+  psql "$DATABASE_URL" -c "SELECT 1"
+```
+
+### Memory issues
+
+```bash
+# Check container memory usage
+docker stats --no-stream
+
+# Increase memory limit
+docker update --memory="4g" brokle-server
+```
+
+<Callout type="warning">
+  For production deployments, we recommend using [Docker Compose](/docs/self-hosting/docker-compose) or [Kubernetes](/docs/self-hosting/kubernetes) for easier management.
+</Callout>
+
+## Next Steps
+
+- [Docker Compose](/docs/self-hosting/docker-compose) - Easier multi-container management
+- [Configuration](/docs/self-hosting/configuration) - All configuration options
+- [Kubernetes](/docs/self-hosting/kubernetes) - Production-grade deployment

@@ -1,0 +1,505 @@
+---
+title: Versioning
+description: Track prompt changes, manage deployments with labels, and safely roll back when needed
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+import { Steps, Step } from "fumadocs-ui/components/steps";
+
+# Versioning
+
+Every prompt change in Brokle creates a new version, giving you complete history, safe deployments, and instant rollback capabilities.
+
+## How Versioning Works
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         Prompt: customer-support                 │
+├─────────────────────────────────────────────────────────────────┤
+│  Version 1  │  Version 2  │  Version 3  │  Version 4  │  ...   │
+│  (initial)  │  (tone fix) │  (add vars) │  (optimize) │        │
+├─────────────────────────────────────────────────────────────────┤
+│  Labels:                                                         │
+│    production → Version 2                                        │
+│    staging    → Version 4                                        │
+│    development → Version 4                                       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Key Concepts
+
+| Concept | Description |
+|---------|-------------|
+| **Version** | Immutable snapshot of a prompt at a point in time |
+| **Label** | Pointer to a specific version (like git tags) |
+| **Head** | Latest version of the prompt |
+| **Diff** | Changes between two versions |
+
+## Creating Versions
+
+### Via SDK
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    from brokle import Brokle
+
+    client = Brokle()
+
+    # Create a new prompt (version 1)
+    prompt = client.prompts.create(
+        name="greeting",
+        content="Hello {{name}}!",
+        description="Basic greeting prompt"
+    )
+    print(f"Created version: {prompt.version}")  # 1
+
+    # Update creates a new version
+    prompt = client.prompts.update(
+        name="greeting",
+        content="Hello {{name}}! Welcome to our service.",
+        comment="Added welcome message"
+    )
+    print(f"New version: {prompt.version}")  # 2
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    import { Brokle } from 'brokle';
+
+    const client = new Brokle();
+
+    // Create a new prompt (version 1)
+    const prompt = await client.prompts.create({
+      name: 'greeting',
+      content: 'Hello {{name}}!',
+      description: 'Basic greeting prompt'
+    });
+    console.log(`Created version: ${prompt.version}`);  // 1
+
+    // Update creates a new version
+    const updated = await client.prompts.update({
+      name: 'greeting',
+      content: 'Hello {{name}}! Welcome to our service.',
+      comment: 'Added welcome message'
+    });
+    console.log(`New version: ${updated.version}`);  // 2
+    ```
+  </Tab>
+</Tabs>
+
+### Via Dashboard
+
+1. Navigate to **Prompts** → Select prompt → **Edit**
+2. Make changes in the editor
+3. Add a version comment (recommended)
+4. Click **Save** to create new version
+
+## Fetching Versions
+
+### Latest Version (Default)
+
+```python
+# Gets the most recent version
+prompt = client.prompts.get("customer-support")
+```
+
+### Specific Version
+
+```python
+# Get exact version
+prompt_v1 = client.prompts.get("customer-support", version=1)
+prompt_v2 = client.prompts.get("customer-support", version=2)
+
+# Compare
+print(f"V1: {prompt_v1.content[:50]}...")
+print(f"V2: {prompt_v2.content[:50]}...")
+```
+
+### By Label
+
+```python
+# Get production version
+prod = client.prompts.get("customer-support", label="production")
+
+# Get development version
+dev = client.prompts.get("customer-support", label="development")
+
+# These might be different versions
+print(f"Production: v{prod.version}")
+print(f"Development: v{dev.version}")
+```
+
+## Labels (Deployment Environments)
+
+Labels point to specific versions, enabling environment-based deployments:
+
+### Default Labels
+
+| Label | Purpose | Updates |
+|-------|---------|---------|
+| `development` | Active development | Auto-updates to latest |
+| `staging` | Pre-production testing | Manual promotion |
+| `production` | Live traffic | Manual promotion with approval |
+
+### Promoting Between Labels
+
+<Steps>
+  <Step>
+    ### Test in Development
+
+    ```python
+    # Latest version is automatically in development
+    dev_prompt = client.prompts.get("support", label="development")
+    # Test in playground...
+    ```
+  </Step>
+
+  <Step>
+    ### Promote to Staging
+
+    ```python
+    # Promote version 5 to staging
+    client.prompts.promote(
+        name="support",
+        version=5,
+        to_label="staging"
+    )
+    ```
+  </Step>
+
+  <Step>
+    ### Validate in Staging
+
+    ```python
+    # Run evaluation against staging
+    staging_prompt = client.prompts.get("support", label="staging")
+    results = evaluate_dataset(
+        dataset=test_dataset,
+        generator=lambda x: generate_with_prompt(staging_prompt, x)
+    )
+    ```
+  </Step>
+
+  <Step>
+    ### Deploy to Production
+
+    ```python
+    # Promote to production after validation
+    client.prompts.promote(
+        name="support",
+        version=5,
+        to_label="production",
+        comment="Passed all quality checks"
+    )
+    ```
+  </Step>
+</Steps>
+
+### Custom Labels
+
+Create labels for specific use cases:
+
+```python
+# Create A/B test label
+client.prompts.create_label(
+    name="support",
+    label="ab-test-variant-b",
+    version=6
+)
+
+# Use in application
+if user_in_experiment_group_b:
+    prompt = client.prompts.get("support", label="ab-test-variant-b")
+else:
+    prompt = client.prompts.get("support", label="production")
+```
+
+## Version History
+
+### Listing Versions
+
+```python
+# Get all versions
+versions = client.prompts.list_versions("customer-support")
+
+for v in versions:
+    print(f"Version {v.version}: {v.comment or 'No comment'}")
+    print(f"  Created: {v.created_at}")
+    print(f"  Author: {v.author}")
+    print(f"  Labels: {v.labels}")
+```
+
+### Version Diff
+
+Compare two versions:
+
+```python
+# Get diff between versions
+diff = client.prompts.diff("customer-support", from_version=3, to_version=5)
+
+print(f"Changes from v3 to v5:")
+print(diff.content_diff)
+# - Hello {{name}}, how can I help?
+# + Hello {{name}}! Welcome to our support service.
+# + How can I assist you today?
+```
+
+### Dashboard History
+
+View version history visually:
+- Timeline of all changes
+- Side-by-side diffs
+- Author and comments
+- Label assignments
+
+## Rollback
+
+### Instant Rollback
+
+Revert to a previous version instantly:
+
+```python
+# Rollback production to version 3
+client.prompts.promote(
+    name="customer-support",
+    version=3,
+    to_label="production",
+    comment="Rollback: v5 caused issues with edge cases"
+)
+```
+
+### Why Rollback Works Instantly
+
+Labels are just pointers. Changing a label updates what version is served without modifying any content:
+
+```
+Before rollback:
+  production → Version 5
+
+After rollback:
+  production → Version 3
+
+Version 5 still exists, just not labeled production anymore.
+```
+
+### Emergency Rollback
+
+For urgent production issues:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    # Get current production version
+    current = client.prompts.get("support", label="production")
+    print(f"Current production: v{current.version}")
+
+    # Get the last known good version
+    last_good_version = 4  # You know this worked
+
+    # Emergency rollback
+    client.prompts.promote(
+        name="support",
+        version=last_good_version,
+        to_label="production",
+        comment="EMERGENCY ROLLBACK: v5 causing errors"
+    )
+
+    # Verify
+    rolled_back = client.prompts.get("support", label="production")
+    print(f"Now production: v{rolled_back.version}")
+    ```
+  </Tab>
+  <Tab value="cli" label="CLI">
+    ```bash
+    # Emergency rollback via CLI
+    brokle prompts promote support \
+      --version 4 \
+      --label production \
+      --comment "EMERGENCY ROLLBACK"
+    ```
+  </Tab>
+</Tabs>
+
+## Version Metadata
+
+### Automatic Metadata
+
+Each version automatically captures:
+
+| Field | Description |
+|-------|-------------|
+| `created_at` | Timestamp of creation |
+| `author` | User who created the version |
+| `content_hash` | SHA-256 of content for integrity |
+| `character_count` | Length of prompt content |
+
+### Custom Metadata
+
+Add your own metadata:
+
+```python
+client.prompts.update(
+    name="support",
+    content="...",
+    comment="Optimized for faster responses",
+    metadata={
+        "ticket": "JIRA-1234",
+        "reviewed_by": "alice@company.com",
+        "testing_status": "passed",
+        "rollout_percentage": 10
+    }
+)
+```
+
+## Protection Rules
+
+### Production Protection
+
+<Callout type="warning">
+  Enterprise plans include production label protection. Changes to production require approval.
+</Callout>
+
+```python
+# This will require approval in enterprise
+client.prompts.promote(
+    name="support",
+    version=6,
+    to_label="production"
+)
+# Returns: PendingApproval(approval_id="apr_123", approvers=["admin@..."])
+```
+
+### Approval Workflow
+
+```
+Developer promotes to production
+         │
+         ▼
+   ┌───────────┐
+   │  Pending  │
+   │  Approval │
+   └───────────┘
+         │
+    Approver reviews
+         │
+    ┌────┴────┐
+    ▼         ▼
+┌──────┐  ┌────────┐
+│Approve│  │ Reject │
+└──────┘  └────────┘
+    │         │
+    ▼         ▼
+Production   Remains
+updated      unchanged
+```
+
+## Best Practices
+
+### 1. Always Add Comments
+
+```python
+# Good: Descriptive comment
+client.prompts.update(
+    name="support",
+    content=new_content,
+    comment="Added handling for refund requests per JIRA-456"
+)
+
+# Bad: No context
+client.prompts.update(name="support", content=new_content)
+```
+
+### 2. Use Semantic Versioning for Major Changes
+
+Track significant changes with metadata:
+
+```python
+client.prompts.update(
+    name="support",
+    content=completely_new_approach,
+    comment="MAJOR: Complete rewrite of support prompt",
+    metadata={
+        "semantic_version": "2.0.0",
+        "breaking_changes": True
+    }
+)
+```
+
+### 3. Test Before Promoting
+
+```python
+# Automated testing before promotion
+def promote_with_testing(prompt_name, version, target_label):
+    # Get the version
+    prompt = client.prompts.get(prompt_name, version=version)
+
+    # Run tests
+    results = evaluate_dataset(
+        dataset=regression_dataset,
+        generator=lambda x: generate(prompt, x),
+        evaluators=["relevance", "accuracy"]
+    )
+
+    # Check quality gates
+    if results.mean("relevance") < 0.8:
+        raise ValueError("Quality gate failed: relevance too low")
+
+    # Promote if passed
+    client.prompts.promote(prompt_name, version, to_label=target_label)
+```
+
+### 4. Document Major Versions
+
+For significant changes, document the reasoning:
+
+```python
+CHANGE_LOG = """
+Version 6 (2024-01-15):
+- Improved handling of billing inquiries
+- Added empathy statements for complaints
+- Reduced response length by ~20%
+
+Migration notes:
+- Variable 'issue_type' now required
+- Removed deprecated 'legacy_format' option
+"""
+
+client.prompts.update(
+    name="support",
+    content=new_content,
+    metadata={"changelog": CHANGE_LOG}
+)
+```
+
+## Troubleshooting
+
+### Wrong Version in Production
+
+```python
+# Check what's currently in production
+prod = client.prompts.get("support", label="production")
+print(f"Production version: {prod.version}")
+
+# Check when it was promoted
+versions = client.prompts.list_versions("support")
+for v in versions:
+    if "production" in v.labels:
+        print(f"Production promotion: {v.label_assigned_at}")
+```
+
+### Version Not Found
+
+```python
+# List all versions to find what exists
+versions = client.prompts.list_versions("support")
+available = [v.version for v in versions]
+print(f"Available versions: {available}")
+```
+
+## Next Steps
+
+- [Playground](/docs/prompt-management/playground) - Test prompts interactively
+- [Evaluation](/docs/evaluation) - Automated quality testing
+- [Tracing](/docs/tracing) - Link prompts to traces

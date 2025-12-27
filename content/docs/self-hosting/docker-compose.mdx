@@ -1,0 +1,424 @@
+---
+title: Docker Compose
+description: Deploy Brokle with Docker Compose for development and small teams
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Steps, Step } from "fumadocs-ui/components/steps";
+
+# Docker Compose
+
+Deploy Brokle with Docker Compose for development, testing, and small team deployments.
+
+## Prerequisites
+
+- Docker 24.0+ installed
+- Docker Compose v2+ installed
+- 8 GB RAM minimum
+- 50 GB disk space
+
+## Quick Start
+
+<Steps>
+  <Step>
+    ### Clone the Repository
+
+    ```bash
+    git clone https://github.com/brokle-ai/brokle.git
+    cd brokle
+    ```
+  </Step>
+
+  <Step>
+    ### Configure Environment
+
+    ```bash
+    # Copy example environment file
+    cp .env.example .env
+
+    # Edit configuration
+    nano .env
+    ```
+
+    **Required variables:**
+    ```bash
+    JWT_SECRET=your-secure-jwt-secret-at-least-32-characters
+    AI_KEY_ENCRYPTION_KEY=base64-encoded-32-byte-encryption-key
+    ```
+  </Step>
+
+  <Step>
+    ### Start Services
+
+    ```bash
+    docker compose up -d
+    ```
+  </Step>
+
+  <Step>
+    ### Access Dashboard
+
+    Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+    Create your first account to get started.
+  </Step>
+</Steps>
+
+## Docker Compose File
+
+```yaml
+# docker-compose.yml
+version: "3.8"
+
+services:
+  # PostgreSQL - Transactional data
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: brokle
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-brokle}
+      POSTGRES_DB: brokle
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U brokle"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ClickHouse - Analytics data
+  clickhouse:
+    image: clickhouse/clickhouse-server:24-alpine
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+    healthcheck:
+      test: ["CMD", "clickhouse-client", "--query", "SELECT 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Redis - Cache and queues
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Brokle API Server
+  server:
+    image: ghcr.io/brokle-ai/brokle-server:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: server
+    environment:
+      APP_MODE: server
+      PORT: 8080
+      DATABASE_URL: postgresql://brokle:${POSTGRES_PASSWORD:-brokle}@postgres:5432/brokle
+      CLICKHOUSE_URL: http://clickhouse:8123
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      AI_KEY_ENCRYPTION_KEY: ${AI_KEY_ENCRYPTION_KEY}
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Brokle Worker
+  worker:
+    image: ghcr.io/brokle-ai/brokle-worker:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: worker
+    environment:
+      APP_MODE: worker
+      DATABASE_URL: postgresql://brokle:${POSTGRES_PASSWORD:-brokle}@postgres:5432/brokle
+      CLICKHOUSE_URL: http://clickhouse:8123
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Brokle Web UI
+  web:
+    image: ghcr.io/brokle-ai/brokle-web:latest
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8080
+    ports:
+      - "3000:3000"
+    depends_on:
+      - server
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  clickhouse-data:
+  redis-data:
+```
+
+## Environment File
+
+```bash
+# .env
+
+# Required - Generate secure secrets
+JWT_SECRET=your-very-secure-jwt-secret-at-least-32-characters-long
+AI_KEY_ENCRYPTION_KEY=base64-encoded-32-byte-key
+
+# Database passwords (change in production)
+POSTGRES_PASSWORD=brokle
+
+# Optional - Feature flags
+ENABLE_SIGNUP=true
+ENABLE_ANONYMOUS=false
+
+# Optional - Email configuration
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASSWORD=
+FROM_EMAIL=noreply@example.com
+```
+
+## Generate Secrets
+
+```bash
+# Generate JWT secret
+openssl rand -base64 32
+
+# Generate encryption key
+openssl rand -base64 32
+```
+
+## Common Operations
+
+### View Logs
+
+```bash
+# All services
+docker compose logs -f
+
+# Specific service
+docker compose logs -f server
+
+# Last 100 lines
+docker compose logs --tail 100 server
+```
+
+### Restart Services
+
+```bash
+# Restart all
+docker compose restart
+
+# Restart specific service
+docker compose restart server
+```
+
+### Update to Latest Version
+
+```bash
+# Pull latest images
+docker compose pull
+
+# Restart with new versions
+docker compose up -d
+
+# View what changed
+docker compose logs -f server
+```
+
+### Run Migrations
+
+```bash
+# Migrations run automatically, but to run manually:
+docker compose exec server ./brokle migrate up
+
+# Check status
+docker compose exec server ./brokle migrate status
+```
+
+### Scale Workers
+
+```bash
+# Scale to 3 workers
+docker compose up -d --scale worker=3
+```
+
+### Access Database
+
+```bash
+# PostgreSQL shell
+docker compose exec postgres psql -U brokle
+
+# ClickHouse shell
+docker compose exec clickhouse clickhouse-client
+```
+
+## Backup and Restore
+
+### Create Backup
+
+```bash
+# Backup all data
+./scripts/backup.sh
+
+# Or manually:
+
+# PostgreSQL
+docker compose exec postgres pg_dump -U brokle brokle > backup/postgres.sql
+
+# ClickHouse
+docker compose exec clickhouse clickhouse-client \
+  --query "SELECT * FROM otel_traces FORMAT Native" > backup/traces.native
+```
+
+### Restore Backup
+
+```bash
+# PostgreSQL
+docker compose exec -T postgres psql -U brokle brokle < backup/postgres.sql
+
+# ClickHouse
+docker compose exec -T clickhouse clickhouse-client \
+  --query "INSERT INTO otel_traces FORMAT Native" < backup/traces.native
+```
+
+## Production Considerations
+
+### SSL/TLS Termination
+
+Add a reverse proxy like Traefik or nginx:
+
+```yaml
+# Add to docker-compose.yml
+services:
+  traefik:
+    image: traefik:v3.0
+    command:
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.email=admin@example.com"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - letsencrypt:/letsencrypt
+
+  server:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`api.example.com`)"
+      - "traefik.http.routers.api.tls.certresolver=letsencrypt"
+```
+
+### Resource Limits
+
+```yaml
+services:
+  server:
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2'
+        reservations:
+          memory: 1G
+          cpus: '1'
+```
+
+### External Databases
+
+For production, use managed databases:
+
+```yaml
+services:
+  server:
+    environment:
+      DATABASE_URL: postgresql://user:pass@your-rds-instance.aws.com:5432/brokle
+      CLICKHOUSE_URL: https://your-clickhouse-cloud.com:8443
+      REDIS_URL: redis://your-elasticache.aws.com:6379
+```
+
+## Troubleshooting
+
+### Services won't start
+
+```bash
+# Check status
+docker compose ps
+
+# View logs
+docker compose logs
+
+# Check disk space
+df -h
+
+# Check memory
+free -m
+```
+
+### Database connection issues
+
+```bash
+# Test PostgreSQL
+docker compose exec postgres pg_isready
+
+# Test ClickHouse
+docker compose exec clickhouse clickhouse-client --query "SELECT 1"
+
+# Test Redis
+docker compose exec redis redis-cli ping
+```
+
+### Reset everything
+
+```bash
+# Stop and remove containers, networks, volumes
+docker compose down -v
+
+# Start fresh
+docker compose up -d
+```
+
+<Callout type="info">
+  For large-scale production deployments, consider [Kubernetes](/docs/self-hosting/kubernetes) for better scalability and management.
+</Callout>
+
+## Next Steps
+
+- [Configuration](/docs/self-hosting/configuration) - All configuration options
+- [Kubernetes](/docs/self-hosting/kubernetes) - Production-grade deployment
+- [Security](/docs/security) - Security best practices

@@ -1,0 +1,544 @@
+---
+title: Spans API
+description: REST API endpoints for querying and managing individual spans in Brokle
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+
+# Spans API
+
+The Spans API provides endpoints for querying individual spans within traces. Spans are ingested through the Traces API but can be queried individually.
+
+## Endpoints Overview
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/api/v1/spans` | List spans | JWT |
+| GET | `/api/v1/spans/{spanId}` | Get span details | JWT |
+| GET | `/api/v1/traces/{traceId}/spans` | Get spans for a trace | JWT |
+
+## Span Types
+
+Brokle supports multiple span types for comprehensive observability:
+
+| Type | Description | Common Attributes |
+|------|-------------|-------------------|
+| `span` | General operation | `input`, `output` |
+| `generation` | LLM API calls | `model`, `usage`, `messages` |
+| `retrieval` | Vector/document search | `query`, `results`, `scores` |
+| `tool` | Tool/function execution | `tool_name`, `arguments`, `result` |
+| `agent` | Agent operations | `agent_name`, `actions` |
+| `event` | Discrete events | `event_name`, `data` |
+
+## List Spans
+
+```
+GET /api/v1/spans
+```
+
+Retrieve a paginated list of spans with filtering.
+
+### Authentication
+
+- **Header**: `Authorization: Bearer {jwt_token}`
+
+### Query Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `projectId` | string | Yes | Filter by project ID |
+| `traceId` | string | No | Filter by trace ID |
+| `type` | string | No | Filter by span type |
+| `name` | string | No | Filter by span name |
+| `model` | string | No | Filter by model name |
+| `startTime` | ISO 8601 | No | Start of time range |
+| `endTime` | ISO 8601 | No | End of time range |
+| `minDuration` | integer | No | Minimum duration (ms) |
+| `maxDuration` | integer | No | Maximum duration (ms) |
+| `status` | string | No | `ok` or `error` |
+| `page` | integer | No | Page number (default: 1) |
+| `pageSize` | integer | No | Items per page (max: 100) |
+| `sortBy` | string | No | Sort field |
+| `sortOrder` | string | No | `asc` or `desc` |
+
+### Response
+
+```json
+{
+  "data": [
+    {
+      "id": "span_abc123",
+      "spanId": "b7ad6b7169203331",
+      "traceId": "0af7651916cd43dd8448eb211c80319c",
+      "parentSpanId": null,
+      "name": "chat_completion",
+      "type": "generation",
+      "startTime": "2024-01-15T10:30:00Z",
+      "endTime": "2024-01-15T10:30:01.5Z",
+      "duration": 1500,
+      "status": "ok",
+      "model": "gpt-4",
+      "usage": {
+        "promptTokens": 150,
+        "completionTokens": 75,
+        "totalTokens": 225
+      },
+      "cost": 0.0045,
+      "attributes": {
+        "temperature": 0.7,
+        "max_tokens": 1000
+      }
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "pageSize": 20,
+    "totalItems": 500,
+    "totalPages": 25,
+    "hasMore": true
+  }
+}
+```
+
+### Examples
+
+<Tabs>
+  <Tab value="curl" label="cURL">
+    ```bash
+    curl -X GET "https://api.brokle.ai/api/v1/spans?projectId=proj_123&type=generation&model=gpt-4" \
+      -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..."
+    ```
+  </Tab>
+  <Tab value="python" label="Python">
+    ```python
+    import requests
+
+    response = requests.get(
+        "https://api.brokle.ai/api/v1/spans",
+        headers={
+            "Authorization": "Bearer eyJhbGciOiJIUzI1NiIs..."
+        },
+        params={
+            "projectId": "proj_123",
+            "type": "generation",
+            "model": "gpt-4",
+            "minDuration": 1000,  # Spans slower than 1s
+            "pageSize": 50
+        }
+    )
+
+    spans = response.json()["data"]
+    for span in spans:
+        print(f"{span['name']}: {span['duration']}ms, {span['usage']['totalTokens']} tokens")
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    const response = await fetch(
+      'https://api.brokle.ai/api/v1/spans?' + new URLSearchParams({
+        projectId: 'proj_123',
+        type: 'generation',
+        model: 'gpt-4',
+        minDuration: '1000'
+      }),
+      {
+        headers: {
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIs...'
+        }
+      }
+    );
+
+    const { data: spans } = await response.json();
+    spans.forEach(span => {
+      console.log(`${span.name}: ${span.duration}ms`);
+    });
+    ```
+  </Tab>
+</Tabs>
+
+## Get Span
+
+```
+GET /api/v1/spans/{spanId}
+```
+
+Retrieve detailed information about a specific span.
+
+### Path Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `spanId` | string | The span ID |
+
+### Query Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `includeInput` | boolean | Include input data (default: true) |
+| `includeOutput` | boolean | Include output data (default: true) |
+| `includeEvents` | boolean | Include span events (default: true) |
+
+### Response
+
+```json
+{
+  "data": {
+    "id": "span_abc123",
+    "spanId": "b7ad6b7169203331",
+    "traceId": "0af7651916cd43dd8448eb211c80319c",
+    "parentSpanId": null,
+    "name": "chat_completion",
+    "type": "generation",
+    "startTime": "2024-01-15T10:30:00Z",
+    "endTime": "2024-01-15T10:30:01.5Z",
+    "duration": 1500,
+    "status": "ok",
+    "statusMessage": null,
+    "model": "gpt-4",
+    "provider": "openai",
+    "input": {
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are a helpful assistant."
+        },
+        {
+          "role": "user",
+          "content": "What is artificial intelligence?"
+        }
+      ],
+      "model": "gpt-4",
+      "temperature": 0.7,
+      "max_tokens": 1000
+    },
+    "output": {
+      "role": "assistant",
+      "content": "Artificial intelligence (AI) is...",
+      "finish_reason": "stop"
+    },
+    "usage": {
+      "promptTokens": 150,
+      "completionTokens": 75,
+      "totalTokens": 225
+    },
+    "cost": 0.0045,
+    "attributes": {
+      "temperature": 0.7,
+      "max_tokens": 1000,
+      "top_p": 1.0,
+      "frequency_penalty": 0,
+      "presence_penalty": 0
+    },
+    "events": [
+      {
+        "name": "first_token",
+        "timestamp": "2024-01-15T10:30:00.5Z",
+        "attributes": {}
+      }
+    ],
+    "evaluations": [
+      {
+        "id": "eval_123",
+        "name": "relevance",
+        "score": 0.95,
+        "createdAt": "2024-01-15T10:31:00Z"
+      }
+    ]
+  }
+}
+```
+
+## Get Trace Spans
+
+```
+GET /api/v1/traces/{traceId}/spans
+```
+
+Retrieve all spans for a specific trace in hierarchical order.
+
+### Path Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `traceId` | string | The trace ID |
+
+### Query Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `flat` | boolean | Return flat list instead of tree (default: false) |
+| `includeInput` | boolean | Include input data (default: true) |
+| `includeOutput` | boolean | Include output data (default: true) |
+
+### Response (Hierarchical)
+
+```json
+{
+  "data": {
+    "rootSpan": {
+      "id": "span_root",
+      "spanId": "b7ad6b7169203331",
+      "name": "agent_run",
+      "type": "agent",
+      "duration": 5000,
+      "children": [
+        {
+          "id": "span_child1",
+          "spanId": "c8be7c8270314442",
+          "parentSpanId": "b7ad6b7169203331",
+          "name": "tool_call",
+          "type": "tool",
+          "duration": 500,
+          "children": []
+        },
+        {
+          "id": "span_child2",
+          "spanId": "d9cf8d9381425553",
+          "parentSpanId": "b7ad6b7169203331",
+          "name": "chat_completion",
+          "type": "generation",
+          "duration": 1500,
+          "children": []
+        }
+      ]
+    },
+    "spanCount": 3,
+    "totalDuration": 5000
+  }
+}
+```
+
+### Response (Flat)
+
+```json
+{
+  "data": [
+    {
+      "id": "span_root",
+      "spanId": "b7ad6b7169203331",
+      "parentSpanId": null,
+      "name": "agent_run",
+      "type": "agent",
+      "duration": 5000,
+      "depth": 0
+    },
+    {
+      "id": "span_child1",
+      "spanId": "c8be7c8270314442",
+      "parentSpanId": "b7ad6b7169203331",
+      "name": "tool_call",
+      "type": "tool",
+      "duration": 500,
+      "depth": 1
+    },
+    {
+      "id": "span_child2",
+      "spanId": "d9cf8d9381425553",
+      "parentSpanId": "b7ad6b7169203331",
+      "name": "chat_completion",
+      "type": "generation",
+      "duration": 1500,
+      "depth": 1
+    }
+  ]
+}
+```
+
+## Span Aggregations
+
+### Aggregate by Model
+
+```
+GET /api/v1/spans/aggregate
+```
+
+Aggregate span data for analytics.
+
+```bash
+curl -X GET "https://api.brokle.ai/api/v1/spans/aggregate?projectId=proj_123&groupBy=model&metric=count" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..."
+```
+
+**Response:**
+
+```json
+{
+  "data": [
+    {
+      "model": "gpt-4",
+      "count": 1500,
+      "avgDuration": 1200,
+      "totalTokens": 450000,
+      "totalCost": 13.50
+    },
+    {
+      "model": "gpt-3.5-turbo",
+      "count": 5000,
+      "avgDuration": 500,
+      "totalTokens": 1200000,
+      "totalCost": 2.40
+    }
+  ]
+}
+```
+
+### Query Parameters for Aggregations
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `projectId` | string | Project ID (required) |
+| `groupBy` | string | Group by: `model`, `type`, `status`, `hour`, `day` |
+| `metric` | string | Metric: `count`, `duration`, `tokens`, `cost` |
+| `startTime` | ISO 8601 | Start of time range |
+| `endTime` | ISO 8601 | End of time range |
+
+## Span Search
+
+### Full-Text Search
+
+```
+GET /api/v1/spans/search
+```
+
+Search across span inputs and outputs.
+
+```bash
+curl -X GET "https://api.brokle.ai/api/v1/spans/search?projectId=proj_123&q=error+handling" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..."
+```
+
+**Query Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `projectId` | string | Project ID (required) |
+| `q` | string | Search query |
+| `searchIn` | string | `input`, `output`, or `both` (default) |
+| `type` | string | Filter by span type |
+| `page` | integer | Page number |
+| `pageSize` | integer | Results per page |
+
+## Input/Output Masking
+
+For privacy, you can configure which fields to mask:
+
+```json
+{
+  "projectId": "proj_123",
+  "masking": {
+    "enabled": true,
+    "patterns": [
+      {
+        "field": "input.messages[*].content",
+        "regex": "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}\\b",
+        "replacement": "[EMAIL]"
+      },
+      {
+        "field": "output.content",
+        "regex": "\\b\\d{3}-\\d{2}-\\d{4}\\b",
+        "replacement": "[SSN]"
+      }
+    ]
+  }
+}
+```
+
+<Callout type="info">
+  Masking is applied at ingestion time. Original data is never stored.
+</Callout>
+
+## Span Events
+
+Spans can contain events that mark points in time:
+
+### Common Events
+
+| Event Name | Description |
+|------------|-------------|
+| `first_token` | First token received (streaming) |
+| `tool_call` | Tool invocation started |
+| `tool_result` | Tool execution completed |
+| `retry` | Request retry attempted |
+| `error` | Error occurred |
+
+### Event Structure
+
+```json
+{
+  "events": [
+    {
+      "name": "first_token",
+      "timestamp": "2024-01-15T10:30:00.5Z",
+      "attributes": {
+        "time_to_first_token_ms": 500
+      }
+    },
+    {
+      "name": "tool_call",
+      "timestamp": "2024-01-15T10:30:01.0Z",
+      "attributes": {
+        "tool_name": "calculator",
+        "arguments": {"expression": "2 + 2"}
+      }
+    }
+  ]
+}
+```
+
+## Performance Tips
+
+### Efficient Queries
+
+```python
+# Good: Specific filters reduce scan time
+response = requests.get(
+    "/api/v1/spans",
+    params={
+        "projectId": "proj_123",
+        "type": "generation",
+        "startTime": "2024-01-15T00:00:00Z",
+        "endTime": "2024-01-15T23:59:59Z"
+    }
+)
+
+# Bad: Broad queries are slower
+response = requests.get(
+    "/api/v1/spans",
+    params={
+        "projectId": "proj_123"  # Scanning all spans
+    }
+)
+```
+
+### Pagination for Large Results
+
+```python
+all_spans = []
+page = 1
+
+while True:
+    response = requests.get(
+        "/api/v1/spans",
+        params={
+            "projectId": "proj_123",
+            "page": page,
+            "pageSize": 100
+        },
+        headers={"Authorization": f"Bearer {token}"}
+    )
+
+    data = response.json()
+    all_spans.extend(data["data"])
+
+    if not data["pagination"]["hasMore"]:
+        break
+
+    page += 1
+```
+
+## Related
+
+- [Traces API →](/docs/api/endpoints/traces)
+- [Evaluations API →](/docs/api/endpoints/evaluations)
+- [Tracing Concepts →](/docs/concepts/spans)

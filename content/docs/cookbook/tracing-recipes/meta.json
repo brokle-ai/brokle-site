@@ -1,0 +1,9 @@
+{
+  "title": "Tracing Recipes",
+  "pages": [
+    "index",
+    "async-tracing",
+    "batch-processing",
+    "streaming"
+  ]
+}

@@ -1,0 +1,502 @@
+---
+title: Cost Tracking
+description: Monitor, analyze, and optimize your AI spending with detailed cost analytics
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+
+# Cost Tracking
+
+Brokle automatically tracks costs for all LLM calls, providing visibility into spending patterns and opportunities for optimization.
+
+## How Cost Tracking Works
+
+Brokle calculates costs based on:
+- **Token counts**: Input and output tokens per request
+- **Model pricing**: Current pricing for each model
+- **Special features**: Vision, audio, caching discounts
+
+```python
+# Cost is calculated automatically for every trace
+with client.start_as_current_generation(name="chat", model="gpt-4o") as gen:
+    response = openai.chat.completions.create(...)
+    # Cost automatically recorded:
+    # input_tokens × input_price + output_tokens × output_price
+```
+
+## Model Pricing
+
+Brokle maintains up-to-date pricing for major providers:
+
+### OpenAI Pricing
+
+| Model | Input (per 1M) | Output (per 1M) |
+|-------|----------------|-----------------|
+| GPT-4o | $2.50 | $10.00 |
+| GPT-4o-mini | $0.15 | $0.60 |
+| GPT-4 Turbo | $10.00 | $30.00 |
+| GPT-3.5 Turbo | $0.50 | $1.50 |
+| text-embedding-3-small | $0.02 | - |
+| text-embedding-3-large | $0.13 | - |
+
+### Anthropic Pricing
+
+| Model | Input (per 1M) | Output (per 1M) |
+|-------|----------------|-----------------|
+| Claude 3.5 Sonnet | $3.00 | $15.00 |
+| Claude 3 Opus | $15.00 | $75.00 |
+| Claude 3 Sonnet | $3.00 | $15.00 |
+| Claude 3 Haiku | $0.25 | $1.25 |
+
+<Callout type="info">
+  Pricing is updated automatically as providers change their rates. You can also configure custom pricing for self-hosted models.
+</Callout>
+
+## Viewing Costs
+
+### Cost Dashboard
+
+Navigate to **Analytics** → **Costs** for detailed cost analysis:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Cost Analytics                                │
+├─────────────────────────────────────────────────────────────────┤
+│  This Month: $2,450.32                                          │
+│  Projected: $2,890.00                                           │
+│  Budget: $3,000.00 (97% used)                                   │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  Daily Spending                                                  │
+│  ████████████████████████  $95.20                               │
+│  ██████████████████████    $88.50                               │
+│  ████████████████████████████  $102.30                          │
+│  ██████████████████          $78.90                             │
+│                                                                  │
+├─────────────────────────────────────────────────────────────────┤
+│  Cost by Model              │  Cost by Feature                  │
+│  GPT-4o: $1,800 (73%)       │  Chat: $1,500 (61%)               │
+│  GPT-4o-mini: $450 (18%)    │  Search: $650 (27%)               │
+│  Claude Sonnet: $200 (9%)   │  Summary: $300 (12%)              │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Via SDK
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    from brokle import Brokle
+    from datetime import datetime, timedelta
+
+    client = Brokle()
+
+    # Get cost summary
+    costs = client.analytics.get_costs(
+        start_time=datetime.now() - timedelta(days=30)
+    )
+
+    print(f"Total cost: ${costs.total:.2f}")
+    print(f"Input tokens: {costs.input_tokens:,}")
+    print(f"Output tokens: {costs.output_tokens:,}")
+
+    # Breakdown by model
+    by_model = client.analytics.get_costs(
+        start_time=datetime.now() - timedelta(days=30),
+        group_by="model"
+    )
+
+    for model in by_model:
+        print(f"{model.name}: ${model.cost:.2f}")
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    import { Brokle } from 'brokle';
+
+    const client = new Brokle();
+
+    // Get cost summary
+    const costs = await client.analytics.getCosts({
+      startTime: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    });
+
+    console.log(`Total cost: $${costs.total.toFixed(2)}`);
+    console.log(`Input tokens: ${costs.inputTokens.toLocaleString()}`);
+    console.log(`Output tokens: ${costs.outputTokens.toLocaleString()}`);
+
+    // Breakdown by model
+    const byModel = await client.analytics.getCosts({
+      startTime: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+      groupBy: 'model'
+    });
+
+    byModel.forEach(model => {
+      console.log(`${model.name}: $${model.cost.toFixed(2)}`);
+    });
+    ```
+  </Tab>
+</Tabs>
+
+## Cost Breakdown Dimensions
+
+Analyze costs across multiple dimensions:
+
+### By Model
+
+```python
+costs_by_model = client.analytics.get_costs(group_by="model")
+# GPT-4o: $1,800
+# GPT-4o-mini: $450
+# Claude Sonnet: $200
+```
+
+### By Feature
+
+Tag traces with feature names:
+
+```python
+with client.start_as_current_span(name="search") as span:
+    span.update_trace(metadata={"feature": "search"})
+    response = llm.generate(search_prompt)
+
+# Later: Get costs by feature
+costs_by_feature = client.analytics.get_costs(
+    group_by="metadata.feature"
+)
+```
+
+### By User Segment
+
+```python
+with client.start_as_current_span(name="chat") as span:
+    span.update_trace(
+        user_id="user_123",
+        metadata={"user_tier": "enterprise"}
+    )
+    response = llm.generate(prompt)
+
+# Costs by user tier
+costs_by_tier = client.analytics.get_costs(
+    group_by="metadata.user_tier"
+)
+# enterprise: $1,200
+# pro: $800
+# free: $450
+```
+
+### By Time Period
+
+```python
+# Daily costs
+daily_costs = client.analytics.get_costs(
+    start_time=datetime.now() - timedelta(days=30),
+    group_by="day"
+)
+
+# Hourly costs (for finding peak usage)
+hourly_costs = client.analytics.get_costs(
+    start_time=datetime.now() - timedelta(hours=24),
+    group_by="hour"
+)
+```
+
+## Budgets and Alerts
+
+### Setting Budgets
+
+Configure budget limits per project:
+
+```python
+# Set monthly budget
+client.projects.update(
+    project_id="proj_123",
+    settings={
+        "budget": {
+            "monthly_limit": 3000,
+            "alert_thresholds": [0.5, 0.8, 0.95]  # 50%, 80%, 95%
+        }
+    }
+)
+```
+
+### Cost Alerts
+
+Get notified when spending exceeds thresholds:
+
+```python
+# Create cost alert
+client.alerts.create(
+    name="Daily cost exceeded",
+    condition="daily_cost > 150",
+    channels=["slack", "email"],
+    message="Daily AI spending exceeded $150"
+)
+
+# Budget percentage alert
+client.alerts.create(
+    name="Budget warning",
+    condition="monthly_cost > (monthly_budget * 0.8)",
+    channels=["email"],
+    message="80% of monthly budget used"
+)
+```
+
+### Alert Examples
+
+```python
+# Spike detection
+client.alerts.create(
+    name="Cost spike",
+    condition="daily_cost > (avg_daily_cost_7d * 2)",
+    channels=["slack"],
+    message="Cost spike: spending 2x normal rate"
+)
+
+# Per-user cost
+client.alerts.create(
+    name="High user cost",
+    condition="cost_per_user > 10",
+    channels=["email"],
+    message="User exceeding $10 in AI costs"
+)
+```
+
+## Cost Optimization
+
+### Model Selection Strategy
+
+Choose models based on task complexity:
+
+```python
+def select_model(task_type: str, importance: str) -> str:
+    """Select cost-effective model based on task."""
+    if task_type == "classification" or importance == "low":
+        return "gpt-4o-mini"  # $0.15/1M input
+    elif task_type == "reasoning" and importance == "high":
+        return "gpt-4o"  # $2.50/1M input
+    else:
+        return "gpt-4o-mini"
+
+# Use in application
+model = select_model(task_type="summarization", importance="medium")
+```
+
+### Token Optimization
+
+Reduce token usage without sacrificing quality:
+
+```python
+# 1. Trim unnecessary context
+def optimize_context(context: str, max_chars: int = 8000) -> str:
+    if len(context) > max_chars:
+        # Keep most relevant parts
+        return context[:max_chars]
+    return context
+
+# 2. Use efficient prompts
+EFFICIENT_PROMPT = "Summarize in 2 sentences:"
+VERBOSE_PROMPT = "Please provide a comprehensive summary..."
+
+# 3. Set appropriate max_tokens
+response = openai.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=messages,
+    max_tokens=150  # Limit output length
+)
+```
+
+### Caching
+
+Cache frequent requests:
+
+```python
+import hashlib
+
+def get_cached_response(prompt: str, cache: dict) -> str | None:
+    key = hashlib.sha256(prompt.encode()).hexdigest()
+    return cache.get(key)
+
+def cache_response(prompt: str, response: str, cache: dict):
+    key = hashlib.sha256(prompt.encode()).hexdigest()
+    cache[key] = response
+
+# Use semantic caching for similar queries
+# (Brokle can help identify similar queries via embeddings)
+```
+
+### Batching
+
+Batch similar requests when possible:
+
+```python
+# Instead of 10 individual calls
+for item in items:
+    response = llm.generate(f"Classify: {item}")
+
+# Batch into single call
+all_items = "\n".join([f"{i}. {item}" for i, item in enumerate(items)])
+response = llm.generate(f"Classify each item:\n{all_items}")
+```
+
+## Cost Attribution
+
+### Per-User Costing
+
+Track costs per user for usage-based pricing:
+
+```python
+# Tag traces with user
+with client.start_as_current_span(name="chat") as span:
+    span.update_trace(user_id="user_123")
+    response = llm.generate(prompt)
+
+# Query user costs
+user_costs = client.analytics.get_costs(
+    filters={"user_id": "user_123"},
+    start_time=datetime.now() - timedelta(days=30)
+)
+
+print(f"User 123 cost: ${user_costs.total:.2f}")
+```
+
+### Per-Feature Costing
+
+Understand which features drive costs:
+
+```python
+# Tag traces with feature
+with client.start_as_current_span(name="search") as span:
+    span.update_trace(metadata={"feature": "ai_search"})
+
+# Compare feature costs
+features = ["chat", "search", "summarization", "analysis"]
+for feature in features:
+    cost = client.analytics.get_costs(
+        filters={"metadata.feature": feature}
+    )
+    print(f"{feature}: ${cost.total:.2f}")
+```
+
+## Cost Reports
+
+### Generating Reports
+
+Create cost reports for stakeholders:
+
+```python
+# Generate monthly report
+report = client.analytics.generate_report(
+    report_type="cost_summary",
+    period="monthly",
+    include=[
+        "total_cost",
+        "cost_by_model",
+        "cost_by_feature",
+        "cost_trend",
+        "optimization_suggestions"
+    ]
+)
+
+# Export to PDF
+report.export("pdf", "cost_report_december.pdf")
+
+# Send via email
+report.email(
+    recipients=["finance@company.com"],
+    subject="Monthly AI Cost Report"
+)
+```
+
+### Scheduled Reports
+
+```python
+client.reports.schedule(
+    name="Weekly Cost Summary",
+    report_type="cost_summary",
+    schedule="weekly",
+    day="monday",
+    recipients=["team@company.com"]
+)
+```
+
+## Custom Pricing
+
+### Self-Hosted Models
+
+Configure pricing for self-hosted models:
+
+```python
+client.pricing.set_custom_price(
+    model="llama-3-70b",
+    input_price_per_million=0.50,
+    output_price_per_million=0.75
+)
+```
+
+### Enterprise Discounts
+
+Apply negotiated discounts:
+
+```python
+client.pricing.set_discount(
+    provider="openai",
+    discount_percent=20  # 20% off all OpenAI models
+)
+```
+
+## Best Practices
+
+### 1. Tag Everything
+
+```python
+# Always include attribution metadata
+with client.start_as_current_span(name="operation") as span:
+    span.update_trace(
+        user_id=user_id,
+        metadata={
+            "feature": feature_name,
+            "team": team_name,
+            "environment": "production"
+        }
+    )
+```
+
+### 2. Set Alerts Before You Need Them
+
+```python
+# Don't wait for a surprise bill
+client.alerts.create(
+    name="Cost protection",
+    condition="daily_cost > 200",
+    channels=["email", "slack"],
+    message="Daily cost exceeded $200"
+)
+```
+
+### 3. Review Weekly
+
+Schedule regular cost reviews:
+- Check for cost spikes
+- Identify optimization opportunities
+- Compare model efficiency
+
+### 4. Use the Right Model
+
+| Task | Recommended Model | Reason |
+|------|-------------------|--------|
+| Classification | gpt-4o-mini | Simple task, low cost |
+| Summarization | gpt-4o-mini | Structured output, efficient |
+| Complex reasoning | gpt-4o | Better quality needed |
+| Code generation | gpt-4o | Accuracy important |
+
+<Callout type="warning">
+  Cost data may have a small delay (up to 5 minutes) from when traces are recorded.
+</Callout>
+
+## Next Steps
+
+- [Dashboards](/docs/analytics/dashboards) - Visualize cost trends
+- [Tracing](/docs/tracing) - Investigate high-cost traces
+- [Evaluation](/docs/evaluation) - Ensure quality alongside cost optimization

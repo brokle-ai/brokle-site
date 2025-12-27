@@ -1,0 +1,397 @@
+---
+title: Hallucination Detection
+description: Detect and measure hallucinations in LLM outputs
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+
+# Hallucination Detection
+
+Detect and measure when LLM outputs contain fabricated or incorrect information.
+
+## Problem
+
+LLMs can generate plausible-sounding but incorrect information (hallucinations):
+- Facts that aren't in the source material
+- Incorrect citations or references
+- Made-up statistics or dates
+- Contradictions with provided context
+
+## Solution
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    from brokle import Brokle
+    from brokle.evaluation import LLMJudge, evaluate
+
+    brokle = Brokle()
+
+    # 1. Simple groundedness check
+    groundedness_judge = LLMJudge(
+        name="groundedness",
+        prompt="""Evaluate if the response is grounded in the provided context.
+
+Context:
+{context}
+
+Response:
+{output}
+
+Check for:
+1. Claims not supported by the context
+2. Made-up facts or statistics
+3. Incorrect interpretations of the context
+4. Information that contradicts the context
+
+Rate from 0-1:
+- 1.0: Fully grounded, all claims supported
+- 0.7: Mostly grounded, minor unsupported details
+- 0.5: Partially grounded, some hallucinations
+- 0.3: Mostly hallucinated
+- 0.0: Completely fabricated
+
+Provide score, list any hallucinations found, and explain.""",
+        model="gpt-4o"
+    )
+
+    # 2. Detailed hallucination analyzer
+    def detect_hallucinations(
+        context: str,
+        response: str,
+        trace_id: str = None
+    ) -> dict:
+        """Detect and categorize hallucinations."""
+
+        with brokle.start_as_current_span(
+            name="hallucination_detection",
+            metadata={"context_length": len(context), "response_length": len(response)}
+        ) as span:
+            # Check groundedness
+            groundedness = groundedness_judge.evaluate(
+                context=context,
+                output=response
+            )
+
+            # Categorize hallucination types
+            categorizer = LLMJudge(
+                name="hallucination_types",
+                prompt="""Analyze the response for different types of hallucinations.
+
+Context: {context}
+Response: {output}
+
+Identify and categorize any hallucinations:
+1. **Factual errors**: Incorrect facts or statistics
+2. **Unsupported claims**: Claims not in the context
+3. **Contradictions**: Statements contradicting the context
+4. **Fabricated details**: Made-up specifics (dates, names, numbers)
+5. **Misinterpretations**: Wrong conclusions from correct facts
+
+For each found, specify:
+- Type
+- Quote from response
+- Explanation
+
+Return as structured analysis.""",
+                model="gpt-4o"
+            )
+
+            categorization = categorizer.evaluate(
+                context=context,
+                output=response
+            )
+
+            # Record scores
+            span.score(name="groundedness", value=groundedness.score, comment=groundedness.comment)
+
+            # Calculate hallucination severity
+            severity = 1.0 - groundedness.score
+            span.score(name="hallucination_severity", value=severity)
+
+            result = {
+                "groundedness_score": groundedness.score,
+                "hallucination_severity": severity,
+                "is_reliable": groundedness.score >= 0.8,
+                "analysis": categorization.comment,
+                "recommendation": (
+                    "safe to use" if groundedness.score >= 0.9
+                    else "review recommended" if groundedness.score >= 0.7
+                    else "significant hallucinations detected"
+                )
+            }
+
+            span.update(output=result)
+            return result
+
+    # Usage
+    context = """
+    Brokle is an open-source AI observability platform founded in 2024.
+    It supports Python and JavaScript SDKs.
+    The company is based in San Francisco.
+    """
+
+    response = """
+    Brokle is an AI observability platform that was founded in 2023 in New York.
+    It supports Python, JavaScript, and Go SDKs. The platform has over 10,000 users
+    and was recently acquired by a major tech company.
+    """
+
+    result = detect_hallucinations(context, response)
+    print(f"Groundedness: {result['groundedness_score']:.0%}")
+    print(f"Recommendation: {result['recommendation']}")
+    print(f"Analysis: {result['analysis']}")
+
+    brokle.flush()
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    import { Brokle, LLMJudge } from 'brokle';
+
+    const brokle = new Brokle();
+
+    const groundednessJudge = new LLMJudge({
+      name: 'groundedness',
+      prompt: `Evaluate if the response is grounded in the provided context.
+
+Context:
+{context}
+
+Response:
+{output}
+
+Check for:
+1. Claims not supported by the context
+2. Made-up facts or statistics
+3. Incorrect interpretations
+4. Contradictions
+
+Rate from 0-1 with explanation.`,
+      model: 'gpt-4o',
+    });
+
+    async function detectHallucinations(context, response) {
+      return brokle.withSpan(
+        { name: 'hallucination_detection' },
+        async (span) => {
+          const groundedness = await groundednessJudge.evaluate({
+            context,
+            output: response,
+          });
+
+          span.score({
+            name: 'groundedness',
+            value: groundedness.score,
+            comment: groundedness.comment,
+          });
+
+          const severity = 1.0 - groundedness.score;
+          span.score({ name: 'hallucination_severity', value: severity });
+
+          return {
+            groundednessScore: groundedness.score,
+            hallucinationSeverity: severity,
+            isReliable: groundedness.score >= 0.8,
+            recommendation:
+              groundedness.score >= 0.9
+                ? 'safe to use'
+                : groundedness.score >= 0.7
+                ? 'review recommended'
+                : 'significant hallucinations detected',
+          };
+        }
+      );
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## How It Works
+
+1. **Context Comparison**: The judge compares the response against source context
+2. **Claim Extraction**: Identifies specific claims in the response
+3. **Verification**: Checks each claim against the context
+4. **Categorization**: Groups hallucinations by type
+5. **Severity Scoring**: Provides overall reliability score
+
+## Hallucination Categories
+
+| Type | Description | Example |
+|------|-------------|---------|
+| Factual Error | Incorrect facts | "Founded in 2023" (was 2024) |
+| Unsupported Claim | Not in context | "10,000 users" (not mentioned) |
+| Contradiction | Opposes context | "New York" (context says SF) |
+| Fabricated Detail | Made-up specifics | "Acquired by..." (never stated) |
+| Misinterpretation | Wrong conclusion | Inferring partnerships incorrectly |
+
+## Variations
+
+### RAG Hallucination Checker
+
+```python
+def check_rag_hallucination(
+    query: str,
+    retrieved_docs: list[str],
+    response: str
+) -> dict:
+    """Check hallucinations in RAG responses."""
+
+    combined_context = "\n---\n".join([
+        f"Document {i+1}:\n{doc}"
+        for i, doc in enumerate(retrieved_docs)
+    ])
+
+    with brokle.start_as_current_span(name="rag_hallucination_check") as span:
+        # Check if response is grounded in retrieved docs
+        groundedness = groundedness_judge.evaluate(
+            context=combined_context,
+            output=response
+        )
+
+        # Check for out-of-scope answers
+        scope_judge = LLMJudge(
+            name="scope_check",
+            prompt="""Did the response stay within the scope of the retrieved documents,
+or did it bring in external knowledge not present in the documents?
+
+Documents: {context}
+Response: {output}
+
+Rate 1.0 if fully within scope, 0.0 if mostly external knowledge.""",
+            model="gpt-4o-mini"
+        )
+
+        scope_result = scope_judge.evaluate(
+            context=combined_context,
+            output=response
+        )
+
+        span.score(name="groundedness", value=groundedness.score)
+        span.score(name="scope_adherence", value=scope_result.score)
+
+        return {
+            "groundedness": groundedness.score,
+            "scope_adherence": scope_result.score,
+            "combined_score": (groundedness.score + scope_result.score) / 2,
+            "issues": {
+                "hallucination": groundedness.score < 0.8,
+                "out_of_scope": scope_result.score < 0.8
+            }
+        }
+```
+
+### Citation Verification
+
+```python
+def verify_citations(response: str, sources: dict[str, str]) -> dict:
+    """Verify that citations in a response are accurate."""
+
+    citation_judge = LLMJudge(
+        name="citation_verification",
+        prompt="""Verify each citation in the response.
+
+Response: {output}
+
+Available Sources:
+{sources}
+
+For each citation found:
+1. Identify what claim it supports
+2. Check if the source actually supports that claim
+3. Rate accuracy of each citation
+
+Provide:
+- List of citations checked
+- Accuracy of each
+- Overall citation accuracy score (0-1)""",
+        model="gpt-4o"
+    )
+
+    sources_text = "\n".join([
+        f"[{key}]: {value}" for key, value in sources.items()
+    ])
+
+    result = citation_judge.evaluate(
+        output=response,
+        sources=sources_text
+    )
+
+    return {
+        "citation_accuracy": result.score,
+        "details": result.comment
+    }
+```
+
+### Real-Time Hallucination Prevention
+
+```python
+def generate_with_hallucination_check(
+    context: str,
+    query: str,
+    threshold: float = 0.8
+) -> dict:
+    """Generate response with automatic hallucination checking."""
+
+    with brokle.start_as_current_span(name="safe_generation") as span:
+        # Generate initial response
+        response = openai_client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": f"Context: {context}"},
+                {"role": "user", "content": query}
+            ]
+        ).choices[0].message.content
+
+        # Check for hallucinations
+        check_result = detect_hallucinations(context, response)
+
+        if check_result["groundedness_score"] < threshold:
+            # Regenerate with stricter prompt
+            response = openai_client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": f"""Context: {context}
+
+IMPORTANT: Only use information from the provided context.
+If the context doesn't contain the answer, say so.
+Do not make up or infer facts not explicitly stated."""},
+                    {"role": "user", "content": query}
+                ]
+            ).choices[0].message.content
+
+            # Recheck
+            check_result = detect_hallucinations(context, response)
+            span.set_attribute("regenerated", True)
+
+        span.update(
+            output=response,
+            metadata={
+                "groundedness": check_result["groundedness_score"],
+                "passed_threshold": check_result["groundedness_score"] >= threshold
+            }
+        )
+
+        return {
+            "response": response,
+            "hallucination_check": check_result
+        }
+```
+
+<Callout type="warning">
+  Hallucination detection itself uses LLMs, which can occasionally miss subtle hallucinations. Use multiple evaluation methods for critical applications.
+</Callout>
+
+## Best Practices
+
+1. **Use Strong Judge Models**: GPT-4o is more reliable for detecting subtle hallucinations
+2. **Provide Full Context**: Include all relevant source material
+3. **Set Appropriate Thresholds**: 0.8+ for general use, 0.95+ for critical applications
+4. **Log All Scores**: Track hallucination rates over time to identify patterns
+
+## Related
+
+- [Groundedness](/docs/evaluation/built-in-evaluators#groundedness) - Built-in evaluator
+- [Response Quality](/docs/cookbook/evaluation-recipes/response-quality) - Broader quality metrics
+- [LLM as Judge](/docs/evaluation/llm-as-judge) - Custom judge creation

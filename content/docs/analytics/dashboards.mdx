@@ -1,0 +1,463 @@
+---
+title: Dashboards
+description: Build custom dashboards to visualize AI application metrics, performance, and quality
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+import { Steps, Step } from "fumadocs-ui/components/steps";
+
+# Dashboards
+
+Brokle dashboards provide visual insights into your AI application. Use built-in dashboards or create custom views for your specific needs.
+
+## Built-in Dashboards
+
+### Overview Dashboard
+
+The main dashboard showing key metrics at a glance:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      Overview Dashboard                          │
+├──────────────────┬──────────────────┬──────────────────┬────────┤
+│   Total Traces   │   Token Usage    │   Total Cost     │ Errors │
+│     45,230       │     12.5M        │     $1,234       │  0.8%  │
+│    ↑ 12%         │    ↑ 8%          │    ↓ 5%          │  ↓     │
+├──────────────────┴──────────────────┴──────────────────┴────────┤
+│                                                                  │
+│  ████████████████████████                                        │
+│  ████████████████████                     Traces over Time       │
+│  ██████████████████████████                                      │
+│  ████████████████████                                            │
+│                                                                  │
+├─────────────────────────────┬────────────────────────────────────┤
+│      Model Usage            │         Top Features               │
+│  GPT-4o: 60%                │   Chat: 45%                        │
+│  GPT-4o-mini: 35%           │   Search: 30%                      │
+│  Claude: 5%                 │   Summary: 25%                     │
+└─────────────────────────────┴────────────────────────────────────┘
+```
+
+### Performance Dashboard
+
+Detailed latency and reliability metrics:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                   Performance Dashboard                          │
+├─────────────────────────────────────────────────────────────────┤
+│  Latency (P50/P95/P99)                                          │
+│  ├─ Overall:    1.2s / 2.8s / 4.5s                              │
+│  ├─ GPT-4o:     1.5s / 3.2s / 5.0s                              │
+│  └─ GPT-4o-mini: 0.8s / 1.5s / 2.2s                             │
+│                                                                  │
+│  Time to First Token                                            │
+│  ├─ P50: 180ms                                                  │
+│  └─ P95: 450ms                                                  │
+│                                                                  │
+│  Error Breakdown                                                │
+│  ├─ Rate Limits: 0.5%                                           │
+│  ├─ Timeouts: 0.2%                                              │
+│  └─ API Errors: 0.1%                                            │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Quality Dashboard
+
+Evaluation scores and feedback metrics:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Quality Dashboard                             │
+├─────────────────────────────────────────────────────────────────┤
+│  Evaluation Scores (7-day avg)                                  │
+│  ├─ Relevance:    ████████░░  0.85                              │
+│  ├─ Helpfulness:  ███████░░░  0.78                              │
+│  └─ Accuracy:     █████████░  0.92                              │
+│                                                                  │
+│  User Feedback                                                  │
+│  ├─ Satisfaction: 89% 👍                                        │
+│  ├─ Response rate: 4.2%                                         │
+│  └─ Top issues: "Too verbose", "Missing details"                │
+│                                                                  │
+│  Quality Trend                                                  │
+│  [Chart showing score changes over time]                        │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## Creating Custom Dashboards
+
+<Steps>
+  <Step>
+    ### Navigate to Dashboard Builder
+
+    Go to **Analytics** → **Dashboards** → **Create Dashboard**
+  </Step>
+
+  <Step>
+    ### Add Widgets
+
+    Choose from available widget types:
+    - **Metric Card**: Single key metric
+    - **Line Chart**: Trends over time
+    - **Bar Chart**: Comparisons
+    - **Pie Chart**: Distribution
+    - **Table**: Detailed data
+    - **Heatmap**: Time-based patterns
+  </Step>
+
+  <Step>
+    ### Configure Data Sources
+
+    Select metrics and dimensions for each widget:
+
+    ```yaml
+    widget:
+      type: line_chart
+      metric: trace_count
+      group_by: model
+      time_range: 7d
+      filters:
+        - environment = "production"
+    ```
+  </Step>
+
+  <Step>
+    ### Save and Share
+
+    Name your dashboard and set sharing permissions.
+  </Step>
+</Steps>
+
+## Widget Types
+
+### Metric Cards
+
+Display key numbers prominently:
+
+```
+┌────────────────────┐
+│   Today's Cost     │
+│      $45.23        │
+│     ↑ 12% vs avg   │
+└────────────────────┘
+```
+
+Configuration:
+```yaml
+widget:
+  type: metric
+  metric: cost
+  aggregation: sum
+  comparison: "vs_avg_7d"
+```
+
+### Time Series Charts
+
+Track trends over time:
+
+```python
+# Via API
+chart_data = client.analytics.get_time_series(
+    metrics=["trace_count", "token_count"],
+    start_time=datetime.now() - timedelta(days=7),
+    group_by="day"
+)
+```
+
+### Comparison Charts
+
+Compare dimensions side-by-side:
+
+```yaml
+widget:
+  type: bar_chart
+  metric: latency_p95
+  group_by: model
+  filters:
+    - time_range = "24h"
+```
+
+### Distribution Charts
+
+Show breakdowns:
+
+```yaml
+widget:
+  type: pie_chart
+  metric: cost
+  group_by: model
+```
+
+### Data Tables
+
+Detailed tabular data:
+
+```yaml
+widget:
+  type: table
+  columns:
+    - trace_id
+    - model
+    - latency_ms
+    - cost
+    - quality_score
+  sort_by: cost
+  sort_order: desc
+  limit: 100
+```
+
+### Heatmaps
+
+Visualize patterns across time:
+
+```yaml
+widget:
+  type: heatmap
+  metric: trace_count
+  x_axis: hour_of_day  # 0-23
+  y_axis: day_of_week  # Mon-Sun
+```
+
+## Filters and Drill-Down
+
+### Global Filters
+
+Apply filters to all widgets:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Filters: [Environment: Production ▼] [Model: All ▼] [7 days ▼] │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  [Dashboard content filtered accordingly]                        │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Widget-Level Filters
+
+Configure filters per widget:
+
+```yaml
+widget:
+  type: line_chart
+  metric: cost
+  filters:
+    - model = "gpt-4o"
+    - environment = "production"
+    - quality_score < 0.7
+```
+
+### Click-to-Drill
+
+Click on chart elements to drill down:
+
+```
+Click on "GPT-4o" bar
+  → Opens filtered view showing only GPT-4o traces
+  → Adds filter: model = "gpt-4o"
+```
+
+## Dashboard Templates
+
+### Engineering Template
+
+```yaml
+name: Engineering Dashboard
+widgets:
+  - type: metric
+    metric: error_rate
+    position: [0, 0]
+
+  - type: line_chart
+    metric: latency_p95
+    group_by: model
+    position: [1, 0]
+
+  - type: table
+    columns: [trace_id, error_type, timestamp]
+    filters: [status = "error"]
+    position: [0, 1]
+```
+
+### Product Template
+
+```yaml
+name: Product Dashboard
+widgets:
+  - type: metric
+    metric: daily_active_users
+    position: [0, 0]
+
+  - type: pie_chart
+    metric: trace_count
+    group_by: feature
+    position: [1, 0]
+
+  - type: line_chart
+    metric: satisfaction_rate
+    position: [0, 1]
+```
+
+### Finance Template
+
+```yaml
+name: Finance Dashboard
+widgets:
+  - type: metric
+    metric: monthly_cost
+    position: [0, 0]
+
+  - type: bar_chart
+    metric: cost
+    group_by: team
+    position: [1, 0]
+
+  - type: line_chart
+    metric: cost_per_user
+    position: [0, 1]
+```
+
+## Sharing & Access
+
+### Share Options
+
+| Option | Description |
+|--------|-------------|
+| **Private** | Only you can view |
+| **Team** | All team members can view |
+| **Project** | All project members can view |
+| **Public Link** | Anyone with link can view (read-only) |
+
+### Embedding
+
+Embed dashboards in other tools:
+
+```html
+<!-- Embed via iframe -->
+<iframe
+  src="https://app.brokle.ai/embed/dashboard/abc123?token=xyz"
+  width="100%"
+  height="600"
+  frameborder="0"
+></iframe>
+```
+
+### Scheduled Reports
+
+Send dashboard snapshots via email:
+
+```python
+# Configure scheduled report
+client.dashboards.schedule_report(
+    dashboard_id="dash_123",
+    schedule="weekly",
+    recipients=["team@company.com"],
+    format="pdf"
+)
+```
+
+## Real-Time Updates
+
+### Live Mode
+
+Enable real-time updates for active monitoring:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  🔴 LIVE MODE - Refreshing every 30 seconds                     │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  [Widgets auto-refresh with latest data]                        │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+Configure refresh intervals:
+- 30 seconds (for incident response)
+- 1 minute
+- 5 minutes
+- Manual refresh only
+
+### Streaming Metrics
+
+For critical monitoring, use streaming:
+
+```python
+# Stream real-time metrics
+async for metric in client.analytics.stream_metrics(
+    metrics=["trace_count", "error_rate"],
+    interval_seconds=10
+):
+    print(f"Traces: {metric.trace_count}, Errors: {metric.error_rate}%")
+```
+
+## Best Practices
+
+### 1. Purpose-Driven Dashboards
+
+Create focused dashboards for specific audiences:
+
+```yaml
+# Bad: One dashboard for everything
+# Good: Separate dashboards per audience
+
+engineering_dashboard:
+  focus: performance, errors, latency
+
+product_dashboard:
+  focus: usage, features, engagement
+
+executive_dashboard:
+  focus: costs, ROI, trends
+```
+
+### 2. Use Consistent Time Ranges
+
+Align time ranges across related widgets for accurate comparison:
+
+```yaml
+# All widgets should use the same time range
+dashboard:
+  default_time_range: "7d"
+  widgets:
+    - time_range: inherit  # Uses dashboard default
+    - time_range: inherit
+```
+
+### 3. Add Context
+
+Include comparison metrics for context:
+
+```yaml
+widget:
+  type: metric
+  metric: daily_cost
+  comparison: "vs_same_day_last_week"  # Shows +15% context
+```
+
+### 4. Set Up Alerts from Dashboards
+
+Link alerts to dashboard thresholds:
+
+```python
+# Create alert from dashboard metric
+client.alerts.create_from_widget(
+    dashboard_id="dash_123",
+    widget_id="widget_456",
+    threshold=100,
+    operator=">"
+)
+```
+
+<Callout type="info">
+  Dashboards are automatically saved. Your layout and filters are preserved between sessions.
+</Callout>
+
+## Next Steps
+
+- [Cost Tracking](/docs/analytics/cost-tracking) - Deep dive into cost analytics
+- [Alerts](/docs/analytics#alerts) - Set up monitoring alerts
+- [Tracing](/docs/tracing) - Investigate individual traces

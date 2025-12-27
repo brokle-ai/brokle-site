@@ -1,0 +1,658 @@
+---
+title: Agent Evaluation
+description: Evaluate AI agents with tool use and multi-step reasoning
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Steps, Step } from "fumadocs-ui/components/steps";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+
+# Agent Evaluation
+
+Learn how to evaluate AI agents that use tools, make decisions, and perform multi-step reasoning tasks.
+
+## What You'll Build
+
+A comprehensive agent evaluation system that measures:
+- Task completion accuracy
+- Tool usage efficiency
+- Reasoning quality
+- Error recovery capabilities
+- Multi-step execution performance
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                   Agent Evaluation Pipeline                      │
+├─────────────────────────────────────────────────────────────────┤
+│  Dataset (100 tasks)                                             │
+│  ├─ Simple queries (30%)                                        │
+│  ├─ Multi-step tasks (40%)                                      │
+│  └─ Complex reasoning (30%)                                     │
+├─────────────────────────────────────────────────────────────────┤
+│  Evaluation Dimensions                                           │
+│  ├─ Task Completion: 94%                                        │
+│  ├─ Tool Efficiency: 87%                                        │
+│  ├─ Reasoning Quality: 91%                                      │
+│  └─ Error Recovery: 78%                                         │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## Prerequisites
+
+- Brokle account and API key
+- Python 3.9+ with pip
+- OpenAI API key (or other LLM provider)
+- Familiarity with agent frameworks (LangChain, custom agents)
+
+## Setup
+
+<Steps>
+  <Step>
+    ### Install Dependencies
+
+    ```bash
+    pip install brokle openai langchain langchain-openai
+    ```
+  </Step>
+
+  <Step>
+    ### Configure Environment
+
+    ```bash
+    export BROKLE_API_KEY=bk_...
+    export OPENAI_API_KEY=sk_...
+    ```
+  </Step>
+
+  <Step>
+    ### Initialize Clients
+
+    ```python
+    from brokle import Brokle, wrap_openai
+    from langchain_openai import ChatOpenAI
+    from langchain.agents import AgentExecutor, create_openai_tools_agent
+    from langchain.tools import Tool
+    import openai
+
+    # Initialize Brokle
+    brokle = Brokle()
+
+    # Wrap OpenAI for automatic tracing
+    openai_client = wrap_openai(openai.OpenAI(), brokle=brokle)
+    ```
+  </Step>
+</Steps>
+
+## Implementation
+
+### Step 1: Define Your Agent
+
+Create an agent with tools that we'll evaluate:
+
+```python
+from langchain.tools import Tool
+from langchain_openai import ChatOpenAI
+from langchain.agents import AgentExecutor, create_openai_tools_agent
+from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
+
+# Define tools
+def search_database(query: str) -> str:
+    """Search the product database."""
+    # Simulated database search
+    products = {
+        "laptop": {"name": "Pro Laptop", "price": 1299, "stock": 15},
+        "phone": {"name": "Smart Phone", "price": 899, "stock": 42},
+        "tablet": {"name": "Tab Pro", "price": 599, "stock": 8}
+    }
+    for key, product in products.items():
+        if key in query.lower():
+            return f"Found: {product['name']} - ${product['price']} ({product['stock']} in stock)"
+    return "No matching products found"
+
+def calculate_total(items: str) -> str:
+    """Calculate order total with tax."""
+    try:
+        prices = [float(p) for p in items.split(",")]
+        subtotal = sum(prices)
+        tax = subtotal * 0.08
+        return f"Subtotal: ${subtotal:.2f}, Tax: ${tax:.2f}, Total: ${subtotal + tax:.2f}"
+    except:
+        return "Error: Please provide prices as comma-separated numbers"
+
+def check_inventory(product: str) -> str:
+    """Check product availability."""
+    inventory = {"laptop": 15, "phone": 42, "tablet": 8}
+    stock = inventory.get(product.lower(), 0)
+    return f"{product}: {stock} units available" if stock > 0 else f"{product}: Out of stock"
+
+tools = [
+    Tool(name="search_database", func=search_database, description="Search for products in the database"),
+    Tool(name="calculate_total", func=calculate_total, description="Calculate order total with tax"),
+    Tool(name="check_inventory", func=check_inventory, description="Check product inventory levels"),
+]
+
+# Create agent
+llm = ChatOpenAI(model="gpt-4o", temperature=0)
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful shopping assistant. Use the available tools to help customers."),
+    ("human", "{input}"),
+    MessagesPlaceholder(variable_name="agent_scratchpad"),
+])
+
+agent = create_openai_tools_agent(llm, tools, prompt)
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+```
+
+### Step 2: Create Traced Agent Wrapper
+
+Wrap the agent execution with Brokle tracing:
+
+```python
+def run_traced_agent(task: str, session_id: str = None) -> dict:
+    """Execute agent with full tracing."""
+
+    with brokle.start_as_current_span(
+        name="agent_execution",
+        as_type="agent",
+        metadata={"task": task}
+    ) as span:
+        # Set session for grouping related executions
+        if session_id:
+            span.update_trace(session_id=session_id)
+
+        try:
+            # Execute agent
+            result = agent_executor.invoke({"input": task})
+
+            # Extract tool usage from intermediate steps
+            tool_calls = []
+            for step in result.get("intermediate_steps", []):
+                action, observation = step
+                tool_calls.append({
+                    "tool": action.tool,
+                    "input": action.tool_input,
+                    "output": str(observation)[:200]
+                })
+
+            # Update span with results
+            span.update(
+                output=result["output"],
+                metadata={
+                    "tool_calls": len(tool_calls),
+                    "tools_used": list(set(tc["tool"] for tc in tool_calls)),
+                    "success": True
+                }
+            )
+
+            return {
+                "output": result["output"],
+                "tool_calls": tool_calls,
+                "success": True
+            }
+
+        except Exception as e:
+            span.update(
+                output=str(e),
+                metadata={"success": False, "error_type": type(e).__name__}
+            )
+            span.score(name="error", value=1, comment=str(e))
+            return {"output": str(e), "success": False}
+```
+
+### Step 3: Define Evaluation Dataset
+
+Create a dataset of test cases with expected outcomes:
+
+```python
+evaluation_dataset = [
+    # Simple queries
+    {
+        "task": "Find information about laptops",
+        "expected_tools": ["search_database"],
+        "expected_contains": ["laptop", "price"],
+        "category": "simple"
+    },
+    {
+        "task": "Check if phones are in stock",
+        "expected_tools": ["check_inventory"],
+        "expected_contains": ["phone", "available"],
+        "category": "simple"
+    },
+
+    # Multi-step tasks
+    {
+        "task": "I want to buy a laptop and a tablet. What's the total cost with tax?",
+        "expected_tools": ["search_database", "calculate_total"],
+        "expected_contains": ["total", "tax"],
+        "category": "multi_step"
+    },
+    {
+        "task": "Check inventory for tablets and tell me the price",
+        "expected_tools": ["check_inventory", "search_database"],
+        "expected_contains": ["tablet", "price", "stock"],
+        "category": "multi_step"
+    },
+
+    # Complex reasoning
+    {
+        "task": "I have a budget of $1500. Can I buy both a laptop and a phone? Include tax.",
+        "expected_tools": ["search_database", "calculate_total"],
+        "expected_contains": ["total", "$"],
+        "requires_reasoning": True,
+        "category": "complex"
+    },
+    {
+        "task": "Which products have more than 10 items in stock? List their prices.",
+        "expected_tools": ["check_inventory", "search_database"],
+        "expected_contains": ["laptop", "phone"],
+        "requires_reasoning": True,
+        "category": "complex"
+    },
+]
+```
+
+### Step 4: Create Evaluators
+
+Define custom evaluators for agent-specific metrics:
+
+```python
+from brokle.evaluation import LLMJudge
+
+# Task completion evaluator
+task_completion_judge = LLMJudge(
+    name="task_completion",
+    prompt="""Evaluate if the agent completed the requested task.
+
+Task: {input}
+Agent Response: {output}
+Expected Elements: {expected}
+
+Rate from 0-1:
+- 1.0: Task fully completed with all expected elements
+- 0.7: Task mostly completed, minor elements missing
+- 0.5: Task partially completed
+- 0.3: Task attempted but largely incomplete
+- 0.0: Task not completed
+
+Provide score and brief explanation.""",
+    model="gpt-4o-mini"
+)
+
+# Reasoning quality evaluator
+reasoning_judge = LLMJudge(
+    name="reasoning_quality",
+    prompt="""Evaluate the quality of the agent's reasoning process.
+
+Task: {input}
+Agent Response: {output}
+Tools Used: {tools_used}
+
+Assess:
+1. Was the reasoning logical and well-structured?
+2. Were tools used appropriately and efficiently?
+3. Did the agent explain its process clearly?
+4. Were there any reasoning errors or gaps?
+
+Rate from 0-1 with explanation.""",
+    model="gpt-4o-mini"
+)
+
+def evaluate_tool_efficiency(result: dict, expected_tools: list) -> dict:
+    """Evaluate tool usage efficiency."""
+    tools_used = [tc["tool"] for tc in result.get("tool_calls", [])]
+
+    # Check if expected tools were used
+    expected_set = set(expected_tools)
+    used_set = set(tools_used)
+
+    # Calculate efficiency metrics
+    coverage = len(expected_set & used_set) / len(expected_set) if expected_set else 1.0
+    redundancy = max(0, len(tools_used) - len(expected_tools)) / max(1, len(expected_tools))
+    efficiency = coverage * (1 - redundancy * 0.2)  # Penalize redundant calls
+
+    return {
+        "score": min(1.0, efficiency),
+        "coverage": coverage,
+        "redundancy": redundancy,
+        "tools_expected": expected_tools,
+        "tools_used": tools_used
+    }
+
+def evaluate_output_contains(output: str, expected_contains: list) -> dict:
+    """Check if output contains expected elements."""
+    found = [e for e in expected_contains if e.lower() in output.lower()]
+    score = len(found) / len(expected_contains) if expected_contains else 1.0
+
+    return {
+        "score": score,
+        "found": found,
+        "missing": [e for e in expected_contains if e not in found]
+    }
+```
+
+### Step 5: Run Batch Evaluation
+
+Execute the full evaluation pipeline:
+
+```python
+import json
+from datetime import datetime
+
+def run_agent_evaluation(dataset: list) -> dict:
+    """Run full agent evaluation on dataset."""
+
+    session_id = f"eval_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    results = []
+
+    with brokle.start_as_current_span(
+        name="agent_evaluation_batch",
+        metadata={
+            "dataset_size": len(dataset),
+            "session_id": session_id
+        }
+    ) as batch_span:
+
+        for i, test_case in enumerate(dataset):
+            print(f"\nEvaluating task {i+1}/{len(dataset)}: {test_case['task'][:50]}...")
+
+            with brokle.start_as_current_span(
+                name="evaluation_case",
+                metadata={
+                    "case_index": i,
+                    "category": test_case.get("category", "unknown")
+                }
+            ) as case_span:
+
+                # Run agent
+                result = run_traced_agent(test_case["task"], session_id)
+
+                # Evaluate tool efficiency
+                tool_eval = evaluate_tool_efficiency(
+                    result,
+                    test_case.get("expected_tools", [])
+                )
+                case_span.score(
+                    name="tool_efficiency",
+                    value=tool_eval["score"],
+                    comment=f"Coverage: {tool_eval['coverage']:.0%}"
+                )
+
+                # Evaluate output contents
+                content_eval = evaluate_output_contains(
+                    result.get("output", ""),
+                    test_case.get("expected_contains", [])
+                )
+                case_span.score(
+                    name="content_coverage",
+                    value=content_eval["score"],
+                    comment=f"Found {len(content_eval['found'])}/{len(test_case.get('expected_contains', []))}"
+                )
+
+                # LLM-based task completion evaluation
+                completion_eval = task_completion_judge.evaluate(
+                    input=test_case["task"],
+                    output=result.get("output", ""),
+                    expected=", ".join(test_case.get("expected_contains", []))
+                )
+                case_span.score(
+                    name="task_completion",
+                    value=completion_eval.score,
+                    comment=completion_eval.comment
+                )
+
+                # Reasoning evaluation for complex tasks
+                if test_case.get("requires_reasoning"):
+                    reasoning_eval = reasoning_judge.evaluate(
+                        input=test_case["task"],
+                        output=result.get("output", ""),
+                        tools_used=", ".join(tool_eval["tools_used"])
+                    )
+                    case_span.score(
+                        name="reasoning_quality",
+                        value=reasoning_eval.score,
+                        comment=reasoning_eval.comment
+                    )
+
+                # Store results
+                results.append({
+                    "task": test_case["task"],
+                    "category": test_case.get("category"),
+                    "success": result.get("success", False),
+                    "scores": {
+                        "tool_efficiency": tool_eval["score"],
+                        "content_coverage": content_eval["score"],
+                        "task_completion": completion_eval.score
+                    }
+                })
+
+        # Calculate aggregate scores
+        categories = {}
+        for r in results:
+            cat = r["category"]
+            if cat not in categories:
+                categories[cat] = []
+            categories[cat].append(r["scores"])
+
+        summary = {
+            "total_cases": len(results),
+            "success_rate": sum(1 for r in results if r["success"]) / len(results),
+            "avg_scores": {
+                "tool_efficiency": sum(r["scores"]["tool_efficiency"] for r in results) / len(results),
+                "content_coverage": sum(r["scores"]["content_coverage"] for r in results) / len(results),
+                "task_completion": sum(r["scores"]["task_completion"] for r in results) / len(results),
+            },
+            "by_category": {
+                cat: {
+                    "count": len(scores),
+                    "avg_tool_efficiency": sum(s["tool_efficiency"] for s in scores) / len(scores),
+                    "avg_task_completion": sum(s["task_completion"] for s in scores) / len(scores),
+                }
+                for cat, scores in categories.items()
+            }
+        }
+
+        batch_span.update(
+            output=summary,
+            metadata=summary
+        )
+
+        return {"results": results, "summary": summary}
+
+# Run evaluation
+evaluation = run_agent_evaluation(evaluation_dataset)
+print("\n" + "="*60)
+print("EVALUATION SUMMARY")
+print("="*60)
+print(json.dumps(evaluation["summary"], indent=2))
+
+# Flush traces
+brokle.flush()
+```
+
+### Step 6: Track Error Recovery
+
+Add evaluation for error handling capabilities:
+
+```python
+error_recovery_dataset = [
+    {
+        "task": "Search for unicorn products",  # Product doesn't exist
+        "expected_behavior": "graceful_handling",
+        "category": "not_found"
+    },
+    {
+        "task": "Calculate total for: abc, xyz",  # Invalid input
+        "expected_behavior": "error_message",
+        "category": "invalid_input"
+    },
+    {
+        "task": "Check inventory for flying cars",  # Nonsense request
+        "expected_behavior": "sensible_response",
+        "category": "edge_case"
+    },
+]
+
+error_recovery_judge = LLMJudge(
+    name="error_recovery",
+    prompt="""Evaluate how well the agent handled an error or edge case.
+
+Task: {input}
+Expected Behavior: {expected}
+Agent Response: {output}
+
+Assess:
+1. Did the agent recognize the error/edge case?
+2. Was the response helpful and informative?
+3. Did the agent avoid crashing or producing nonsense?
+4. Did the agent suggest alternatives or next steps?
+
+Rate from 0-1:
+- 1.0: Excellent error handling with helpful guidance
+- 0.7: Good handling, recognized the issue
+- 0.5: Handled but response could be more helpful
+- 0.3: Poor handling, confusing response
+- 0.0: Crashed or produced nonsense""",
+    model="gpt-4o-mini"
+)
+
+def evaluate_error_recovery(dataset: list) -> dict:
+    """Evaluate agent error recovery capabilities."""
+
+    results = []
+
+    with brokle.start_as_current_span(
+        name="error_recovery_evaluation",
+        metadata={"test_count": len(dataset)}
+    ) as span:
+
+        for test in dataset:
+            result = run_traced_agent(test["task"])
+
+            eval_result = error_recovery_judge.evaluate(
+                input=test["task"],
+                expected=test["expected_behavior"],
+                output=result.get("output", "")
+            )
+
+            span.score(
+                name=f"error_recovery_{test['category']}",
+                value=eval_result.score,
+                comment=eval_result.comment
+            )
+
+            results.append({
+                "category": test["category"],
+                "score": eval_result.score
+            })
+
+        avg_score = sum(r["score"] for r in results) / len(results)
+        span.update(metadata={"avg_error_recovery_score": avg_score})
+
+        return {"results": results, "avg_score": avg_score}
+```
+
+## Complete Example
+
+```python
+from brokle import Brokle, wrap_openai
+from brokle.evaluation import LLMJudge
+from langchain_openai import ChatOpenAI
+from langchain.agents import AgentExecutor, create_openai_tools_agent
+from langchain.tools import Tool
+from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
+import openai
+
+# Initialize
+brokle = Brokle()
+openai_client = wrap_openai(openai.OpenAI(), brokle=brokle)
+
+# Create agent with tools (see Step 1)
+# ... agent setup code ...
+
+# Define evaluation dataset
+dataset = [
+    {"task": "Find laptop prices", "expected_tools": ["search_database"], "expected_contains": ["laptop", "price"]},
+    {"task": "What's in stock?", "expected_tools": ["check_inventory"], "expected_contains": ["available"]},
+]
+
+# Run evaluation
+results = run_agent_evaluation(dataset)
+
+# Print results
+print(f"Success Rate: {results['summary']['success_rate']:.1%}")
+print(f"Tool Efficiency: {results['summary']['avg_scores']['tool_efficiency']:.1%}")
+print(f"Task Completion: {results['summary']['avg_scores']['task_completion']:.1%}")
+
+brokle.flush()
+```
+
+## Viewing Results
+
+After running your agent evaluation:
+
+1. Navigate to **Traces** in the Brokle dashboard
+2. Filter by session ID to see all evaluation runs
+3. View the **agent_evaluation_batch** span for summary metrics
+4. Drill into individual **evaluation_case** spans for detailed scores
+5. Check the **Scores** tab for aggregated evaluation metrics
+
+## Best Practices
+
+### 1. Design Diverse Test Cases
+
+```python
+# Cover different complexity levels
+test_categories = {
+    "simple": 0.3,      # 30% simple single-tool tasks
+    "multi_step": 0.4,  # 40% multi-tool workflows
+    "complex": 0.3,     # 30% reasoning-heavy tasks
+}
+
+# Include edge cases and error scenarios
+edge_cases = [
+    "ambiguous_request",
+    "missing_information",
+    "conflicting_requirements",
+    "out_of_scope_task"
+]
+```
+
+### 2. Use Multiple Evaluation Dimensions
+
+```python
+evaluation_dimensions = {
+    "task_completion": "Did the agent complete the task?",
+    "tool_efficiency": "Were tools used appropriately?",
+    "reasoning_quality": "Was the reasoning sound?",
+    "response_clarity": "Is the response clear and helpful?",
+    "error_handling": "How did it handle errors?",
+    "latency": "Was execution time acceptable?"
+}
+```
+
+### 3. Track Improvements Over Time
+
+```python
+# Tag evaluations with agent version
+with brokle.start_as_current_span(
+    name="agent_evaluation",
+    metadata={
+        "agent_version": "v1.2.0",
+        "model": "gpt-4o",
+        "prompt_version": "2024-01"
+    }
+) as span:
+    # Run evaluation
+    pass
+```
+
+<Callout type="info">
+  Use Brokle's dashboard to compare evaluation results across different agent versions and identify regression or improvement trends.
+</Callout>
+
+## Next Steps
+
+- [Custom Evaluators](/docs/evaluation/custom-evaluators) - Build domain-specific evaluators
+- [LLM as Judge](/docs/evaluation/llm-as-judge) - Advanced LLM-based evaluation
+- [Datasets](/docs/evaluation/datasets) - Manage evaluation datasets
+- [Production Monitoring](/docs/tutorials/production-monitoring) - Monitor agents in production

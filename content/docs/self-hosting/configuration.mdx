@@ -1,0 +1,345 @@
+---
+title: Configuration
+description: Complete configuration reference for self-hosted Brokle
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Configuration
+
+Complete reference for all Brokle configuration options.
+
+## Environment Variables
+
+### Required Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `APP_MODE` | Application mode | `server` or `worker` |
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql://user:pass@host:5432/db` |
+| `CLICKHOUSE_URL` | ClickHouse HTTP URL | `http://localhost:8123` |
+| `REDIS_URL` | Redis connection string | `redis://localhost:6379` |
+| `JWT_SECRET` | JWT signing secret (min 32 chars) | `your-secure-secret-here` |
+| `AI_KEY_ENCRYPTION_KEY` | Base64-encoded 32-byte key | `base64string==` |
+
+### Server Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `8080` | HTTP server port |
+| `HOST` | `0.0.0.0` | HTTP server host |
+| `ENVIRONMENT` | `development` | Environment name |
+| `LOG_LEVEL` | `info` | Log level (debug, info, warn, error) |
+| `LOG_FORMAT` | `json` | Log format (json, text) |
+
+### Authentication
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `JWT_SECRET` | Required | JWT signing secret |
+| `JWT_EXPIRY` | `24h` | Access token expiry |
+| `REFRESH_TOKEN_EXPIRY` | `7d` | Refresh token expiry |
+| `SESSION_COOKIE_NAME` | `brokle_session` | Session cookie name |
+| `SESSION_COOKIE_SECURE` | `true` | Use secure cookies |
+| `SESSION_COOKIE_DOMAIN` | - | Cookie domain |
+
+### Rate Limiting
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `RATE_LIMIT_ENABLED` | `true` | Enable rate limiting |
+| `RATE_LIMIT_REQUESTS` | `100` | Requests per window |
+| `RATE_LIMIT_WINDOW` | `1m` | Rate limit window |
+| `RATE_LIMIT_BURST` | `50` | Burst allowance |
+
+### Database Configuration
+
+#### PostgreSQL
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DATABASE_URL` | Required | Connection string |
+| `DATABASE_MAX_CONNS` | `25` | Max connections |
+| `DATABASE_MIN_CONNS` | `5` | Min connections |
+| `DATABASE_MAX_CONN_LIFETIME` | `1h` | Max connection lifetime |
+| `DATABASE_MAX_CONN_IDLE_TIME` | `30m` | Max idle time |
+
+#### ClickHouse
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CLICKHOUSE_URL` | Required | HTTP URL |
+| `CLICKHOUSE_DATABASE` | `default` | Database name |
+| `CLICKHOUSE_USERNAME` | - | Username |
+| `CLICKHOUSE_PASSWORD` | - | Password |
+| `CLICKHOUSE_MAX_IDLE_CONNS` | `5` | Max idle connections |
+| `CLICKHOUSE_MAX_OPEN_CONNS` | `10` | Max open connections |
+
+#### Redis
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `REDIS_URL` | Required | Connection URL |
+| `REDIS_MAX_RETRIES` | `3` | Max retries |
+| `REDIS_MIN_IDLE_CONNS` | `5` | Min idle connections |
+| `REDIS_POOL_SIZE` | `10` | Connection pool size |
+| `REDIS_POOL_TIMEOUT` | `4s` | Pool timeout |
+
+### Encryption
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `AI_KEY_ENCRYPTION_KEY` | Required | 32-byte key (base64) |
+| `ENCRYPTION_ALGORITHM` | `aes-256-gcm` | Encryption algorithm |
+
+Generate encryption key:
+```bash
+openssl rand -base64 32
+```
+
+### Email Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SMTP_HOST` | - | SMTP server host |
+| `SMTP_PORT` | `587` | SMTP port |
+| `SMTP_USERNAME` | - | SMTP username |
+| `SMTP_PASSWORD` | - | SMTP password |
+| `SMTP_FROM` | - | From email address |
+| `SMTP_TLS` | `true` | Use TLS |
+
+### Feature Flags
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ENABLE_SIGNUP` | `true` | Allow new signups |
+| `ENABLE_ANONYMOUS` | `false` | Allow anonymous traces |
+| `ENABLE_METRICS` | `true` | Enable /metrics endpoint |
+| `ENABLE_PROFILING` | `false` | Enable pprof profiling |
+
+### Worker Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `WORKER_CONCURRENCY` | `10` | Worker goroutines |
+| `WORKER_BATCH_SIZE` | `100` | Batch size for processing |
+| `WORKER_FLUSH_INTERVAL` | `5s` | Flush interval |
+| `WORKER_QUEUE_SIZE` | `1000` | Queue buffer size |
+
+### Telemetry Ingestion
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `INGESTION_BATCH_SIZE` | `100` | Traces per batch |
+| `INGESTION_FLUSH_INTERVAL` | `1s` | Max time between flushes |
+| `INGESTION_MAX_TRACE_SIZE` | `1MB` | Max single trace size |
+| `INGESTION_RETENTION_DAYS` | `30` | Data retention period |
+
+### Storage
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `STORAGE_TYPE` | `local` | Storage type (local, s3) |
+| `STORAGE_PATH` | `./data` | Local storage path |
+| `S3_BUCKET` | - | S3 bucket name |
+| `S3_REGION` | - | S3 region |
+| `S3_ENDPOINT` | - | S3 endpoint (for MinIO) |
+| `S3_ACCESS_KEY` | - | S3 access key |
+| `S3_SECRET_KEY` | - | S3 secret key |
+
+### CORS Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CORS_ENABLED` | `true` | Enable CORS |
+| `CORS_ALLOWED_ORIGINS` | `*` | Allowed origins |
+| `CORS_ALLOWED_METHODS` | `GET,POST,PUT,DELETE` | Allowed methods |
+| `CORS_ALLOWED_HEADERS` | `*` | Allowed headers |
+| `CORS_MAX_AGE` | `86400` | Preflight cache (seconds) |
+
+## Configuration File
+
+You can also use a configuration file:
+
+```yaml
+# config.yaml
+server:
+  port: 8080
+  host: 0.0.0.0
+
+database:
+  url: postgresql://user:pass@localhost:5432/brokle
+  max_conns: 25
+  min_conns: 5
+
+clickhouse:
+  url: http://localhost:8123
+  database: default
+
+redis:
+  url: redis://localhost:6379
+  pool_size: 10
+
+auth:
+  jwt_secret: your-secret-here
+  jwt_expiry: 24h
+
+rate_limit:
+  enabled: true
+  requests: 100
+  window: 1m
+
+worker:
+  concurrency: 10
+  batch_size: 100
+
+features:
+  signup: true
+  anonymous: false
+  metrics: true
+```
+
+Load with:
+```bash
+./brokle server --config config.yaml
+```
+
+## Sample Configurations
+
+### Development
+
+```bash
+# .env.development
+APP_MODE=server
+PORT=8080
+ENVIRONMENT=development
+LOG_LEVEL=debug
+LOG_FORMAT=text
+
+DATABASE_URL=postgresql://brokle:brokle@localhost:5432/brokle
+CLICKHOUSE_URL=http://localhost:8123
+REDIS_URL=redis://localhost:6379
+
+JWT_SECRET=development-secret-not-for-production
+AI_KEY_ENCRYPTION_KEY=ZGV2ZWxvcG1lbnQta2V5LW5vdC1mb3ItcHJvZA==
+
+ENABLE_SIGNUP=true
+ENABLE_PROFILING=true
+CORS_ALLOWED_ORIGINS=http://localhost:3000
+```
+
+### Production
+
+```bash
+# .env.production
+APP_MODE=server
+PORT=8080
+ENVIRONMENT=production
+LOG_LEVEL=info
+LOG_FORMAT=json
+
+DATABASE_URL=postgresql://brokle:${DB_PASSWORD}@db.internal:5432/brokle
+DATABASE_MAX_CONNS=50
+CLICKHOUSE_URL=https://clickhouse.internal:8443
+REDIS_URL=redis://redis.internal:6379
+
+JWT_SECRET=${JWT_SECRET}
+AI_KEY_ENCRYPTION_KEY=${ENCRYPTION_KEY}
+
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_REQUESTS=1000
+RATE_LIMIT_WINDOW=1m
+
+ENABLE_SIGNUP=false
+ENABLE_METRICS=true
+SESSION_COOKIE_SECURE=true
+SESSION_COOKIE_DOMAIN=.example.com
+
+CORS_ALLOWED_ORIGINS=https://app.example.com,https://api.example.com
+```
+
+### High-Volume Ingestion
+
+```bash
+# .env.high-volume
+APP_MODE=worker
+ENVIRONMENT=production
+
+DATABASE_URL=postgresql://brokle:${DB_PASSWORD}@db.internal:5432/brokle
+CLICKHOUSE_URL=https://clickhouse.internal:8443
+REDIS_URL=redis://redis.internal:6379
+
+WORKER_CONCURRENCY=50
+WORKER_BATCH_SIZE=500
+WORKER_FLUSH_INTERVAL=500ms
+WORKER_QUEUE_SIZE=10000
+
+INGESTION_BATCH_SIZE=500
+INGESTION_FLUSH_INTERVAL=500ms
+```
+
+## Validation
+
+The server validates configuration at startup:
+
+```bash
+./brokle server --validate-config
+```
+
+Missing required variables will cause startup failure with clear error messages:
+
+```
+Error: configuration validation failed:
+  - JWT_SECRET is required
+  - AI_KEY_ENCRYPTION_KEY is required
+```
+
+## Environment-Specific Overrides
+
+```bash
+# Base configuration
+export DATABASE_URL=postgresql://localhost:5432/brokle
+
+# Override for testing
+DATABASE_URL=postgresql://localhost:5432/brokle_test ./brokle server
+```
+
+## Secrets Management
+
+### Kubernetes Secrets
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: brokle-secrets
+type: Opaque
+stringData:
+  jwt-secret: "your-jwt-secret"
+  encryption-key: "your-encryption-key"
+  database-url: "postgresql://user:pass@host:5432/db"
+```
+
+### AWS Secrets Manager
+
+```bash
+# Fetch from Secrets Manager
+JWT_SECRET=$(aws secretsmanager get-secret-value --secret-id brokle/jwt-secret --query SecretString --output text)
+```
+
+### HashiCorp Vault
+
+```bash
+# Fetch from Vault
+JWT_SECRET=$(vault kv get -field=jwt-secret secret/brokle)
+```
+
+<Callout type="warning">
+  Never commit secrets to version control. Use environment variables, secrets managers, or encrypted configuration files.
+</Callout>
+
+## Next Steps
+
+- [Docker](/docs/self-hosting/docker) - Docker deployment
+- [Kubernetes](/docs/self-hosting/kubernetes) - Kubernetes deployment
+- [Security](/docs/security) - Security best practices

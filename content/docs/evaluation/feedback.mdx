@@ -1,6 +1,573 @@
 ---
 title: Feedback
-description: Collecting user feedback
+description: Collect and analyze user feedback on AI responses to measure satisfaction and identify improvement opportunities
 ---
 
-Capture and analyze user feedback on your AI responses.
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+import { Steps, Step } from "fumadocs-ui/components/steps";
+
+# Feedback
+
+User feedback captures real-world reactions to your AI outputs. Unlike automated scores, feedback reflects actual user satisfaction and helps identify issues that algorithms might miss.
+
+## Feedback Types
+
+| Type | Values | Use Case |
+|------|--------|----------|
+| **Binary** | 👍 / 👎 (1 / -1) | Quick satisfaction signal |
+| **Rating** | 1-5 stars | Detailed quality assessment |
+| **Categorical** | Labels | Issue classification |
+| **Text** | Free-form | Detailed user comments |
+
+## Quick Start
+
+<Steps>
+  <Step>
+    ### Initialize the Client
+
+    <Tabs>
+      <Tab value="python" label="Python">
+        ```python
+        from brokle import Brokle
+
+        client = Brokle(api_key="bk_...")
+        ```
+      </Tab>
+      <Tab value="javascript" label="JavaScript">
+        ```javascript
+        import { Brokle } from 'brokle';
+
+        const client = new Brokle({ apiKey: 'bk_...' });
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step>
+    ### Capture User Feedback
+
+    <Tabs>
+      <Tab value="python" label="Python">
+        ```python
+        # Record thumbs up
+        client.feedback(
+            trace_id="trace_abc123",
+            score=1,  # 1 = positive, -1 = negative
+            comment="User clicked thumbs up"
+        )
+        ```
+      </Tab>
+      <Tab value="javascript" label="JavaScript">
+        ```javascript
+        // Record thumbs up
+        await client.feedback({
+          traceId: 'trace_abc123',
+          score: 1,  // 1 = positive, -1 = negative
+          comment: 'User clicked thumbs up'
+        });
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step>
+    ### View in Dashboard
+
+    Navigate to **Traces** → Select a trace → **Feedback** tab to see user reactions.
+  </Step>
+</Steps>
+
+## Recording Feedback
+
+### Binary Feedback (Thumbs Up/Down)
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    # Positive feedback
+    client.feedback(
+        trace_id="trace_123",
+        score=1,
+        user_id="user_456"
+    )
+
+    # Negative feedback
+    client.feedback(
+        trace_id="trace_123",
+        score=-1,
+        user_id="user_456",
+        comment="The answer was incorrect"
+    )
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    // Positive feedback
+    await client.feedback({
+      traceId: 'trace_123',
+      score: 1,
+      userId: 'user_456'
+    });
+
+    // Negative feedback
+    await client.feedback({
+      traceId: 'trace_123',
+      score: -1,
+      userId: 'user_456',
+      comment: 'The answer was incorrect'
+    });
+    ```
+  </Tab>
+</Tabs>
+
+### Star Ratings
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    # 5-star rating (normalize to -1 to 1 scale)
+    def stars_to_score(stars: int) -> float:
+        return (stars - 3) / 2  # 1→-1, 3→0, 5→1
+
+    client.feedback(
+        trace_id="trace_123",
+        score=stars_to_score(4),  # 4 stars = 0.5
+        user_id="user_456",
+        metadata={"rating_type": "stars", "raw_value": 4}
+    )
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    // 5-star rating (normalize to -1 to 1 scale)
+    function starsToScore(stars) {
+      return (stars - 3) / 2;  // 1→-1, 3→0, 5→1
+    }
+
+    await client.feedback({
+      traceId: 'trace_123',
+      score: starsToScore(4),  // 4 stars = 0.5
+      userId: 'user_456',
+      metadata: { ratingType: 'stars', rawValue: 4 }
+    });
+    ```
+  </Tab>
+</Tabs>
+
+### Categorical Feedback
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    # Capture issue category
+    client.feedback(
+        trace_id="trace_123",
+        score=-1,
+        user_id="user_456",
+        category="inaccurate",
+        comment="The dates mentioned are wrong"
+    )
+
+    # Common categories
+    FEEDBACK_CATEGORIES = [
+        "inaccurate",
+        "irrelevant",
+        "incomplete",
+        "too_long",
+        "too_short",
+        "offensive",
+        "outdated",
+        "other"
+    ]
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    // Capture issue category
+    await client.feedback({
+      traceId: 'trace_123',
+      score: -1,
+      userId: 'user_456',
+      category: 'inaccurate',
+      comment: 'The dates mentioned are wrong'
+    });
+
+    // Common categories
+    const FEEDBACK_CATEGORIES = [
+      'inaccurate',
+      'irrelevant',
+      'incomplete',
+      'too_long',
+      'too_short',
+      'offensive',
+      'outdated',
+      'other'
+    ];
+    ```
+  </Tab>
+</Tabs>
+
+## Feedback Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `trace_id` | string | Yes | The trace being rated |
+| `score` | number | Yes | Feedback score (-1 to 1) |
+| `user_id` | string | No | User providing feedback |
+| `comment` | string | No | User's explanation |
+| `category` | string | No | Issue classification |
+| `metadata` | object | No | Additional context |
+
+## Frontend Integration
+
+### React Component
+
+```tsx
+import { useState } from 'react';
+import { Brokle } from 'brokle';
+
+const client = new Brokle({ apiKey: 'bk_...' });
+
+function FeedbackButtons({ traceId, userId }) {
+  const [submitted, setSubmitted] = useState(false);
+
+  const submitFeedback = async (score: 1 | -1) => {
+    await client.feedback({
+      traceId,
+      score,
+      userId
+    });
+    setSubmitted(true);
+  };
+
+  if (submitted) {
+    return <span>Thanks for your feedback!</span>;
+  }
+
+  return (
+    <div className="flex gap-2">
+      <button onClick={() => submitFeedback(1)}>👍</button>
+      <button onClick={() => submitFeedback(-1)}>👎</button>
+    </div>
+  );
+}
+```
+
+### With Comment Modal
+
+```tsx
+function FeedbackWithComment({ traceId, userId }) {
+  const [showModal, setShowModal] = useState(false);
+  const [comment, setComment] = useState('');
+  const [category, setCategory] = useState('');
+
+  const submitNegativeFeedback = async () => {
+    await client.feedback({
+      traceId,
+      score: -1,
+      userId,
+      comment,
+      category
+    });
+    setShowModal(false);
+  };
+
+  return (
+    <>
+      <button onClick={() => submitFeedback(1)}>👍</button>
+      <button onClick={() => setShowModal(true)}>👎</button>
+
+      {showModal && (
+        <Modal onClose={() => setShowModal(false)}>
+          <select value={category} onChange={e => setCategory(e.target.value)}>
+            <option value="">What went wrong?</option>
+            <option value="inaccurate">Inaccurate information</option>
+            <option value="irrelevant">Not relevant to my question</option>
+            <option value="incomplete">Missing information</option>
+            <option value="other">Other</option>
+          </select>
+
+          <textarea
+            value={comment}
+            onChange={e => setComment(e.target.value)}
+            placeholder="Tell us more (optional)"
+          />
+
+          <button onClick={submitNegativeFeedback}>Submit</button>
+        </Modal>
+      )}
+    </>
+  );
+}
+```
+
+## API Endpoint Integration
+
+For server-side feedback collection:
+
+```python
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from brokle import Brokle
+
+app = FastAPI()
+client = Brokle()
+
+class FeedbackRequest(BaseModel):
+    trace_id: str
+    score: int  # 1 or -1
+    comment: str | None = None
+    category: str | None = None
+
+@app.post("/api/feedback")
+async def submit_feedback(req: FeedbackRequest, user_id: str = Depends(get_user)):
+    try:
+        client.feedback(
+            trace_id=req.trace_id,
+            score=req.score,
+            user_id=user_id,
+            comment=req.comment,
+            category=req.category
+        )
+        return {"success": True}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+```
+
+## Querying Feedback
+
+### Via SDK
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    # Get feedback for a trace
+    feedback = client.get_feedback(trace_id="trace_123")
+
+    for item in feedback:
+        print(f"Score: {item.score}, Comment: {item.comment}")
+
+    # Get aggregated feedback stats
+    stats = client.get_feedback_stats(
+        project_id="proj_123",
+        start_time=datetime.now() - timedelta(days=7)
+    )
+
+    print(f"Positive: {stats.positive_count}")
+    print(f"Negative: {stats.negative_count}")
+    print(f"Satisfaction rate: {stats.satisfaction_rate:.1%}")
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    // Get feedback for a trace
+    const feedback = await client.getFeedback({ traceId: 'trace_123' });
+
+    feedback.forEach(item => {
+      console.log(`Score: ${item.score}, Comment: ${item.comment}`);
+    });
+
+    // Get aggregated feedback stats
+    const stats = await client.getFeedbackStats({
+      projectId: 'proj_123',
+      startTime: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    });
+
+    console.log(`Positive: ${stats.positiveCount}`);
+    console.log(`Negative: ${stats.negativeCount}`);
+    console.log(`Satisfaction rate: ${(stats.satisfactionRate * 100).toFixed(1)}%`);
+    ```
+  </Tab>
+</Tabs>
+
+### Via Dashboard
+
+1. Navigate to **Analytics** → **Feedback**
+2. View satisfaction trends over time
+3. Filter by category, user segment, or model
+4. Drill down into negative feedback patterns
+
+## Feedback Analysis
+
+### Satisfaction Trends
+
+Track satisfaction rate over time:
+
+```python
+from datetime import datetime, timedelta
+
+# Get daily satisfaction rates
+daily_stats = client.get_feedback_aggregations(
+    project_id="proj_123",
+    start_time=datetime.now() - timedelta(days=30),
+    group_by="day"
+)
+
+for day in daily_stats:
+    positive = day.positive_count
+    total = day.positive_count + day.negative_count
+    rate = positive / total if total > 0 else 0
+    print(f"{day.date}: {rate:.1%} ({total} ratings)")
+```
+
+### Category Analysis
+
+Identify common issues:
+
+```python
+# Get feedback by category
+category_stats = client.get_feedback_by_category(
+    project_id="proj_123",
+    start_time=datetime.now() - timedelta(days=7)
+)
+
+print("Top issues:")
+for cat in sorted(category_stats, key=lambda x: x.count, reverse=True):
+    print(f"  {cat.category}: {cat.count} complaints")
+```
+
+### Model Comparison
+
+Compare satisfaction across models:
+
+```python
+# Get feedback grouped by model
+model_stats = client.get_feedback_stats(
+    project_id="proj_123",
+    group_by="model"
+)
+
+for model in model_stats:
+    print(f"{model.name}: {model.satisfaction_rate:.1%}")
+```
+
+## Connecting Feedback to Improvement
+
+### Identify Problem Traces
+
+```python
+# Find traces with negative feedback
+problem_traces = client.list_traces(
+    project_id="proj_123",
+    filters={"feedback_score": {"lt": 0}},
+    limit=50
+)
+
+for trace in problem_traces:
+    print(f"Trace: {trace.id}")
+    print(f"Input: {trace.input[:100]}...")
+    print(f"Feedback: {trace.feedback[0].comment}")
+    print("---")
+```
+
+### A/B Testing
+
+Track feedback by experiment variant:
+
+```python
+# Tag traces with experiment variant
+with client.start_as_current_span(name="chat") as span:
+    span.update_trace(metadata={"experiment": "prompt_v2"})
+    response = llm.generate(prompt_v2)
+
+# Later: Compare feedback by variant
+variants = ["prompt_v1", "prompt_v2"]
+for variant in variants:
+    stats = client.get_feedback_stats(
+        project_id="proj_123",
+        filters={"metadata.experiment": variant}
+    )
+    print(f"{variant}: {stats.satisfaction_rate:.1%}")
+```
+
+## Best Practices
+
+### 1. Make Feedback Easy
+
+Position feedback buttons prominently:
+
+```tsx
+// Good: Always visible
+<div className="flex items-center gap-4">
+  <div className="ai-response">{response}</div>
+  <FeedbackButtons traceId={traceId} />
+</div>
+
+// Bad: Hidden in dropdown
+<DropdownMenu>
+  <MenuItem>Rate this response</MenuItem>
+</DropdownMenu>
+```
+
+### 2. Capture Context with Negative Feedback
+
+```python
+if score < 0:
+    # Prompt for more information
+    client.feedback(
+        trace_id=trace_id,
+        score=score,
+        category=selected_category,
+        comment=user_comment,
+        metadata={
+            "input_length": len(input),
+            "output_length": len(output),
+            "model": model_name
+        }
+    )
+```
+
+### 3. Track Feedback Rate
+
+Monitor what percentage of responses get feedback:
+
+```python
+total_traces = client.count_traces(project_id, time_range)
+traces_with_feedback = client.count_traces(
+    project_id,
+    time_range,
+    filters={"has_feedback": True}
+)
+
+feedback_rate = traces_with_feedback / total_traces
+print(f"Feedback rate: {feedback_rate:.1%}")
+```
+
+<Callout type="info">
+  A typical feedback rate is 1-5% of all responses. If lower, consider making feedback buttons more prominent.
+</Callout>
+
+### 4. Act on Feedback
+
+Set up processes to review negative feedback:
+
+1. **Daily**: Review all negative feedback
+2. **Weekly**: Analyze category trends
+3. **Monthly**: Update prompts/models based on patterns
+
+## Troubleshooting
+
+### Feedback Not Appearing
+
+1. Verify `trace_id` exists and belongs to your project
+2. Check API key has write permissions
+3. Ensure `client.flush()` was called (for batched operations)
+
+### Low Feedback Rate
+
+- Make feedback buttons more visible
+- Add feedback prompts after extended conversations
+- Consider incentives for providing feedback
+
+### Biased Feedback
+
+- Users with strong opinions are more likely to provide feedback
+- Balance with automated evaluation scores
+- Use random sampling for unbiased analysis
+
+## Next Steps
+
+- [Scores](/docs/evaluation/scores) - Add programmatic quality scores
+- [Built-in Evaluators](/docs/evaluation/built-in-evaluators) - Automated quality assessment
+- [Analytics](/docs/concepts/cost-analytics) - Understand usage patterns

@@ -1,6 +1,678 @@
 ---
 title: JavaScript SDK
-description: JavaScript SDK docs
+description: Complete reference for the Brokle JavaScript SDK - TypeScript-first with full async support
 ---
 
-JavaScript SDK for Brokle.
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+
+# JavaScript SDK
+
+The Brokle JavaScript SDK provides comprehensive AI observability for Node.js applications, with full TypeScript support and modern ESM/CommonJS compatibility.
+
+## Installation
+
+<Tabs>
+  <Tab value="npm" label="npm">
+    ```bash
+    npm install brokle
+    ```
+  </Tab>
+  <Tab value="pnpm" label="pnpm">
+    ```bash
+    pnpm add brokle
+    ```
+  </Tab>
+  <Tab value="yarn" label="yarn">
+    ```bash
+    yarn add brokle
+    ```
+  </Tab>
+</Tabs>
+
+**Requirements:**
+- Node.js 18+
+- TypeScript 4.7+ (optional, for type definitions)
+
+## Quick Start
+
+```javascript
+import { Brokle } from 'brokle';
+import { wrapOpenAI } from 'brokle-openai';
+import OpenAI from 'openai';
+
+// Initialize client
+const client = new Brokle({ apiKey: 'bk_...' });
+
+// Wrap OpenAI for automatic tracing
+const openai = wrapOpenAI(new OpenAI(), { brokle: client });
+
+// All LLM calls are now traced
+const response = await openai.chat.completions.create({
+  model: 'gpt-4',
+  messages: [{ role: 'user', content: 'Hello!' }]
+});
+
+console.log(response.choices[0].message.content);
+
+// Ensure traces are sent
+await client.shutdown();
+```
+
+## Client Initialization
+
+### Brokle Client
+
+```typescript
+import { Brokle } from 'brokle';
+
+const client = new Brokle({
+  apiKey: 'bk_...',              // Required: Your API key
+  baseUrl: undefined,             // Optional: Custom API URL
+  environment: 'production',      // Optional: Environment name
+  sampleRate: 1.0,               // Optional: Sampling rate (0.0-1.0)
+  flushAt: 100,                  // Optional: Batch size before flush
+  flushInterval: 5000,           // Optional: Auto-flush interval (ms)
+  debug: false,                  // Optional: Enable debug logging
+  compression: 'gzip',           // Optional: Payload compression
+});
+```
+
+### Environment Variables
+
+The client reads from environment variables if not provided:
+
+```bash
+export BROKLE_API_KEY=bk_...
+export BROKLE_BASE_URL=https://api.brokle.ai
+export BROKLE_ENVIRONMENT=production
+export BROKLE_SAMPLE_RATE=1.0
+export BROKLE_DEBUG=false
+```
+
+```typescript
+// No arguments needed if env vars are set
+const client = new Brokle({});
+```
+
+## Tracing
+
+### Starting Spans
+
+```typescript
+const span = client.startSpan({
+  name: 'operation',
+  input: { query: userQuery },
+  attributes: {
+    userId: user.id,
+    feature: 'search'
+  }
+});
+
+try {
+  const result = await performOperation(userQuery);
+  span.end({ output: result });
+} catch (error) {
+  span.end({ error: error.message });
+  throw error;
+}
+```
+
+### Using observe Wrapper
+
+```typescript
+import { observe } from 'brokle';
+
+const processQuery = observe(
+  { name: 'process_query' },
+  async (query: string) => {
+    const result = await search(query);
+    return { query, results: result };
+  }
+);
+
+// Each call creates a trace
+const result = await processQuery('find documents');
+```
+
+### Callback Pattern
+
+```typescript
+await client.trace('operation', async (span) => {
+  span.setAttributes({ userId: user.id });
+
+  const result = await doWork();
+
+  return result; // Automatically set as output
+});
+```
+
+## Span Types
+
+### General Spans
+
+```typescript
+const span = client.startSpan({
+  name: 'operation',
+  type: 'span', // default
+  attributes: { key: 'value' }
+});
+
+const result = await doWork();
+span.end({ output: result });
+```
+
+### Generation Spans (LLM Calls)
+
+```typescript
+const gen = client.startGeneration({
+  name: 'chat_completion',
+  model: 'gpt-4',
+  input: { messages }
+});
+
+const response = await callLLM(messages);
+
+gen.end({
+  output: response.content,
+  usage: {
+    promptTokens: response.usage.prompt_tokens,
+    completionTokens: response.usage.completion_tokens
+  },
+  attributes: {
+    temperature: 0.7,
+    maxTokens: 500
+  }
+});
+```
+
+### Retrieval Spans
+
+```typescript
+const span = client.startSpan({
+  name: 'vector_search',
+  type: 'retrieval',
+  attributes: {
+    index: 'documents',
+    topK: 5
+  }
+});
+
+const results = await vectorStore.search(query, 5);
+
+span.end({
+  output: {
+    count: results.length,
+    scores: results.map(r => r.score)
+  }
+});
+```
+
+### Tool Spans
+
+```typescript
+const span = client.startSpan({
+  name: 'calculator',
+  type: 'tool',
+  input: { expression: '2 + 2' },
+  attributes: { toolName: 'calculator' }
+});
+
+const result = evaluate('2 + 2');
+
+span.end({ output: { result } });
+```
+
+## Nested Spans
+
+Create hierarchical traces:
+
+```typescript
+const parent = client.startSpan({
+  name: 'pipeline',
+  attributes: {
+    userId: 'user_123',
+    sessionId: 'session_456'
+  }
+});
+
+// Child span 1
+const step1 = client.startSpan({
+  name: 'step_1',
+  parentSpanId: parent.spanId
+});
+const result1 = await stepOne();
+step1.end({ output: result1 });
+
+// Child span 2
+const step2 = client.startSpan({
+  name: 'step_2',
+  parentSpanId: parent.spanId
+});
+const result2 = await stepTwo(result1);
+step2.end({ output: result2 });
+
+parent.end({ output: result2 });
+```
+
+## Span Methods
+
+### setAttributes
+
+Add key-value pairs:
+
+```typescript
+span.setAttributes({
+  key: 'value',
+  count: 42,
+  isPremium: true
+});
+```
+
+### end
+
+End the span with optional data:
+
+```typescript
+span.end({
+  output: { result: '...' },       // Output data
+  error: 'Error message',          // Error description
+  attributes: { key: 'value' },    // Additional attributes
+  usage: {                         // Token usage (for generations)
+    promptTokens: 100,
+    completionTokens: 50
+  }
+});
+```
+
+## LLM Integrations
+
+### OpenAI
+
+```typescript
+import { Brokle } from 'brokle';
+import { wrapOpenAI } from 'brokle-openai';
+import OpenAI from 'openai';
+
+const client = new Brokle({ apiKey: 'bk_...' });
+const openai = wrapOpenAI(new OpenAI(), { brokle: client });
+
+// Chat completions
+const response = await openai.chat.completions.create({
+  model: 'gpt-4',
+  messages: [{ role: 'user', content: 'Hello!' }]
+});
+
+// Streaming
+const stream = await openai.chat.completions.create({
+  model: 'gpt-4',
+  messages: [{ role: 'user', content: 'Hello!' }],
+  stream: true
+});
+
+for await (const chunk of stream) {
+  process.stdout.write(chunk.choices[0]?.delta?.content || '');
+}
+
+// Embeddings
+const embeddings = await openai.embeddings.create({
+  model: 'text-embedding-3-small',
+  input: ['Hello world']
+});
+```
+
+### Anthropic
+
+```typescript
+import { Brokle } from 'brokle';
+import { wrapAnthropic } from 'brokle-anthropic';
+import Anthropic from '@anthropic-ai/sdk';
+
+const client = new Brokle({ apiKey: 'bk_...' });
+const claude = wrapAnthropic(new Anthropic(), { brokle: client });
+
+const response = await claude.messages.create({
+  model: 'claude-3-sonnet-20240229',
+  max_tokens: 1024,
+  messages: [{ role: 'user', content: 'Hello!' }]
+});
+```
+
+## Prompts
+
+### Fetching Prompts
+
+```typescript
+// Get a prompt by name
+const prompt = await client.promptManager.get('customer_support');
+
+// Get a specific version
+const prompt = await client.promptManager.get('customer_support', {
+  label: 'production'
+});
+
+const prompt = await client.promptManager.get('customer_support', {
+  version: 3
+});
+```
+
+### Using Prompts
+
+```typescript
+// Convert to OpenAI format
+const messages = prompt.toOpenAIMessages({
+  customerName: 'John',
+  issue: 'billing question'
+});
+
+const response = await openai.chat.completions.create({
+  model: prompt.model || 'gpt-4',
+  messages
+});
+```
+
+## Lifecycle Management
+
+### Flushing
+
+Force send pending traces:
+
+```typescript
+// Async flush
+await client.flush();
+
+// With timeout
+await client.flush({ timeout: 10000 });
+```
+
+### Shutdown
+
+Graceful shutdown:
+
+```typescript
+// Flush and close connections
+await client.shutdown();
+```
+
+### Process Exit Handling
+
+```typescript
+// Handle process exit
+process.on('SIGTERM', async () => {
+  await client.shutdown();
+  process.exit(0);
+});
+
+process.on('beforeExit', async () => {
+  await client.shutdown();
+});
+```
+
+### Integration with Web Frameworks
+
+**Express:**
+
+```typescript
+import express from 'express';
+import { Brokle } from 'brokle';
+
+const client = new Brokle({ apiKey: 'bk_...' });
+const app = express();
+
+// Middleware for tracing
+app.use(async (req, res, next) => {
+  const span = client.startSpan({
+    name: `${req.method} ${req.path}`,
+    attributes: {
+      method: req.method,
+      path: req.path,
+      userAgent: req.headers['user-agent']
+    }
+  });
+
+  res.on('finish', () => {
+    span.end({
+      attributes: { statusCode: res.statusCode }
+    });
+  });
+
+  next();
+});
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  await client.shutdown();
+  process.exit(0);
+});
+```
+
+**Next.js:**
+
+```typescript
+// lib/brokle.ts
+import { Brokle } from 'brokle';
+
+export const brokle = new Brokle({ apiKey: process.env.BROKLE_API_KEY });
+
+// In API routes
+import { brokle } from '@/lib/brokle';
+
+export async function POST(req: Request) {
+  const span = brokle.startSpan({ name: 'api/chat' });
+
+  try {
+    const result = await handleChat(req);
+    span.end({ output: result });
+    return Response.json(result);
+  } catch (error) {
+    span.end({ error: error.message });
+    throw error;
+  }
+}
+```
+
+**Fastify:**
+
+```typescript
+import Fastify from 'fastify';
+import { Brokle } from 'brokle';
+
+const client = new Brokle({ apiKey: 'bk_...' });
+const app = Fastify();
+
+app.addHook('onRequest', (req, reply, done) => {
+  req.span = client.startSpan({
+    name: `${req.method} ${req.url}`,
+    attributes: { method: req.method, url: req.url }
+  });
+  done();
+});
+
+app.addHook('onResponse', (req, reply, done) => {
+  req.span?.end({ attributes: { statusCode: reply.statusCode } });
+  done();
+});
+
+app.addHook('onClose', async () => {
+  await client.shutdown();
+});
+```
+
+## TypeScript Support
+
+The SDK is written in TypeScript with full type definitions:
+
+```typescript
+import { Brokle, Span, SpanOptions, GenerationOptions } from 'brokle';
+
+interface MyTraceInput {
+  query: string;
+  userId: string;
+}
+
+interface MyTraceOutput {
+  results: string[];
+  count: number;
+}
+
+const span = client.startSpan<MyTraceInput, MyTraceOutput>({
+  name: 'search',
+  input: { query: 'test', userId: 'user_123' }
+});
+
+// Type-safe output
+span.end({
+  output: {
+    results: ['result1', 'result2'],
+    count: 2
+  }
+});
+```
+
+## Error Handling
+
+### Capturing Errors
+
+```typescript
+const span = client.startSpan({ name: 'operation' });
+
+try {
+  const result = await riskyOperation();
+  span.end({ output: result });
+} catch (error) {
+  if (error instanceof ValidationError) {
+    span.end({
+      error: error.message,
+      attributes: { errorType: 'validation' }
+    });
+  } else {
+    span.end({ error: `Unexpected: ${error.message}` });
+  }
+  throw error;
+}
+```
+
+### SDK Errors
+
+The SDK is designed to never break your application:
+
+```typescript
+// SDK errors are logged but don't propagate
+const client = new Brokle({ apiKey: 'invalid_key' });
+
+// This still works - SDK failures are silent
+const span = client.startSpan({ name: 'operation' });
+const result = await doWork(); // Your code runs normally
+span.end({ output: result });
+```
+
+## Configuration Reference
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `apiKey` | string | Required | Brokle API key |
+| `baseUrl` | string | `https://api.brokle.ai` | API endpoint |
+| `environment` | string | `"default"` | Environment name |
+| `sampleRate` | number | `1.0` | Sampling rate (0.0-1.0) |
+| `flushAt` | number | `100` | Batch size before flush |
+| `flushInterval` | number | `5000` | Auto-flush interval (ms) |
+| `debug` | boolean | `false` | Enable debug logging |
+| `compression` | string | `"gzip"` | Payload compression |
+
+## Best Practices
+
+### 1. Initialize Once
+
+```typescript
+// Good - module level
+const client = new Brokle({ apiKey: process.env.BROKLE_API_KEY });
+
+export async function process() {
+  const span = client.startSpan({ name: 'op' });
+  // ...
+}
+
+// Bad - creates new client each call
+export async function process() {
+  const client = new Brokle({ apiKey: '...' }); // Don't do this
+}
+```
+
+### 2. Always Handle Cleanup
+
+```typescript
+// Good - proper cleanup
+const span = client.startSpan({ name: 'op' });
+try {
+  const result = await doWork();
+  span.end({ output: result });
+} catch (error) {
+  span.end({ error: error.message });
+  throw error;
+}
+
+// Bad - span might not end on error
+const span = client.startSpan({ name: 'op' });
+const result = await doWork();
+span.end({ output: result });
+```
+
+### 3. Add Meaningful Context
+
+```typescript
+const span = client.startSpan({
+  name: 'process_order',
+  attributes: {
+    orderId: order.id,
+    customerTier: customer.tier,
+    userId: user.id
+  }
+});
+```
+
+### 4. Handle Shutdown
+
+```typescript
+process.on('SIGTERM', async () => {
+  await client.shutdown();
+  process.exit(0);
+});
+```
+
+<Callout type="warning">
+  Always call `await client.shutdown()` before your process exits to ensure all traces are sent.
+</Callout>
+
+## Troubleshooting
+
+### Traces Not Appearing
+
+1. Check API key: `console.log(process.env.BROKLE_API_KEY)`
+2. Ensure shutdown: Add `await client.shutdown()` before exit
+3. Check debug mode: `new Brokle({ debug: true })`
+
+### High Memory Usage
+
+Reduce batch size and flush interval:
+
+```typescript
+const client = new Brokle({
+  flushAt: 50,
+  flushInterval: 2000
+});
+```
+
+### Slow Performance
+
+Enable sampling for high-throughput:
+
+```typescript
+const client = new Brokle({ sampleRate: 0.1 }); // 10% sampling
+```
+
+## Next Steps
+
+- [Python SDK →](/docs/sdk/python)
+- [OpenAI Integration →](/docs/integrations/openai)
+- [Tracing Guide →](/docs/tracing)
+- [API Reference →](/docs/api)

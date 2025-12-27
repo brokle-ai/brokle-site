@@ -1,0 +1,12 @@
+{
+  "title": "Cookbook",
+  "pages": [
+    "index",
+    "---Tutorials---",
+    "tutorials",
+    "---Recipes---",
+    "tracing-recipes",
+    "evaluation-recipes",
+    "integration-recipes"
+  ]
+}

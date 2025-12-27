@@ -1,0 +1,575 @@
+---
+title: Manual Tracing
+description: Full control over tracing with manual span creation and instrumentation
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+
+# Manual Tracing
+
+Manual tracing gives you complete control over what gets traced. Use it for custom operations, non-LLM code, or when you need fine-grained control.
+
+## When to Use Manual Tracing
+
+- **Custom business logic**: Data processing, validation, transformations
+- **Non-LLM operations**: Database queries, API calls, file operations
+- **Complex pipelines**: Multi-step workflows with custom structure
+- **Fine-grained control**: Specific timing, attributes, or hierarchy
+
+## Basic Manual Tracing
+
+### Context Manager Pattern (Recommended)
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    from brokle import Brokle
+
+    client = Brokle(api_key="bk_...")
+
+    with client.start_as_current_span(name="process_document") as span:
+        # Your code here
+        result = analyze_document(document)
+
+        # Update span with output
+        span.update(output=result)
+
+    client.flush()
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    import { Brokle } from 'brokle';
+
+    const client = new Brokle({ apiKey: 'bk_...' });
+
+    const span = client.startSpan({ name: 'process_document' });
+
+    try {
+      const result = await analyzeDocument(document);
+      span.end({ output: result });
+    } catch (error) {
+      span.end({ error: error.message });
+      throw error;
+    }
+
+    await client.shutdown();
+    ```
+  </Tab>
+</Tabs>
+
+### Decorator Pattern (Python)
+
+```python
+from brokle import observe
+
+@observe(name="analyze_sentiment")
+def analyze_sentiment(text: str) -> dict:
+    # Function is automatically traced
+    score = sentiment_model.predict(text)
+    return {"text": text, "score": score}
+
+# Each call creates a trace
+result = analyze_sentiment("Great product!")
+```
+
+### Function Pattern (JavaScript)
+
+```javascript
+import { observe } from 'brokle';
+
+const analyzeSentiment = observe(
+  { name: 'analyze_sentiment' },
+  async (text) => {
+    const score = await sentimentModel.predict(text);
+    return { text, score };
+  }
+);
+
+const result = await analyzeSentiment('Great product!');
+```
+
+## Setting Span Input and Output
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    with client.start_as_current_span(name="transform_data") as span:
+        # Set input explicitly
+        span.update(input={"raw_data": data, "config": config})
+
+        # Perform operation
+        result = transform(data, config)
+
+        # Set output
+        span.update(output=result)
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    const span = client.startSpan({
+      name: 'transform_data',
+      input: { rawData: data, config }
+    });
+
+    const result = await transform(data, config);
+
+    span.end({ output: result });
+    ```
+  </Tab>
+</Tabs>
+
+## Adding Attributes
+
+Add custom key-value pairs for filtering and analysis:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    with client.start_as_current_span(name="process_order") as span:
+        # Set individual attributes
+        span.set_attribute("order_id", order.id)
+        span.set_attribute("customer_tier", customer.tier)
+        span.set_attribute("item_count", len(order.items))
+        span.set_attribute("total_value", order.total)
+
+        # Or batch set via metadata
+        span.update(metadata={
+            "payment_method": order.payment_method,
+            "shipping_speed": order.shipping_speed,
+            "has_discount": order.discount is not None
+        })
+
+        result = process_order(order)
+        span.update(output=result)
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    const span = client.startSpan({
+      name: 'process_order',
+      attributes: {
+        orderId: order.id,
+        customerTier: customer.tier,
+        itemCount: order.items.length,
+        totalValue: order.total
+      }
+    });
+
+    // Add more attributes later
+    span.setAttributes({
+      paymentMethod: order.paymentMethod,
+      shippingSpeed: order.shippingSpeed,
+      hasDiscount: order.discount !== null
+    });
+
+    const result = await processOrder(order);
+    span.end({ output: result });
+    ```
+  </Tab>
+</Tabs>
+
+## Nested Spans
+
+Create hierarchical traces with parent-child relationships:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    with client.start_as_current_span(name="checkout_flow") as parent:
+        parent.set_attribute("cart_id", cart.id)
+
+        # Child span 1: Validate cart
+        with client.start_as_current_span(name="validate_cart") as validate_span:
+            validation_result = validate_cart(cart)
+            validate_span.update(output=validation_result)
+
+            if not validation_result.valid:
+                validate_span.update(error="Cart validation failed")
+                return
+
+        # Child span 2: Process payment
+        with client.start_as_current_span(name="process_payment") as payment_span:
+            payment_span.set_attribute("payment_method", cart.payment_method)
+            payment_result = charge_customer(cart.total)
+            payment_span.update(output={"transaction_id": payment_result.id})
+
+        # Child span 3: Create order
+        with client.start_as_current_span(name="create_order") as order_span:
+            order = create_order(cart, payment_result)
+            order_span.update(output={"order_id": order.id})
+
+        parent.update(output={"order_id": order.id, "status": "completed"})
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    const parent = client.startSpan({
+      name: 'checkout_flow',
+      attributes: { cartId: cart.id }
+    });
+
+    // Child span 1: Validate cart
+    const validateSpan = client.startSpan({
+      name: 'validate_cart',
+      parentSpanId: parent.spanId
+    });
+    const validationResult = await validateCart(cart);
+    validateSpan.end({ output: validationResult });
+
+    if (!validationResult.valid) {
+      parent.end({ error: 'Cart validation failed' });
+      return;
+    }
+
+    // Child span 2: Process payment
+    const paymentSpan = client.startSpan({
+      name: 'process_payment',
+      parentSpanId: parent.spanId,
+      attributes: { paymentMethod: cart.paymentMethod }
+    });
+    const paymentResult = await chargeCustomer(cart.total);
+    paymentSpan.end({ output: { transactionId: paymentResult.id } });
+
+    // Child span 3: Create order
+    const orderSpan = client.startSpan({
+      name: 'create_order',
+      parentSpanId: parent.spanId
+    });
+    const order = await createOrder(cart, paymentResult);
+    orderSpan.end({ output: { orderId: order.id } });
+
+    parent.end({ output: { orderId: order.id, status: 'completed' } });
+    ```
+  </Tab>
+</Tabs>
+
+### Resulting Trace Structure
+
+```
+Trace: checkout_flow (1,850ms)
+├── cart_id: cart_123
+├── output: {order_id: "ord_456", status: "completed"}
+│
+├── validate_cart (45ms)
+│   └── output: {valid: true, items: 3}
+│
+├── process_payment (1,200ms)
+│   ├── payment_method: credit_card
+│   └── output: {transaction_id: "txn_789"}
+│
+└── create_order (605ms)
+    └── output: {order_id: "ord_456"}
+```
+
+## Generation Spans
+
+For LLM calls without using wrappers:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    with client.start_as_current_generation(
+        name="summarize_document",
+        model="gpt-4",
+        input={"text": document_text}
+    ) as gen:
+        response = openai.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "Summarize the following document."},
+                {"role": "user", "content": document_text}
+            ]
+        )
+
+        gen.update(
+            output=response.choices[0].message.content,
+            usage={
+                "prompt_tokens": response.usage.prompt_tokens,
+                "completion_tokens": response.usage.completion_tokens
+            }
+        )
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    const gen = client.startGeneration({
+      name: 'summarize_document',
+      model: 'gpt-4',
+      input: { text: documentText }
+    });
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        { role: 'system', content: 'Summarize the following document.' },
+        { role: 'user', content: documentText }
+      ]
+    });
+
+    gen.end({
+      output: response.choices[0].message.content,
+      usage: {
+        promptTokens: response.usage.prompt_tokens,
+        completionTokens: response.usage.completion_tokens
+      }
+    });
+    ```
+  </Tab>
+</Tabs>
+
+## Retrieval Spans
+
+For vector search and document retrieval:
+
+```python
+with client.start_as_current_span(
+    name="semantic_search",
+    as_type="retrieval"
+) as span:
+    span.set_attribute("index", "product_catalog")
+    span.set_attribute("top_k", 10)
+    span.update(input={"query": user_query})
+
+    # Perform search
+    results = vector_db.search(
+        query=user_query,
+        top_k=10
+    )
+
+    span.update(
+        output={
+            "count": len(results),
+            "scores": [r.score for r in results],
+            "document_ids": [r.id for r in results]
+        }
+    )
+```
+
+## Tool Spans
+
+For function/tool execution:
+
+```python
+with client.start_as_current_span(
+    name="calculator",
+    as_type="tool"
+) as span:
+    span.set_attribute("tool_name", "calculator")
+    span.update(input={"expression": expression})
+
+    result = evaluate_expression(expression)
+
+    span.update(output={"result": result})
+```
+
+## Error Handling
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    with client.start_as_current_span(name="api_call") as span:
+        try:
+            result = external_api.call(params)
+            span.update(output=result)
+        except TimeoutError as e:
+            span.update(
+                error=f"Timeout after {timeout}s",
+                metadata={"error_type": "timeout", "retryable": True}
+            )
+            raise
+        except AuthenticationError as e:
+            span.update(
+                error="Authentication failed",
+                metadata={"error_type": "auth", "retryable": False}
+            )
+            raise
+        except Exception as e:
+            span.update(error=str(e))
+            raise
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    const span = client.startSpan({ name: 'api_call' });
+
+    try {
+      const result = await externalApi.call(params);
+      span.end({ output: result });
+    } catch (error) {
+      if (error instanceof TimeoutError) {
+        span.end({
+          error: `Timeout after ${timeout}s`,
+          attributes: { errorType: 'timeout', retryable: true }
+        });
+      } else if (error instanceof AuthenticationError) {
+        span.end({
+          error: 'Authentication failed',
+          attributes: { errorType: 'auth', retryable: false }
+        });
+      } else {
+        span.end({ error: error.message });
+      }
+      throw error;
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Async Operations
+
+### Python
+
+```python
+from brokle import AsyncBrokle
+import asyncio
+
+client = AsyncBrokle(api_key="bk_...")
+
+async def process_items(items):
+    async with client.start_as_current_span(name="batch_process") as span:
+        span.set_attribute("batch_size", len(items))
+
+        # Process in parallel
+        tasks = [process_single(item) for item in items]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        successes = [r for r in results if not isinstance(r, Exception)]
+        failures = [r for r in results if isinstance(r, Exception)]
+
+        span.update(output={
+            "processed": len(successes),
+            "failed": len(failures)
+        })
+
+        return successes
+
+asyncio.run(process_items(items))
+```
+
+### JavaScript
+
+```javascript
+async function processItems(items) {
+  const span = client.startSpan({
+    name: 'batch_process',
+    attributes: { batchSize: items.length }
+  });
+
+  try {
+    const results = await Promise.allSettled(
+      items.map(item => processSingle(item))
+    );
+
+    const successes = results.filter(r => r.status === 'fulfilled');
+    const failures = results.filter(r => r.status === 'rejected');
+
+    span.end({
+      output: {
+        processed: successes.length,
+        failed: failures.length
+      }
+    });
+
+    return successes.map(r => r.value);
+  } catch (error) {
+    span.end({ error: error.message });
+    throw error;
+  }
+}
+```
+
+## Combining Manual and Automatic Tracing
+
+Use manual spans to add context around automatic LLM traces:
+
+```python
+from brokle import Brokle, wrap_openai
+import openai
+
+client = Brokle(api_key="bk_...")
+openai_client = wrap_openai(openai.OpenAI(), brokle=client)
+
+with client.start_as_current_span(name="rag_pipeline") as parent:
+    parent.update_trace(user_id="user_123", session_id="session_456")
+
+    # Manual: Retrieve documents
+    with client.start_as_current_span(name="retrieve_context") as retrieve:
+        docs = search_documents(query)
+        retrieve.update(output={"doc_count": len(docs)})
+
+    # Automatic: LLM call traced automatically
+    response = openai_client.chat.completions.create(
+        model="gpt-4",
+        messages=build_prompt(query, docs)
+    )
+
+    # Manual: Post-process
+    with client.start_as_current_span(name="format_response") as format_span:
+        formatted = format_response(response.choices[0].message.content)
+        format_span.update(output=formatted)
+
+    parent.update(output=formatted)
+```
+
+## Best Practices
+
+### 1. Use Descriptive Names
+
+```python
+# Good
+with client.start_as_current_span(name="validate_payment_card"):
+    ...
+
+# Bad
+with client.start_as_current_span(name="step2"):
+    ...
+```
+
+### 2. Add Relevant Context
+
+```python
+with client.start_as_current_span(name="process_request") as span:
+    span.set_attribute("request_id", request.id)
+    span.set_attribute("user_type", user.type)
+    span.set_attribute("endpoint", request.path)
+```
+
+### 3. Keep Spans Focused
+
+```python
+# Good: Separate concerns
+with client.start_as_current_span(name="order_processing"):
+    with client.start_as_current_span(name="validate"):
+        validate()
+    with client.start_as_current_span(name="charge"):
+        charge()
+    with client.start_as_current_span(name="fulfill"):
+        fulfill()
+
+# Bad: Everything in one span
+with client.start_as_current_span(name="do_everything"):
+    validate()
+    charge()
+    fulfill()
+```
+
+### 4. Always Handle Errors
+
+```python
+with client.start_as_current_span(name="operation") as span:
+    try:
+        result = do_work()
+        span.update(output=result)
+    except Exception as e:
+        span.update(error=str(e))
+        raise  # Re-raise after recording
+```
+
+## Next Steps
+
+- [Automatic Tracing](/docs/tracing/automatic) - Zero-code LLM tracing
+- [Trace Metadata](/docs/tracing/metadata) - Add user and session context
+- [Working with Spans](/docs/tracing/spans) - Advanced span patterns
+- [Python SDK](/docs/sdk/python) - Full API reference

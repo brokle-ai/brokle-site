@@ -1,0 +1,512 @@
+---
+title: Response Quality
+description: Measure response quality across multiple dimensions
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+
+# Response Quality
+
+Measure LLM response quality across multiple dimensions for comprehensive evaluation.
+
+## Problem
+
+A single quality score doesn't capture all aspects of response quality:
+- Is the answer accurate and correct?
+- Is it helpful for the user's actual need?
+- Is it clear and well-structured?
+- Is it concise or unnecessarily verbose?
+- Is the tone appropriate?
+
+## Solution
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    from brokle import Brokle
+    from brokle.evaluation import LLMJudge, evaluate
+    from dataclasses import dataclass
+    from typing import Optional
+
+    brokle = Brokle()
+
+    @dataclass
+    class QualityScores:
+        accuracy: float
+        helpfulness: float
+        clarity: float
+        conciseness: float
+        tone: float
+        overall: float
+        details: dict
+
+    # Define dimension-specific judges
+    judges = {
+        "accuracy": LLMJudge(
+            name="accuracy",
+            prompt="""Rate the factual accuracy of this response.
+
+Question: {input}
+Response: {output}
+Reference (if available): {reference}
+
+Consider:
+- Are facts correct?
+- Are any claims verifiable?
+- Are there any errors or misconceptions?
+
+Rate 0-1 where 1 is completely accurate.""",
+            model="gpt-4o"
+        ),
+
+        "helpfulness": LLMJudge(
+            name="helpfulness",
+            prompt="""Rate how helpful this response is for the user's need.
+
+User Query: {input}
+Response: {output}
+
+Consider:
+- Does it address the actual question?
+- Does it provide actionable information?
+- Would the user get what they need?
+
+Rate 0-1 where 1 is extremely helpful.""",
+            model="gpt-4o-mini"
+        ),
+
+        "clarity": LLMJudge(
+            name="clarity",
+            prompt="""Rate the clarity and structure of this response.
+
+Response: {output}
+
+Consider:
+- Is it well-organized?
+- Is the language clear and unambiguous?
+- Is it easy to follow?
+
+Rate 0-1 where 1 is crystal clear.""",
+            model="gpt-4o-mini"
+        ),
+
+        "conciseness": LLMJudge(
+            name="conciseness",
+            prompt="""Rate the conciseness of this response.
+
+Query: {input}
+Response: {output}
+
+Consider:
+- Is it appropriately detailed for the question?
+- Is there unnecessary repetition?
+- Could it be shorter without losing value?
+
+Rate 0-1 where 1 is optimally concise (not too short, not too long).""",
+            model="gpt-4o-mini"
+        ),
+
+        "tone": LLMJudge(
+            name="tone",
+            prompt="""Rate the appropriateness of the tone.
+
+Context: {context}
+Response: {output}
+
+Consider:
+- Is the tone professional and appropriate?
+- Does it match the expected context?
+- Is it respectful and neutral?
+
+Rate 0-1 where 1 is perfectly appropriate tone.""",
+            model="gpt-4o-mini"
+        )
+    }
+
+    def evaluate_quality(
+        query: str,
+        response: str,
+        reference: str = None,
+        context: str = "general assistant",
+        weights: dict = None
+    ) -> QualityScores:
+        """Evaluate response quality across multiple dimensions."""
+
+        # Default weights
+        if weights is None:
+            weights = {
+                "accuracy": 0.3,
+                "helpfulness": 0.3,
+                "clarity": 0.2,
+                "conciseness": 0.1,
+                "tone": 0.1
+            }
+
+        with brokle.start_as_current_span(
+            name="quality_evaluation",
+            metadata={"dimensions": list(weights.keys())}
+        ) as span:
+            scores = {}
+            details = {}
+
+            # Evaluate each dimension
+            for dimension, judge in judges.items():
+                result = judge.evaluate(
+                    input=query,
+                    output=response,
+                    reference=reference or "Not provided",
+                    context=context
+                )
+
+                scores[dimension] = result.score
+                details[dimension] = result.comment
+
+                # Record individual scores
+                span.score(
+                    name=dimension,
+                    value=result.score,
+                    comment=result.comment[:200] if result.comment else None
+                )
+
+            # Calculate weighted overall score
+            overall = sum(
+                scores[dim] * weights[dim]
+                for dim in weights
+            )
+
+            span.score(name="overall_quality", value=overall)
+            span.update(
+                output={
+                    "overall": overall,
+                    "dimensions": scores
+                },
+                metadata={"overall_quality": overall}
+            )
+
+            return QualityScores(
+                accuracy=scores["accuracy"],
+                helpfulness=scores["helpfulness"],
+                clarity=scores["clarity"],
+                conciseness=scores["conciseness"],
+                tone=scores["tone"],
+                overall=overall,
+                details=details
+            )
+
+    # Usage
+    query = "How do I reset my password?"
+    response = """
+    To reset your password, follow these steps:
+
+    1. Go to the login page
+    2. Click "Forgot Password"
+    3. Enter your email address
+    4. Check your inbox for a reset link
+    5. Click the link and create a new password
+
+    Make sure your new password is at least 8 characters with a mix of letters and numbers.
+    """
+
+    quality = evaluate_quality(query, response)
+    print(f"Overall Quality: {quality.overall:.0%}")
+    print(f"  Accuracy: {quality.accuracy:.0%}")
+    print(f"  Helpfulness: {quality.helpfulness:.0%}")
+    print(f"  Clarity: {quality.clarity:.0%}")
+    print(f"  Conciseness: {quality.conciseness:.0%}")
+    print(f"  Tone: {quality.tone:.0%}")
+
+    brokle.flush()
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    import { Brokle, LLMJudge } from 'brokle';
+
+    const brokle = new Brokle();
+
+    const judges = {
+      accuracy: new LLMJudge({
+        name: 'accuracy',
+        prompt: `Rate the factual accuracy. Question: {input} Response: {output}
+Rate 0-1 where 1 is completely accurate.`,
+        model: 'gpt-4o',
+      }),
+      helpfulness: new LLMJudge({
+        name: 'helpfulness',
+        prompt: `Rate how helpful this is. Query: {input} Response: {output}
+Rate 0-1 where 1 is extremely helpful.`,
+        model: 'gpt-4o-mini',
+      }),
+      clarity: new LLMJudge({
+        name: 'clarity',
+        prompt: `Rate the clarity. Response: {output}
+Rate 0-1 where 1 is crystal clear.`,
+        model: 'gpt-4o-mini',
+      }),
+    };
+
+    async function evaluateQuality(query, response, weights = null) {
+      weights = weights || { accuracy: 0.4, helpfulness: 0.4, clarity: 0.2 };
+
+      return brokle.withSpan({ name: 'quality_evaluation' }, async (span) => {
+        const scores = {};
+
+        for (const [dimension, judge] of Object.entries(judges)) {
+          const result = await judge.evaluate({ input: query, output: response });
+          scores[dimension] = result.score;
+          span.score({ name: dimension, value: result.score });
+        }
+
+        const overall = Object.entries(weights).reduce(
+          (sum, [dim, weight]) => sum + (scores[dim] || 0) * weight,
+          0
+        );
+
+        span.score({ name: 'overall_quality', value: overall });
+
+        return { ...scores, overall };
+      });
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Quality Dimensions
+
+| Dimension | What It Measures | Weight (Default) |
+|-----------|-----------------|------------------|
+| Accuracy | Factual correctness | 30% |
+| Helpfulness | Addresses user need | 30% |
+| Clarity | Clear and well-organized | 20% |
+| Conciseness | Appropriate length | 10% |
+| Tone | Professional and appropriate | 10% |
+
+## Variations
+
+### Domain-Specific Quality
+
+```python
+def evaluate_customer_support_quality(
+    query: str,
+    response: str,
+    ticket_type: str
+) -> dict:
+    """Quality evaluation tailored for customer support."""
+
+    support_judges = {
+        "resolution_potential": LLMJudge(
+            name="resolution",
+            prompt="""Rate if this response would likely resolve the customer's issue.
+
+Customer Query: {input}
+Agent Response: {output}
+Ticket Type: {ticket_type}
+
+Rate 0-1 where 1 means the issue would likely be resolved.""",
+            model="gpt-4o"
+        ),
+
+        "empathy": LLMJudge(
+            name="empathy",
+            prompt="""Rate the empathy shown in this response.
+
+Customer Query: {input}
+Agent Response: {output}
+
+Consider:
+- Acknowledgment of the issue
+- Understanding of customer frustration
+- Supportive language
+
+Rate 0-1.""",
+            model="gpt-4o-mini"
+        ),
+
+        "action_clarity": LLMJudge(
+            name="action_clarity",
+            prompt="""Rate how clear the next steps are.
+
+Response: {output}
+
+Consider:
+- Are next steps clearly stated?
+- Does the customer know what to do?
+- Are expectations set?
+
+Rate 0-1.""",
+            model="gpt-4o-mini"
+        )
+    }
+
+    with brokle.start_as_current_span(
+        name="support_quality",
+        metadata={"ticket_type": ticket_type}
+    ) as span:
+        scores = {}
+        for name, judge in support_judges.items():
+            result = judge.evaluate(
+                input=query,
+                output=response,
+                ticket_type=ticket_type
+            )
+            scores[name] = result.score
+            span.score(name=name, value=result.score)
+
+        return scores
+```
+
+### Comparative Quality
+
+```python
+def compare_responses(
+    query: str,
+    response_a: str,
+    response_b: str
+) -> dict:
+    """Compare quality of two responses side-by-side."""
+
+    comparison_judge = LLMJudge(
+        name="comparison",
+        prompt="""Compare these two responses to the same query.
+
+Query: {input}
+
+Response A:
+{response_a}
+
+Response B:
+{response_b}
+
+For each dimension, indicate which is better (A, B, or TIE):
+1. Accuracy
+2. Helpfulness
+3. Clarity
+4. Conciseness
+5. Overall
+
+Provide brief explanation for each.""",
+        model="gpt-4o"
+    )
+
+    result = comparison_judge.evaluate(
+        input=query,
+        response_a=response_a,
+        response_b=response_b
+    )
+
+    return {
+        "comparison": result.comment,
+        "raw_score": result.score  # Can encode preference
+    }
+```
+
+### Quality Trend Analysis
+
+```python
+def analyze_quality_trend(
+    trace_ids: list[str],
+    dimension: str = "overall_quality"
+) -> dict:
+    """Analyze quality trends over time."""
+
+    scores = []
+    for trace_id in trace_ids:
+        trace = brokle.traces.get(trace_id)
+        score = next(
+            (s for s in trace.scores if s.name == dimension),
+            None
+        )
+        if score:
+            scores.append({
+                "timestamp": trace.timestamp,
+                "score": score.value
+            })
+
+    # Calculate statistics
+    if not scores:
+        return {"error": "No scores found"}
+
+    values = [s["score"] for s in scores]
+    return {
+        "count": len(values),
+        "mean": sum(values) / len(values),
+        "min": min(values),
+        "max": max(values),
+        "trend": "improving" if values[-1] > values[0] else "declining",
+        "scores": scores
+    }
+```
+
+### Batch Quality Evaluation
+
+```python
+def batch_evaluate_quality(
+    samples: list[dict],  # [{"query": ..., "response": ...}, ...]
+    sample_rate: float = 0.1
+) -> dict:
+    """Evaluate quality on a sample of responses."""
+
+    import random
+
+    # Sample responses
+    sample_size = max(1, int(len(samples) * sample_rate))
+    sampled = random.sample(samples, sample_size)
+
+    with brokle.start_as_current_span(
+        name="batch_quality_evaluation",
+        metadata={
+            "total_samples": len(samples),
+            "evaluated_samples": sample_size,
+            "sample_rate": sample_rate
+        }
+    ) as span:
+        all_scores = []
+
+        for sample in sampled:
+            quality = evaluate_quality(
+                query=sample["query"],
+                response=sample["response"]
+            )
+            all_scores.append(quality)
+
+        # Aggregate
+        avg_overall = sum(q.overall for q in all_scores) / len(all_scores)
+        avg_accuracy = sum(q.accuracy for q in all_scores) / len(all_scores)
+        avg_helpfulness = sum(q.helpfulness for q in all_scores) / len(all_scores)
+
+        summary = {
+            "samples_evaluated": len(all_scores),
+            "avg_overall": avg_overall,
+            "avg_accuracy": avg_accuracy,
+            "avg_helpfulness": avg_helpfulness,
+            "quality_distribution": {
+                "excellent": sum(1 for q in all_scores if q.overall >= 0.9),
+                "good": sum(1 for q in all_scores if 0.7 <= q.overall < 0.9),
+                "fair": sum(1 for q in all_scores if 0.5 <= q.overall < 0.7),
+                "poor": sum(1 for q in all_scores if q.overall < 0.5)
+            }
+        }
+
+        span.update(output=summary)
+        span.score(name="batch_avg_quality", value=avg_overall)
+
+        return summary
+```
+
+<Callout type="info">
+  Use cheaper models (gpt-4o-mini) for subjective dimensions like tone, and stronger models (gpt-4o) for accuracy and fact-checking.
+</Callout>
+
+## Best Practices
+
+1. **Weight by Importance**: Adjust weights based on your use case
+2. **Use Reference Answers**: When available, provide reference answers for accuracy
+3. **Sample for Scale**: Evaluate a sample rather than all responses at scale
+4. **Track Over Time**: Monitor quality trends to catch regressions early
+
+## Related
+
+- [Built-in Evaluators](/docs/evaluation/built-in-evaluators) - Pre-built quality evaluators
+- [LLM as Judge](/docs/evaluation/llm-as-judge) - Creating custom judges
+- [Datasets](/docs/evaluation/datasets) - Batch evaluation with datasets

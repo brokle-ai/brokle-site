@@ -1,0 +1,548 @@
+---
+title: Traces API
+description: REST API endpoints for ingesting and querying trace data in Brokle
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+
+# Traces API
+
+The Traces API provides endpoints for ingesting telemetry data and querying trace information.
+
+## Endpoints Overview
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/v1/traces` | Ingest OTLP trace data | API Key |
+| GET | `/api/v1/traces` | List traces | JWT |
+| GET | `/api/v1/traces/{traceId}` | Get trace details | JWT |
+| DELETE | `/api/v1/traces/{traceId}` | Delete a trace | JWT |
+
+```mermaid
+sequenceDiagram
+    participant App as Your App
+    participant SDK as Brokle SDK
+    participant API as POST /v1/traces
+    participant DB as Database
+
+    App->>SDK: LLM Call (traced)
+    SDK->>SDK: Capture span data
+    SDK->>SDK: Batch spans
+    SDK->>API: OTLP JSON payload
+    API->>API: Validate & transform
+    API->>DB: Store traces
+    DB-->>API: Confirmed
+    API-->>SDK: 200 OK (accepted: N)
+```
+
+## Ingest Traces
+
+```
+POST /v1/traces
+```
+
+Ingest trace data in OpenTelemetry Protocol (OTLP) format.
+
+### Authentication
+
+- **Header**: `X-API-Key: bk_your_api_key`
+- **Required Scope**: `traces:write`
+
+### Request Body
+
+OTLP JSON format for trace data:
+
+```json
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": { "stringValue": "my-ai-app" }
+          },
+          {
+            "key": "service.version",
+            "value": { "stringValue": "1.0.0" }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "brokle.tracing",
+            "version": "1.0.0"
+          },
+          "spans": [
+            {
+              "traceId": "0af7651916cd43dd8448eb211c80319c",
+              "spanId": "b7ad6b7169203331",
+              "parentSpanId": "",
+              "name": "chat_completion",
+              "kind": 1,
+              "startTimeUnixNano": "1700000000000000000",
+              "endTimeUnixNano": "1700000001500000000",
+              "attributes": [
+                {
+                  "key": "llm.model",
+                  "value": { "stringValue": "gpt-4" }
+                },
+                {
+                  "key": "llm.usage.prompt_tokens",
+                  "value": { "intValue": "150" }
+                },
+                {
+                  "key": "llm.usage.completion_tokens",
+                  "value": { "intValue": "75" }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+### Span Attributes
+
+Common attributes for LLM observability:
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `llm.model` | string | Model name (e.g., "gpt-4") |
+| `llm.provider` | string | Provider name (e.g., "openai") |
+| `llm.usage.prompt_tokens` | int | Input token count |
+| `llm.usage.completion_tokens` | int | Output token count |
+| `llm.usage.total_tokens` | int | Total token count |
+| `llm.temperature` | double | Temperature setting |
+| `llm.max_tokens` | int | Max tokens setting |
+| `gen_ai.request.model` | string | Requested model |
+| `gen_ai.response.model` | string | Actual model used |
+| `user.id` | string | User identifier |
+| `session.id` | string | Session identifier |
+
+### Response
+
+**Success (200 OK)**
+
+```json
+{
+  "data": {
+    "accepted": 1,
+    "rejected": 0
+  },
+  "meta": {
+    "requestId": "req_abc123"
+  }
+}
+```
+
+**Partial Accept (207 Multi-Status)**
+
+```json
+{
+  "data": {
+    "accepted": 2,
+    "rejected": 1,
+    "errors": [
+      {
+        "spanId": "invalid_span_id",
+        "error": "Invalid span ID format"
+      }
+    ]
+  }
+}
+```
+
+### Examples
+
+<Tabs>
+  <Tab value="curl" label="cURL">
+    ```bash
+    curl -X POST https://api.brokle.ai/v1/traces \
+      -H "Content-Type: application/json" \
+      -H "X-API-Key: bk_your_api_key" \
+      -d '{
+        "resourceSpans": [{
+          "resource": {
+            "attributes": [
+              {"key": "service.name", "value": {"stringValue": "my-app"}}
+            ]
+          },
+          "scopeSpans": [{
+            "spans": [{
+              "traceId": "0af7651916cd43dd8448eb211c80319c",
+              "spanId": "b7ad6b7169203331",
+              "name": "chat_completion",
+              "startTimeUnixNano": "1700000000000000000",
+              "endTimeUnixNano": "1700000001500000000",
+              "attributes": [
+                {"key": "llm.model", "value": {"stringValue": "gpt-4"}}
+              ]
+            }]
+          }]
+        }]
+      }'
+    ```
+  </Tab>
+  <Tab value="python" label="Python">
+    ```python
+    import requests
+    import uuid
+    import time
+
+    trace_id = uuid.uuid4().hex
+    span_id = uuid.uuid4().hex[:16]
+    start_time = int(time.time() * 1e9)
+    end_time = start_time + int(1.5 * 1e9)
+
+    response = requests.post(
+        "https://api.brokle.ai/v1/traces",
+        headers={
+            "Content-Type": "application/json",
+            "X-API-Key": "bk_your_api_key"
+        },
+        json={
+            "resourceSpans": [{
+                "resource": {
+                    "attributes": [
+                        {"key": "service.name", "value": {"stringValue": "my-app"}}
+                    ]
+                },
+                "scopeSpans": [{
+                    "spans": [{
+                        "traceId": trace_id,
+                        "spanId": span_id,
+                        "name": "chat_completion",
+                        "startTimeUnixNano": str(start_time),
+                        "endTimeUnixNano": str(end_time),
+                        "attributes": [
+                            {"key": "llm.model", "value": {"stringValue": "gpt-4"}},
+                            {"key": "llm.usage.prompt_tokens", "value": {"intValue": "150"}},
+                            {"key": "llm.usage.completion_tokens", "value": {"intValue": "75"}}
+                        ]
+                    }]
+                }]
+            }]
+        }
+    )
+
+    print(response.json())
+    ```
+  </Tab>
+</Tabs>
+
+## List Traces
+
+```
+GET /api/v1/traces
+```
+
+Retrieve a paginated list of traces.
+
+### Authentication
+
+- **Header**: `Authorization: Bearer {jwt_token}`
+
+### Query Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `projectId` | string | Yes | Filter by project ID |
+| `startTime` | ISO 8601 | No | Start of time range |
+| `endTime` | ISO 8601 | No | End of time range |
+| `page` | integer | No | Page number (default: 1) |
+| `pageSize` | integer | No | Items per page (default: 20, max: 100) |
+| `sortBy` | string | No | Sort field (default: `startTime`) |
+| `sortOrder` | string | No | `asc` or `desc` (default: `desc`) |
+| `userId` | string | No | Filter by user ID |
+| `sessionId` | string | No | Filter by session ID |
+| `status` | string | No | Filter by status (`ok`, `error`) |
+| `search` | string | No | Search in trace names |
+
+### Response
+
+```json
+{
+  "data": [
+    {
+      "id": "trace_abc123",
+      "traceId": "0af7651916cd43dd8448eb211c80319c",
+      "name": "chat_completion",
+      "startTime": "2024-01-15T10:30:00Z",
+      "endTime": "2024-01-15T10:30:01.5Z",
+      "duration": 1500,
+      "status": "ok",
+      "spanCount": 3,
+      "tokenCount": {
+        "prompt": 150,
+        "completion": 75,
+        "total": 225
+      },
+      "cost": 0.0045,
+      "model": "gpt-4",
+      "userId": "user_123",
+      "sessionId": "session_456",
+      "metadata": {
+        "environment": "production"
+      }
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "pageSize": 20,
+    "totalItems": 150,
+    "totalPages": 8,
+    "hasMore": true
+  }
+}
+```
+
+### Examples
+
+<Tabs>
+  <Tab value="curl" label="cURL">
+    ```bash
+    curl -X GET "https://api.brokle.ai/api/v1/traces?projectId=proj_123&pageSize=50" \
+      -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..."
+    ```
+  </Tab>
+  <Tab value="python" label="Python">
+    ```python
+    import requests
+
+    response = requests.get(
+        "https://api.brokle.ai/api/v1/traces",
+        headers={
+            "Authorization": "Bearer eyJhbGciOiJIUzI1NiIs..."
+        },
+        params={
+            "projectId": "proj_123",
+            "startTime": "2024-01-01T00:00:00Z",
+            "endTime": "2024-01-31T23:59:59Z",
+            "pageSize": 50
+        }
+    )
+
+    traces = response.json()["data"]
+    for trace in traces:
+        print(f"{trace['name']}: {trace['duration']}ms")
+    ```
+  </Tab>
+</Tabs>
+
+## Get Trace
+
+```
+GET /api/v1/traces/{traceId}
+```
+
+Retrieve a single trace with all its spans.
+
+### Path Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `traceId` | string | The trace ID |
+
+### Query Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `includeSpans` | boolean | Include all spans (default: true) |
+| `includeInput` | boolean | Include input data (default: true) |
+| `includeOutput` | boolean | Include output data (default: true) |
+
+### Response
+
+```json
+{
+  "data": {
+    "id": "trace_abc123",
+    "traceId": "0af7651916cd43dd8448eb211c80319c",
+    "name": "chat_completion",
+    "startTime": "2024-01-15T10:30:00Z",
+    "endTime": "2024-01-15T10:30:01.5Z",
+    "duration": 1500,
+    "status": "ok",
+    "spans": [
+      {
+        "id": "span_root",
+        "spanId": "b7ad6b7169203331",
+        "parentSpanId": null,
+        "name": "chat_completion",
+        "type": "generation",
+        "startTime": "2024-01-15T10:30:00Z",
+        "endTime": "2024-01-15T10:30:01.5Z",
+        "duration": 1500,
+        "model": "gpt-4",
+        "input": {
+          "messages": [
+            {"role": "user", "content": "What is AI?"}
+          ]
+        },
+        "output": {
+          "content": "AI, or Artificial Intelligence, is..."
+        },
+        "usage": {
+          "promptTokens": 150,
+          "completionTokens": 75,
+          "totalTokens": 225
+        },
+        "attributes": {
+          "temperature": 0.7
+        }
+      }
+    ],
+    "metadata": {
+      "userId": "user_123",
+      "sessionId": "session_456",
+      "environment": "production"
+    },
+    "tokenCount": {
+      "prompt": 150,
+      "completion": 75,
+      "total": 225
+    },
+    "cost": 0.0045
+  }
+}
+```
+
+## Delete Trace
+
+```
+DELETE /api/v1/traces/{traceId}
+```
+
+Delete a trace and all its associated data.
+
+### Path Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `traceId` | string | The trace ID to delete |
+
+### Response
+
+**Success (204 No Content)**
+
+No response body.
+
+### Example
+
+```bash
+curl -X DELETE "https://api.brokle.ai/api/v1/traces/trace_abc123" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..."
+```
+
+<Callout type="warning">
+  Deleting a trace is permanent and cannot be undone. All associated spans, evaluations, and feedback will also be deleted.
+</Callout>
+
+## Batch Operations
+
+### Batch Delete
+
+```
+POST /api/v1/traces/batch/delete
+```
+
+Delete multiple traces at once.
+
+```json
+{
+  "traceIds": ["trace_1", "trace_2", "trace_3"]
+}
+```
+
+**Response:**
+
+```json
+{
+  "data": {
+    "deleted": 3,
+    "failed": 0
+  }
+}
+```
+
+## Webhooks
+
+Configure webhooks to receive trace data in real-time:
+
+```json
+{
+  "url": "https://your-server.com/webhook",
+  "events": ["trace.created", "trace.completed"],
+  "projectId": "proj_123"
+}
+```
+
+Webhook payload:
+
+```json
+{
+  "event": "trace.completed",
+  "timestamp": "2024-01-15T10:30:01.5Z",
+  "data": {
+    "traceId": "0af7651916cd43dd8448eb211c80319c",
+    "name": "chat_completion",
+    "duration": 1500,
+    "status": "ok"
+  }
+}
+```
+
+## Best Practices
+
+### Batching
+
+Send traces in batches for optimal performance:
+
+```python
+# Good: Batch multiple spans
+client.ingest([span1, span2, span3, span4, span5])
+
+# Bad: Individual requests
+for span in spans:
+    client.ingest([span])  # Avoid this
+```
+
+### Compression
+
+Enable gzip compression for large payloads:
+
+```bash
+curl -X POST https://api.brokle.ai/v1/traces \
+  -H "Content-Encoding: gzip" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: bk_your_api_key" \
+  --data-binary @traces.json.gz
+```
+
+### Sampling
+
+For high-volume applications, configure sampling:
+
+```python
+from brokle import Brokle
+
+client = Brokle(
+    api_key="bk_...",
+    sample_rate=0.1  # Sample 10% of traces
+)
+```
+
+## Related
+
+- [Spans API →](/docs/api/endpoints/spans)
+- [Evaluations API →](/docs/api/endpoints/evaluations)
+- [Python SDK →](/docs/sdk/python)

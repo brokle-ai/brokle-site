@@ -1,4 +1,12 @@
 {
   "title": "Evaluation",
-  "pages": ["scores", "feedback"]
+  "pages": [
+    "index",
+    "scores",
+    "feedback",
+    "built-in-evaluators",
+    "custom-evaluators",
+    "llm-as-judge",
+    "datasets"
+  ]
 }

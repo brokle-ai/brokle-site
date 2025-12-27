@@ -1,0 +1,9 @@
+{
+  "title": "Endpoints",
+  "pages": [
+    "traces",
+    "spans",
+    "evaluations",
+    "projects"
+  ]
+}

@@ -1,0 +1,446 @@
+---
+title: Spans
+description: Learn how spans represent individual operations within your AI application traces
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+
+# Spans
+
+A **span** represents a single operation within a trace. While traces capture the complete journey, spans provide granular visibility into each step along the way.
+
+## What is a Span?
+
+Spans are the building blocks of traces. Each span captures:
+
+- The operation name and type
+- Start and end times
+- Input and output data
+- Custom attributes
+- Relationships to parent spans
+
+```
+Trace: "rag_pipeline"
+│
+├── Span: "embed_query" (Retrieval)
+│   ├── duration: 45ms
+│   ├── input: "What are the pricing tiers?"
+│   └── output: [0.123, -0.456, ...]
+│
+├── Span: "vector_search" (Retrieval)
+│   ├── duration: 120ms
+│   ├── input: query_embedding
+│   └── output: [5 documents]
+│
+└── Span: "generate_response" (Generation)
+    ├── duration: 1,200ms
+    ├── model: gpt-4
+    ├── input: {messages: [...], context: [...]}
+    ├── output: "Our pricing tiers are..."
+    ├── tokens: 1,523
+    └── cost: $0.0456
+```
+
+## Span Types
+
+Brokle supports specialized span types that capture domain-specific data:
+
+| Type | Purpose | Auto-captured Data |
+|------|---------|-------------------|
+| `span` | General operations | Duration, input/output |
+| `generation` | LLM calls | Model, tokens, cost, messages |
+| `retrieval` | Vector/document retrieval | Query, results, scores |
+| `tool` | Tool/function execution | Tool name, arguments, result |
+| `agent` | Agent operations | Agent name, actions, reasoning |
+| `event` | Discrete events | Timestamp, event data |
+
+## Creating Spans
+
+### Basic Spans
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    from brokle import Brokle
+
+    client = Brokle(api_key="bk_...")
+
+    with client.start_as_current_span(name="process_data", as_type="span") as span:
+        span.set_attribute("data_size", len(data))
+
+        result = process(data)
+
+        span.update(output=result)
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    import { Brokle } from 'brokle';
+
+    const client = new Brokle({ apiKey: 'bk_...' });
+
+    const span = client.startSpan({
+      name: 'process_data',
+      attributes: { dataSize: data.length }
+    });
+
+    const result = await process(data);
+    span.end({ output: result });
+    ```
+  </Tab>
+</Tabs>
+
+### Generation Spans (LLM Calls)
+
+Use generation spans for LLM calls to capture model-specific data:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    with client.start_as_current_generation(
+        name="chat_completion",
+        model="gpt-4",
+        input={"messages": messages}
+    ) as gen:
+        response = openai.chat.completions.create(
+            model="gpt-4",
+            messages=messages
+        )
+
+        gen.update(
+            output=response.choices[0].message.content,
+            usage={
+                "prompt_tokens": response.usage.prompt_tokens,
+                "completion_tokens": response.usage.completion_tokens
+            }
+        )
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    const gen = client.startGeneration({
+      name: 'chat_completion',
+      model: 'gpt-4',
+      input: { messages }
+    });
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages
+    });
+
+    gen.end({
+      output: response.choices[0].message.content,
+      usage: {
+        promptTokens: response.usage.prompt_tokens,
+        completionTokens: response.usage.completion_tokens
+      }
+    });
+    ```
+  </Tab>
+</Tabs>
+
+<Callout type="info">
+  When using integration wrappers like `wrap_openai()`, generation spans are created automatically with all token and cost data captured.
+</Callout>
+
+### Nested Spans
+
+Spans can be nested to show parent-child relationships:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    with client.start_as_current_span(name="rag_pipeline") as parent:
+        # Child span 1: Embed query
+        with client.start_as_current_span(name="embed_query") as embed_span:
+            embedding = get_embedding(query)
+            embed_span.update(output={"dimensions": len(embedding)})
+
+        # Child span 2: Search
+        with client.start_as_current_span(name="vector_search") as search_span:
+            docs = search_vectors(embedding, top_k=5)
+            search_span.update(output={"doc_count": len(docs)})
+
+        # Child span 3: Generate
+        with client.start_as_current_generation(
+            name="generate_response",
+            model="gpt-4"
+        ) as gen_span:
+            response = generate(query, docs)
+            gen_span.update(output=response)
+
+        parent.update(output=response)
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    const parent = client.startSpan({ name: 'rag_pipeline' });
+
+    // Child span 1: Embed query
+    const embedSpan = client.startSpan({
+      name: 'embed_query',
+      parentSpanId: parent.spanId
+    });
+    const embedding = await getEmbedding(query);
+    embedSpan.end({ output: { dimensions: embedding.length } });
+
+    // Child span 2: Search
+    const searchSpan = client.startSpan({
+      name: 'vector_search',
+      parentSpanId: parent.spanId
+    });
+    const docs = await searchVectors(embedding, 5);
+    searchSpan.end({ output: { docCount: docs.length } });
+
+    // Child span 3: Generate
+    const genSpan = client.startGeneration({
+      name: 'generate_response',
+      model: 'gpt-4',
+      parentSpanId: parent.spanId
+    });
+    const response = await generate(query, docs);
+    genSpan.end({ output: response });
+
+    parent.end({ output: response });
+    ```
+  </Tab>
+</Tabs>
+
+## Span Attributes
+
+Add custom attributes for filtering and analysis:
+
+```python
+with client.start_as_current_span(name="process_order") as span:
+    # Standard attributes
+    span.set_attribute("order_id", order.id)
+    span.set_attribute("customer_tier", customer.tier)
+    span.set_attribute("item_count", len(order.items))
+    span.set_attribute("total_value", order.total)
+
+    # Status attributes
+    span.set_attribute("priority", "high")
+    span.set_attribute("retry_count", 0)
+```
+
+### Attribute Best Practices
+
+| Category | Examples | Use Case |
+|----------|----------|----------|
+| **Identifiers** | `order_id`, `user_id`, `request_id` | Link to external systems |
+| **Dimensions** | `customer_tier`, `region`, `feature` | Segmentation and filtering |
+| **Metrics** | `item_count`, `response_length` | Quantitative analysis |
+| **Status** | `priority`, `retry_count`, `cache_hit` | Debugging and optimization |
+
+## Span Properties
+
+Every span includes these properties:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `span_id` | string | Unique identifier |
+| `trace_id` | string | Parent trace identifier |
+| `parent_span_id` | string | Parent span (if nested) |
+| `name` | string | Operation name |
+| `type` | enum | Span type (span, generation, etc.) |
+| `start_time` | datetime | When the span started |
+| `end_time` | datetime | When the span completed |
+| `duration_ms` | number | Duration in milliseconds |
+| `input` | any | Input to the operation |
+| `output` | any | Output from the operation |
+| `attributes` | object | Custom key-value pairs |
+| `status` | enum | success, error |
+| `error` | string | Error message if failed |
+
+### Generation-Specific Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `model` | string | LLM model name |
+| `model_parameters` | object | Temperature, max_tokens, etc. |
+| `prompt_tokens` | number | Input token count |
+| `completion_tokens` | number | Output token count |
+| `total_tokens` | number | Total token count |
+| `cost` | number | Calculated cost in USD |
+
+## Automatic vs Manual Spans
+
+### Automatic (via Integrations)
+
+Integration wrappers automatically create spans:
+
+```python
+from brokle import wrap_openai
+
+openai_client = wrap_openai(openai.OpenAI(), brokle=client)
+
+# Automatically creates a generation span
+response = openai_client.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "Hello"}]
+)
+```
+
+### Manual (for Custom Operations)
+
+Create manual spans for non-LLM operations:
+
+```python
+# Vector database retrieval
+with client.start_as_current_span(name="pinecone_query", as_type="retrieval") as span:
+    span.set_attribute("index", "product-embeddings")
+    span.set_attribute("top_k", 10)
+
+    results = pinecone_index.query(embedding, top_k=10)
+
+    span.update(
+        output={"matches": len(results.matches)},
+        metadata={"namespace": "products"}
+    )
+```
+
+## Span Hierarchy Visualization
+
+In the dashboard, spans are visualized as a tree showing:
+
+```
+[Trace] rag_query (2,345ms)
+├── [Retrieval] embed_query (45ms)
+│   └── input: "pricing info"
+│   └── output: vector[1536]
+├── [Retrieval] vector_search (120ms)
+│   └── input: vector[1536]
+│   └── output: 5 documents
+├── [Generation] gpt-4-call (2,100ms)
+│   └── model: gpt-4
+│   └── tokens: 1,523
+│   └── cost: $0.0456
+└── [Span] format_response (80ms)
+```
+
+### Timeline View
+
+The timeline view shows parallel and sequential operations:
+
+```
+Time →
+├─ embed_query ████░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+├─ vector_search   ████████░░░░░░░░░░░░░░░░░░░░
+├─ gpt-4-call             ████████████████████████████
+└─ format_response                              ████
+```
+
+## Error Handling
+
+Capture errors in spans for debugging:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    with client.start_as_current_span(name="api_call") as span:
+        try:
+            result = external_api.call()
+            span.update(output=result)
+        except TimeoutError as e:
+            span.update(error=f"Timeout: {e}")
+            raise
+        except APIError as e:
+            span.update(
+                error=str(e),
+                metadata={"error_code": e.code, "retryable": e.retryable}
+            )
+            raise
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    const span = client.startSpan({ name: 'api_call' });
+
+    try {
+      const result = await externalApi.call();
+      span.end({ output: result });
+    } catch (error) {
+      span.end({
+        error: error.message,
+        attributes: {
+          errorCode: error.code,
+          retryable: error.retryable
+        }
+      });
+      throw error;
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Best Practices
+
+### 1. Name Spans Descriptively
+
+```python
+# Good
+with client.start_as_current_span(name="search_product_catalog") as span:
+    ...
+
+# Bad
+with client.start_as_current_span(name="search") as span:
+    ...
+```
+
+### 2. Use Appropriate Span Types
+
+```python
+# LLM calls → generation
+with client.start_as_current_generation(name="summarize", model="gpt-4"):
+    ...
+
+# Vector search → retrieval
+with client.start_as_current_span(name="semantic_search", as_type="retrieval"):
+    ...
+
+# Tool execution → tool (via attributes)
+with client.start_as_current_span(name="calculator"):
+    span.set_attribute("tool_name", "calculator")
+    ...
+```
+
+### 3. Keep Spans Granular
+
+```python
+# Good - separate spans for distinct operations
+with client.start_as_current_span(name="process_document"):
+    with client.start_as_current_span(name="extract_text"):
+        text = extract(document)
+    with client.start_as_current_span(name="analyze_sentiment"):
+        sentiment = analyze(text)
+
+# Bad - one giant span
+with client.start_as_current_span(name="do_everything"):
+    text = extract(document)
+    sentiment = analyze(text)
+    # ... many more operations
+```
+
+### 4. Add Context for Debugging
+
+```python
+with client.start_as_current_span(name="api_request") as span:
+    span.set_attribute("endpoint", "/v1/products")
+    span.set_attribute("method", "GET")
+    span.set_attribute("retry_attempt", attempt_number)
+    span.set_attribute("timeout_ms", 5000)
+```
+
+## Related Concepts
+
+- [Traces](/docs/concepts/traces) - Container for spans
+- [Evaluations](/docs/concepts/evaluations) - Score span outputs
+- [Cost Analytics](/docs/concepts/cost-analytics) - Track span costs
+
+## Next Steps
+
+- [Create your first trace →](/docs/first-trace)
+- [Explore integrations →](/docs/integrations)
+- [Add evaluations →](/docs/concepts/evaluations)

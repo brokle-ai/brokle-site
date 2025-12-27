@@ -1,0 +1,609 @@
+---
+title: Datasets
+description: Create and manage evaluation datasets for batch testing, regression detection, and systematic quality assessment
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+import { Steps, Step } from "fumadocs-ui/components/steps";
+import { Cards, Card } from "fumadocs-ui/components/card";
+
+# Datasets
+
+Datasets enable systematic evaluation of your AI application by providing curated test cases, expected outputs, and evaluation criteria. Use datasets for regression testing, model comparison, and quality benchmarking.
+
+## Dataset Structure
+
+A dataset consists of test items, each containing:
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `input` | Yes | The input/query to evaluate |
+| `expected_output` | No | Gold standard response |
+| `context` | No | Additional context for RAG |
+| `metadata` | No | Custom fields for filtering |
+
+## Creating Datasets
+
+### From Code
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    from brokle.evaluation import Dataset, DatasetItem
+
+    # Create dataset with items
+    dataset = Dataset(
+        name="customer-support-v1",
+        description="Customer support quality test cases",
+        items=[
+            DatasetItem(
+                input="How do I reset my password?",
+                expected_output="Click 'Forgot Password' on the login page, enter your email, and follow the reset link sent to your inbox.",
+                metadata={"category": "account", "difficulty": "easy"}
+            ),
+            DatasetItem(
+                input="I was charged twice for my subscription",
+                expected_output="I apologize for the inconvenience. I can see the duplicate charge and will process a refund within 3-5 business days.",
+                metadata={"category": "billing", "difficulty": "medium"}
+            ),
+        ]
+    )
+
+    # Save to Brokle
+    dataset.save()
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    import { Dataset, DatasetItem } from 'brokle/evaluation';
+
+    // Create dataset with items
+    const dataset = new Dataset({
+      name: 'customer-support-v1',
+      description: 'Customer support quality test cases',
+      items: [
+        new DatasetItem({
+          input: 'How do I reset my password?',
+          expectedOutput: "Click 'Forgot Password' on the login page, enter your email, and follow the reset link sent to your inbox.",
+          metadata: { category: 'account', difficulty: 'easy' }
+        }),
+        new DatasetItem({
+          input: 'I was charged twice for my subscription',
+          expectedOutput: 'I apologize for the inconvenience. I can see the duplicate charge and will process a refund within 3-5 business days.',
+          metadata: { category: 'billing', difficulty: 'medium' }
+        }),
+      ]
+    });
+
+    // Save to Brokle
+    await dataset.save();
+    ```
+  </Tab>
+</Tabs>
+
+### From CSV
+
+```python
+from brokle.evaluation import Dataset
+
+# Load from CSV file
+dataset = Dataset.from_csv(
+    path="test_cases.csv",
+    name="qa-benchmark",
+    input_column="question",
+    expected_output_column="answer",
+    context_column="context"  # Optional
+)
+
+dataset.save()
+```
+
+Example CSV:
+```csv
+question,answer,context,category
+"What is Python?","Python is a programming language...","",technical
+"How to install numpy?","Run pip install numpy","",technical
+```
+
+### From JSON
+
+```python
+dataset = Dataset.from_json(
+    path="test_cases.json",
+    name="rag-evaluation"
+)
+```
+
+Example JSON:
+```json
+{
+  "items": [
+    {
+      "input": "What is the return policy?",
+      "expected_output": "30-day money-back guarantee",
+      "context": "Our return policy allows returns within 30 days...",
+      "metadata": {"source": "faq"}
+    }
+  ]
+}
+```
+
+### From Production Traces
+
+Create datasets from real production data:
+
+```python
+from brokle import Brokle
+from brokle.evaluation import Dataset
+
+client = Brokle()
+
+# Get traces with positive feedback
+traces = client.list_traces(
+    project_id="proj_123",
+    filters={
+        "feedback_score": {"gte": 0.8},
+        "created_at": {"gte": "2024-01-01"}
+    },
+    limit=100
+)
+
+# Convert to dataset
+items = [
+    DatasetItem(
+        input=trace.input,
+        expected_output=trace.output,
+        metadata={
+            "trace_id": trace.id,
+            "model": trace.model,
+            "feedback_score": trace.feedback_score
+        }
+    )
+    for trace in traces
+]
+
+dataset = Dataset(name="production-golden-v1", items=items)
+dataset.save()
+```
+
+## Running Evaluations
+
+### Basic Evaluation
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    from brokle.evaluation import Dataset, evaluate_dataset
+
+    # Load dataset
+    dataset = Dataset.load("customer-support-v1")
+
+    # Define your generation function
+    def generate(input: str) -> str:
+        response = llm.generate(input)
+        return response
+
+    # Run evaluation
+    results = evaluate_dataset(
+        dataset=dataset,
+        generator=generate,
+        evaluators=["relevance", "helpfulness", "accuracy"]
+    )
+
+    # View summary
+    print(results.summary())
+    # Average Scores:
+    #   relevance: 0.85
+    #   helpfulness: 0.82
+    #   accuracy: 0.88
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    import { Dataset, evaluateDataset } from 'brokle/evaluation';
+
+    // Load dataset
+    const dataset = await Dataset.load('customer-support-v1');
+
+    // Define your generation function
+    async function generate(input) {
+      const response = await llm.generate(input);
+      return response;
+    }
+
+    // Run evaluation
+    const results = await evaluateDataset({
+      dataset,
+      generator: generate,
+      evaluators: ['relevance', 'helpfulness', 'accuracy']
+    });
+
+    // View summary
+    console.log(results.summary());
+    ```
+  </Tab>
+</Tabs>
+
+### With Reference Comparison
+
+Compare outputs against expected outputs:
+
+```python
+results = evaluate_dataset(
+    dataset=dataset,
+    generator=generate,
+    evaluators=[
+        "relevance",
+        "semantic_similarity",  # Compare to expected_output
+        "rouge_score"           # Text overlap metric
+    ],
+    compare_to_expected=True
+)
+```
+
+### With Custom Evaluators
+
+```python
+from brokle.evaluation import LLMJudge
+
+custom_judge = LLMJudge(
+    model="gpt-4o",
+    criteria="Rate how well the response matches our brand voice"
+)
+
+results = evaluate_dataset(
+    dataset=dataset,
+    generator=generate,
+    evaluators=[
+        "relevance",
+        custom_judge
+    ]
+)
+```
+
+## Model Comparison
+
+Compare multiple models or prompt versions:
+
+```python
+from brokle.evaluation import compare_models
+
+# Define generators for each model
+generators = {
+    "gpt-4o": lambda x: openai_client.generate(model="gpt-4o", prompt=x),
+    "gpt-4o-mini": lambda x: openai_client.generate(model="gpt-4o-mini", prompt=x),
+    "claude-3-sonnet": lambda x: anthropic_client.generate(model="claude-3-sonnet", prompt=x)
+}
+
+# Compare
+comparison = compare_models(
+    dataset=dataset,
+    generators=generators,
+    evaluators=["relevance", "helpfulness", "accuracy"]
+)
+
+# View comparison
+print(comparison.summary())
+# Model Comparison (n=50):
+#                 relevance  helpfulness  accuracy
+# gpt-4o          0.92       0.89         0.94
+# gpt-4o-mini     0.85       0.82         0.88
+# claude-3-sonnet 0.90       0.91         0.92
+```
+
+### Statistical Significance
+
+Check if differences are significant:
+
+```python
+comparison = compare_models(
+    dataset=dataset,
+    generators=generators,
+    evaluators=["relevance"],
+    compute_significance=True
+)
+
+print(comparison.significance_tests())
+# Significance Tests (p-value):
+# gpt-4o vs gpt-4o-mini: p=0.003 (significant)
+# gpt-4o vs claude-3-sonnet: p=0.45 (not significant)
+```
+
+## Regression Testing
+
+Detect quality regressions between versions:
+
+<Steps>
+  <Step>
+    ### Create Baseline
+
+    ```python
+    # Run baseline evaluation
+    baseline = evaluate_dataset(
+        dataset=dataset,
+        generator=production_model,
+        evaluators=["relevance", "accuracy"]
+    )
+
+    # Save baseline
+    baseline.save("baseline-v1.2.0")
+    ```
+  </Step>
+
+  <Step>
+    ### Test New Version
+
+    ```python
+    # Run evaluation on new version
+    new_results = evaluate_dataset(
+        dataset=dataset,
+        generator=new_model,
+        evaluators=["relevance", "accuracy"]
+    )
+    ```
+  </Step>
+
+  <Step>
+    ### Compare and Alert
+
+    ```python
+    from brokle.evaluation import compare_to_baseline
+
+    comparison = compare_to_baseline(
+        new_results=new_results,
+        baseline_name="baseline-v1.2.0",
+        threshold=0.05  # Alert if any metric drops >5%
+    )
+
+    if comparison.has_regression:
+        print(f"Regression detected in: {comparison.regressed_metrics}")
+        # Alert your team
+    else:
+        print("No regression detected")
+    ```
+  </Step>
+</Steps>
+
+## Filtering and Slicing
+
+Analyze results by metadata:
+
+```python
+# Evaluate
+results = evaluate_dataset(dataset=dataset, generator=generate, evaluators=["relevance"])
+
+# Filter by category
+billing_results = results.filter(metadata={"category": "billing"})
+print(f"Billing accuracy: {billing_results.mean('relevance'):.2f}")
+
+account_results = results.filter(metadata={"category": "account"})
+print(f"Account accuracy: {account_results.mean('relevance'):.2f}")
+
+# Filter by difficulty
+hard_results = results.filter(metadata={"difficulty": "hard"})
+print(f"Hard questions accuracy: {hard_results.mean('relevance'):.2f}")
+```
+
+## Dataset Versioning
+
+### Version Control
+
+```python
+# Create versioned datasets
+dataset_v1 = Dataset(name="qa-benchmark", version="1.0.0", items=items_v1)
+dataset_v1.save()
+
+# Add items and create new version
+dataset_v2 = dataset_v1.copy()
+dataset_v2.version = "1.1.0"
+dataset_v2.add_items(new_items)
+dataset_v2.save()
+
+# Load specific version
+dataset = Dataset.load("qa-benchmark", version="1.0.0")
+```
+
+### Track Changes
+
+```python
+# Compare dataset versions
+diff = Dataset.compare_versions("qa-benchmark", "1.0.0", "1.1.0")
+print(f"Added: {diff.added_count} items")
+print(f"Removed: {diff.removed_count} items")
+print(f"Modified: {diff.modified_count} items")
+```
+
+## Exporting Results
+
+### To DataFrame
+
+```python
+import pandas as pd
+
+results = evaluate_dataset(...)
+
+# Convert to DataFrame
+df = results.to_dataframe()
+print(df.head())
+#   input                          output                    relevance  accuracy
+# 0 How do I reset my password?    Click 'Forgot Password'...  0.95      0.92
+# 1 I was charged twice...          I apologize...              0.88      0.85
+```
+
+### To CSV/JSON
+
+```python
+# Export results
+results.to_csv("evaluation_results.csv")
+results.to_json("evaluation_results.json")
+
+# Export with metadata
+results.to_csv(
+    "results.csv",
+    include_metadata=True,
+    include_reasoning=True
+)
+```
+
+### To Dashboard
+
+```python
+# Save to Brokle for dashboard viewing
+results.save_to_brokle(
+    name="evaluation-run-2024-01-15",
+    project_id="proj_123"
+)
+```
+
+## CI/CD Integration
+
+### GitHub Actions
+
+```yaml
+name: Evaluation
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Run evaluation
+        env:
+          BROKLE_API_KEY: ${{ secrets.BROKLE_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          python -m brokle.evaluation run \
+            --dataset qa-benchmark \
+            --evaluators relevance,accuracy \
+            --threshold 0.85 \
+            --baseline baseline-v1.0
+
+      - name: Upload results
+        uses: actions/upload-artifact@v2
+        with:
+          name: evaluation-results
+          path: evaluation_results.json
+```
+
+### Command Line
+
+```bash
+# Run evaluation from CLI
+brokle evaluate \
+  --dataset "customer-support-v1" \
+  --evaluators "relevance,helpfulness" \
+  --output results.json
+
+# Compare to baseline
+brokle evaluate compare \
+  --new results.json \
+  --baseline baseline-v1.0.json \
+  --threshold 0.05
+```
+
+## Best Practices
+
+### 1. Curate High-Quality Datasets
+
+```python
+# Include diverse examples
+categories = ["account", "billing", "technical", "general"]
+difficulties = ["easy", "medium", "hard"]
+
+items = []
+for category in categories:
+    for difficulty in difficulties:
+        # Get representative examples for each combination
+        items.extend(get_examples(category, difficulty, n=10))
+
+dataset = Dataset(name="comprehensive-test", items=items)
+```
+
+### 2. Update Regularly
+
+```python
+# Quarterly: Add new edge cases from production
+production_failures = client.list_traces(
+    filters={"feedback_score": {"lt": 0}},
+    limit=50
+)
+
+dataset.add_items([
+    DatasetItem(input=t.input, metadata={"source": "production_failure"})
+    for t in production_failures
+])
+```
+
+### 3. Balance Dataset Size
+
+| Purpose | Recommended Size |
+|---------|------------------|
+| Quick regression check | 50-100 items |
+| Comprehensive evaluation | 200-500 items |
+| Statistical significance | 500+ items |
+
+<Callout type="info">
+  Larger datasets provide more reliable results but increase evaluation cost and time. Start small and expand based on needs.
+</Callout>
+
+### 4. Include Edge Cases
+
+```python
+edge_cases = [
+    DatasetItem(input="", expected_output="Please provide a question"),
+    DatasetItem(input="a" * 10000, metadata={"type": "very_long_input"}),
+    DatasetItem(input="🎉 emoji test 🚀", metadata={"type": "unicode"}),
+    DatasetItem(input="<script>alert('xss')</script>", metadata={"type": "injection"})
+]
+
+dataset.add_items(edge_cases)
+```
+
+## Troubleshooting
+
+### Slow Evaluations
+
+- Use smaller datasets for development
+- Enable parallel evaluation: `evaluate_dataset(..., parallel=True)`
+- Use faster evaluators during development: `gpt-4o-mini` instead of `gpt-4o`
+
+### Inconsistent Scores
+
+- Increase evaluator temperature to 0
+- Add few-shot examples to evaluators
+- Use calibration datasets to verify evaluator behavior
+
+### Large Dataset Memory Issues
+
+```python
+# Stream large datasets
+for batch in dataset.iter_batches(batch_size=100):
+    batch_results = evaluate_dataset(batch, ...)
+    batch_results.save_incremental()
+```
+
+## Next Steps
+
+<Cards>
+  <Card
+    title="Built-in Evaluators"
+    description="Use pre-built quality assessments"
+    href="/docs/evaluation/built-in-evaluators"
+  />
+  <Card
+    title="Custom Evaluators"
+    description="Build domain-specific evaluators"
+    href="/docs/evaluation/custom-evaluators"
+  />
+  <Card
+    title="LLM-as-Judge"
+    description="Advanced AI-based evaluation"
+    href="/docs/evaluation/llm-as-judge"
+  />
+</Cards>
