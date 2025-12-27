@@ -1,50 +1,135 @@
 import Link from "next/link"
-import { ArrowRight } from "lucide-react"
+import Image from "next/image"
+import { ArrowRight, MoreHorizontal } from "lucide-react"
 import { DisplayHeading } from "@/components/shared"
+import { Button } from "@/components/ui/button"
 
-// Provider data with placeholder icons (initials-based)
-const providers = [
-  { name: "OpenAI", initials: "OA", color: "bg-emerald-500/10 text-emerald-600" },
-  { name: "Anthropic", initials: "AN", color: "bg-orange-500/10 text-orange-600" },
-  { name: "Google AI", initials: "GA", color: "bg-blue-500/10 text-blue-600" },
-  { name: "Azure OpenAI", initials: "AZ", color: "bg-sky-500/10 text-sky-600" },
-  { name: "AWS Bedrock", initials: "BR", color: "bg-amber-500/10 text-amber-600" },
-  { name: "Cohere", initials: "CO", color: "bg-purple-500/10 text-purple-600" },
-  { name: "Mistral", initials: "MI", color: "bg-indigo-500/10 text-indigo-600" },
-  { name: "Groq", initials: "GQ", color: "bg-rose-500/10 text-rose-600" },
-  { name: "Together AI", initials: "TA", color: "bg-teal-500/10 text-teal-600" },
-  { name: "Fireworks", initials: "FW", color: "bg-red-500/10 text-red-600" },
-  { name: "Replicate", initials: "RP", color: "bg-violet-500/10 text-violet-600" },
-  { name: "Ollama", initials: "OL", color: "bg-slate-500/10 text-slate-600" },
+const integrations = [
+  // AI Providers
+  {
+    name: "OpenAI",
+    href: "/docs/integrations/openai",
+    icon: "/images/integrations/openai_icon.svg",
+  },
+  {
+    name: "Anthropic",
+    href: "/docs/integrations/anthropic",
+    icon: "/images/integrations/anthropic_icon.png",
+  },
+  {
+    name: "Google Gemini",
+    href: "/docs/integrations/google",
+    icon: "/images/integrations/google_gemini_icon.svg",
+  },
+  {
+    name: "Azure OpenAI",
+    href: "/docs/integrations/azure",
+    icon: "/images/integrations/microsoft_icon.svg",
+  },
+  {
+    name: "AWS Bedrock",
+    href: "/docs/integrations/bedrock",
+    icon: "/images/integrations/bedrock_icon.png",
+  },
+  {
+    name: "Mistral",
+    href: "/docs/integrations/mistral",
+    icon: "/images/integrations/mistral_icon.svg",
+    darkInvert: true,
+  },
+  {
+    name: "Cohere",
+    href: "/docs/integrations/cohere",
+    icon: "/images/integrations/cohere_icon.svg",
+  },
+  {
+    name: "Groq",
+    href: "/docs/integrations/groq",
+    icon: "/images/integrations/groq_icon.png",
+    darkInvert: true,
+  },
+  {
+    name: "Together AI",
+    href: "/docs/integrations/together",
+    icon: "/images/integrations/togetherai_icon.svg",
+  },
+  {
+    name: "Fireworks",
+    href: "/docs/integrations/fireworks",
+    icon: "/images/integrations/fireworks_ai_icon.svg",
+  },
+  {
+    name: "Ollama",
+    href: "/docs/integrations/ollama",
+    icon: "/images/integrations/ollama_icon.png",
+    darkInvert: true,
+  },
+  // Frameworks
+  {
+    name: "LangChain",
+    href: "/docs/integrations/langchain",
+    icon: "/images/integrations/langchain_icon.png",
+    darkInvert: true,
+  },
+  {
+    name: "LlamaIndex",
+    href: "/docs/integrations/llamaindex",
+    icon: "/images/integrations/llamaindex_icon.png",
+  },
+  {
+    name: "OpenTelemetry",
+    href: "/docs/integrations/opentelemetry",
+    icon: "/images/integrations/opentelemetry_icon.svg",
+  },
+  {
+    name: "Instructor",
+    href: "/docs/integrations/instructor",
+    icon: "/images/integrations/instructor_icon.svg",
+    darkInvert: true,
+  },
 ]
 
-const frameworks = [
-  { name: "LangChain", initials: "LC", color: "bg-green-500/10 text-green-600" },
-  { name: "LlamaIndex", initials: "LI", color: "bg-purple-500/10 text-purple-600" },
-  { name: "Vercel AI", initials: "VA", color: "bg-zinc-500/10 text-zinc-600" },
-  { name: "OpenTelemetry", initials: "OT", color: "bg-blue-500/10 text-blue-600" },
-  { name: "Instructor", initials: "IN", color: "bg-cyan-500/10 text-cyan-600" },
-  { name: "DSPy", initials: "DS", color: "bg-pink-500/10 text-pink-600" },
-]
-
-const sdks = [
-  { name: "Python", command: "pip install brokle", icon: "PY", color: "bg-yellow-500/10 text-yellow-600" },
-  { name: "TypeScript", command: "npm i @brokle/sdk", icon: "TS", color: "bg-blue-500/10 text-blue-600" },
-  { name: "REST API", command: "OpenAPI 3.0", icon: "API", color: "bg-green-500/10 text-green-600" },
-]
-
-function ProviderBadge({ name, initials, color }: { name: string; initials: string; color: string }) {
+function IntegrationTile({
+  name,
+  href,
+  icon,
+  darkInvert,
+}: {
+  name: string
+  href: string
+  icon: string
+  darkInvert?: boolean
+}) {
   return (
-    <div
-      className="group flex items-center gap-2.5 px-4 py-2.5 rounded-lg border bg-card hover:border-foreground/20 hover:shadow-sm transition-all cursor-default"
+    <Link
+      href={href}
+      className="flex flex-col items-center gap-2 p-3 sm:p-4 rounded-xl border border-border/50 bg-card hover:shadow-md hover:border-border transition-all"
     >
-      <div className={`w-8 h-8 rounded-md flex items-center justify-center text-xs font-bold ${color}`}>
-        {initials}
-      </div>
-      <span className="text-sm font-medium text-foreground/80 group-hover:text-foreground transition-colors">
+      <Image
+        src={icon}
+        alt={`${name} icon`}
+        width={32}
+        height={32}
+        className={darkInvert ? "dark:invert" : ""}
+      />
+      <span className="text-[10px] sm:text-xs text-muted-foreground text-center line-clamp-1">
         {name}
       </span>
-    </div>
+    </Link>
+  )
+}
+
+function MoreTile() {
+  return (
+    <Link
+      href="/docs/integrations"
+      className="flex flex-col items-center gap-2 p-3 sm:p-4 rounded-xl border border-border/50 bg-card hover:shadow-md hover:border-border transition-all"
+    >
+      <MoreHorizontal className="w-8 h-8 text-primary" />
+      <span className="text-[10px] sm:text-xs text-muted-foreground text-center">
+        More
+      </span>
+    </Link>
   )
 }
 
@@ -52,71 +137,39 @@ export function IntegrationsSection() {
   return (
     <section className="py-20 md:py-28 lg:py-32 border-t">
       <div className="container px-4 mx-auto max-w-7xl">
-        <div className="text-center mb-16">
-          <DisplayHeading as="h2" className="mb-4">
-            Works with your entire stack
-          </DisplayHeading>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Native integrations with every major AI provider and framework.
-            Drop-in compatibility with your existing code.
-          </p>
-        </div>
-
-        {/* Providers Grid */}
-        <div className="mb-12">
-          <p className="text-sm text-muted-foreground uppercase tracking-wider mb-6 text-center">
-            AI Providers
-          </p>
-          <div className="flex flex-wrap justify-center gap-3 max-w-5xl mx-auto">
-            {providers.map((provider) => (
-              <ProviderBadge key={provider.name} {...provider} />
-            ))}
-          </div>
-        </div>
-
-        {/* Frameworks Grid */}
-        <div className="mb-12">
-          <p className="text-sm text-muted-foreground uppercase tracking-wider mb-6 text-center">
-            Frameworks & Standards
-          </p>
-          <div className="flex flex-wrap justify-center gap-3 max-w-4xl mx-auto">
-            {frameworks.map((framework) => (
-              <ProviderBadge key={framework.name} {...framework} />
-            ))}
-          </div>
-        </div>
-
-        {/* SDKs */}
-        <div className="mb-12">
-          <p className="text-sm text-muted-foreground uppercase tracking-wider mb-6 text-center">
-            Official SDKs
-          </p>
-          <div className="flex flex-wrap justify-center gap-4 max-w-3xl mx-auto">
-            {sdks.map((sdk) => (
-              <div
-                key={sdk.name}
-                className="flex flex-col items-center p-4 rounded-xl border bg-card hover:border-foreground/20 hover:shadow-sm transition-all min-w-[140px]"
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-12">
+          {/* Left - Text */}
+          <div className="lg:max-w-md">
+            <p className="text-sm text-muted-foreground uppercase tracking-wider mb-3">
+              Integrations
+            </p>
+            <DisplayHeading as="h2" className="mb-4">
+              Works with your entire stack
+            </DisplayHeading>
+            <p className="text-lg text-muted-foreground mb-6">
+              Native integrations with major AI providers and frameworks. Drop-in compatibility with your existing code.
+            </p>
+            <div className="flex items-center gap-4">
+              <Button asChild>
+                <Link href="/docs/quickstart">Get Started</Link>
+              </Button>
+              <Link
+                href="/docs/integrations"
+                className="inline-flex items-center gap-1 text-sm font-medium hover:text-foreground/70 transition-colors"
               >
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold mb-2 ${sdk.color}`}>
-                  {sdk.icon}
-                </div>
-                <span className="text-sm font-semibold mb-1">{sdk.name}</span>
-                <code className="text-xs text-muted-foreground font-mono">
-                  {sdk.command}
-                </code>
-              </div>
-            ))}
+                View all integrations
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
           </div>
-        </div>
 
-        <div className="text-center">
-          <Link
-            href="/integrations"
-            className="inline-flex items-center gap-2 text-sm font-medium text-foreground hover:text-foreground/70 transition-colors"
-          >
-            View all integrations
-            <ArrowRight className="h-4 w-4" />
-          </Link>
+          {/* Right - Icon Grid */}
+          <div className="grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-4 gap-2 sm:gap-3">
+            {integrations.map((integration) => (
+              <IntegrationTile key={integration.name} {...integration} />
+            ))}
+            <MoreTile />
+          </div>
         </div>
       </div>
     </section>

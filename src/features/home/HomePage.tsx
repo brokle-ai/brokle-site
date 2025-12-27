@@ -1,5 +1,4 @@
 import { HeroSection } from "./sections/HeroSection"
-import { LogoBarSection } from "./sections/LogoBarSection"
 import { HowItWorksSection } from "./sections/HowItWorksSection"
 import { StatsSection } from "./sections/StatsSection"
 import { ResearchSection } from "./sections/ResearchSection"
@@ -20,34 +19,31 @@ export default function HomePage() {
       {/* 2. Features with Interactive Tabs - Right after hero like Langfuse */}
       <FeatureTabsSection />
 
-      {/* 3. Logo Bar - Trusted companies */}
-      <LogoBarSection />
-
-      {/* 4. How It Works */}
+      {/* 3. How It Works */}
       <HowItWorksSection />
 
-      {/* 5. Stats - Traction metrics */}
+      {/* 4. Stats - Traction metrics */}
       <StatsSection />
 
-      {/* 6. Research - Key innovations */}
+      {/* 5. Research - Key innovations */}
       <ResearchSection />
 
-      {/* 7. Platform Overview - Cloud vs Self-hosted */}
+      {/* 6. Platform Overview - Cloud vs Self-hosted */}
       <PlatformOverviewSection />
 
-      {/* 8. Use Cases Grid */}
+      {/* 7. Use Cases Grid */}
       <UseCasesSection />
 
-      {/* 9. Integrations */}
+      {/* 8. Integrations */}
       <IntegrationsSection />
 
-      {/* 10. Open Source */}
+      {/* 9. Open Source */}
       <OpenSourceSection />
 
-      {/* 11. Testimonials */}
+      {/* 10. Testimonials */}
       <TestimonialsSection />
 
-      {/* 12. Final CTA */}
+      {/* 11. Final CTA */}
       <FinalCTASection />
     </>
   )

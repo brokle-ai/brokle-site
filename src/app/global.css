@@ -55,6 +55,28 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
+
+  /* =====================================================
+     Visual Polish - Gradients, Shadows, Glows
+     ===================================================== */
+
+  /* Hero gradient - subtle blue/purple tint */
+  --gradient-hero-start: oklch(0.97 0.015 250);
+  --gradient-hero-end: oklch(0.98 0.01 300);
+
+  /* Code block - dark gradient for premium feel */
+  --code-bg-start: oklch(0.14 0 0);
+  --code-bg-end: oklch(0.18 0.005 250);
+  --code-border: oklch(0.3 0 0);
+
+  /* Enhanced shadows */
+  --shadow-card: 0 1px 3px oklch(0 0 0 / 4%), 0 4px 12px oklch(0 0 0 / 3%);
+  --shadow-card-hover: 0 4px 16px oklch(0 0 0 / 8%), 0 12px 32px oklch(0 0 0 / 5%);
+  --shadow-code: 0 8px 32px oklch(0 0 0 / 25%), 0 2px 8px oklch(0 0 0 / 15%);
+
+  /* Brand glow effect */
+  --brand-glow: 0 0 24px oklch(0.55 0.18 255 / 25%);
+  --brand-glow-strong: 0 0 40px oklch(0.55 0.18 255 / 35%);
 }
 
 .dark {
@@ -105,6 +127,18 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
+
+  /* Visual Polish - Dark mode variants */
+  --gradient-hero-start: oklch(0.16 0.01 250);
+  --gradient-hero-end: oklch(0.14 0.005 300);
+  --code-bg-start: oklch(0.10 0 0);
+  --code-bg-end: oklch(0.14 0.005 250);
+  --code-border: oklch(0.25 0 0);
+  --shadow-card: 0 1px 3px oklch(0 0 0 / 20%), 0 4px 12px oklch(0 0 0 / 15%);
+  --shadow-card-hover: 0 4px 16px oklch(0 0 0 / 30%), 0 12px 32px oklch(0 0 0 / 20%);
+  --shadow-code: 0 8px 32px oklch(0 0 0 / 40%), 0 2px 8px oklch(0 0 0 / 25%);
+  --brand-glow: 0 0 24px oklch(0.65 0.16 250 / 30%);
+  --brand-glow-strong: 0 0 40px oklch(0.65 0.16 250 / 45%);
 }
 
 @theme inline {
@@ -143,6 +177,29 @@
   --color-ring: var(--ring);
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
+
+  /* Marquee animations */
+  --animate-marquee: marquee var(--duration) linear infinite;
+  --animate-marquee-vertical: marquee-vertical var(--duration) linear infinite;
+}
+
+/* Marquee keyframes */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-100% - var(--gap)));
+  }
+}
+
+@keyframes marquee-vertical {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(calc(-100% - var(--gap)));
+  }
 }
 
 @layer base {

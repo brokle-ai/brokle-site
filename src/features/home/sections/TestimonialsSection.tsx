@@ -1,5 +1,5 @@
 import { DisplayHeading } from "@/components/shared"
-import { Quote } from "lucide-react"
+import { Marquee } from "@/components/ui/marquee"
 
 const testimonials = [
   {
@@ -26,6 +26,30 @@ const testimonials = [
     company: "Prism AI",
     initials: "EN",
   },
+  {
+    quote:
+      "Self-hosting Brokle was a breeze. We had full observability running in our private cloud within an hour.",
+    author: "Alex Thompson",
+    title: "DevOps Lead",
+    company: "SecureAI Corp",
+    initials: "AT",
+  },
+  {
+    quote:
+      "The prompt versioning feature is a game-changer. We can A/B test prompts and see exactly which performs better.",
+    author: "Lisa Park",
+    title: "Senior AI Engineer",
+    company: "DataFlow AI",
+    initials: "LP",
+  },
+  {
+    quote:
+      "OpenTelemetry-native means we integrated Brokle with our existing observability stack in minutes, not days.",
+    author: "James Wilson",
+    title: "Platform Architect",
+    company: "CloudScale",
+    initials: "JW",
+  },
 ]
 
 function TestimonialCard({
@@ -42,14 +66,13 @@ function TestimonialCard({
   initials: string
 }) {
   return (
-    <div className="flex flex-col p-6 rounded-xl bg-card border">
-      <Quote className="w-8 h-8 text-foreground/10 mb-4" />
-      <p className="text-foreground/80 leading-relaxed mb-6 flex-1">
+    <div className="w-[400px] flex-shrink-0 flex flex-col p-5 rounded-xl bg-accent border border-border/50">
+      <p className="text-foreground/80 text-sm leading-relaxed mb-4">
         &ldquo;{quote}&rdquo;
       </p>
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-foreground/[0.08] flex items-center justify-center">
-          <span className="text-sm font-semibold text-foreground/60">
+        <div className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+          <span className="text-xs font-semibold">
             {initials}
           </span>
         </div>
@@ -66,7 +89,8 @@ function TestimonialCard({
 
 export function TestimonialsSection() {
   return (
-    <section className="py-20 md:py-28 lg:py-32 border-t">
+    <section className="py-20 md:py-28 lg:py-32 border-t overflow-hidden">
+      {/* Header */}
       <div className="container px-4 mx-auto max-w-7xl">
         <div className="text-center mb-12">
           <DisplayHeading as="h2" className="mb-4">
@@ -76,12 +100,27 @@ export function TestimonialsSection() {
             See why engineering teams trust Brokle to power their AI observability.
           </p>
         </div>
+      </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Full-width marquee */}
+      <div className="relative">
+        {/* Fade edges */}
+        <div className="absolute left-0 inset-y-0 w-[10%] bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
+        <div className="absolute right-0 inset-y-0 w-[10%] bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+
+        {/* Row 1 - scrolling left */}
+        <Marquee pauseOnHover className="[--duration:40s]">
           {testimonials.map((testimonial) => (
             <TestimonialCard key={testimonial.author} {...testimonial} />
           ))}
-        </div>
+        </Marquee>
+
+        {/* Row 2 - scrolling right */}
+        <Marquee pauseOnHover reverse className="mt-4 [--duration:40s]">
+          {testimonials.map((testimonial) => (
+            <TestimonialCard key={testimonial.author} {...testimonial} />
+          ))}
+        </Marquee>
       </div>
     </section>
   )
