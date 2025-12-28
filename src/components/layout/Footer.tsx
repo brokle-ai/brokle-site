@@ -17,6 +17,7 @@ const footerLinks = {
     { name: "Python SDK", href: "/docs/sdk/python" },
     { name: "JavaScript SDK", href: "/docs/sdk/javascript" },
     { name: "API Reference", href: "/docs/api" },
+    { name: "Contributing", href: "https://github.com/brokle-ai/brokle/blob/main/CONTRIBUTING.md", external: true },
     { name: "Status", href: "https://status.brokle.ai", external: true },
   ],
   company: [
@@ -29,7 +30,8 @@ const footerLinks = {
   legal: [
     { name: "Privacy Policy", href: "/privacy" },
     { name: "Terms of Service", href: "/terms" },
-    { name: "Security", href: "/security" },
+    { name: "License", href: "https://github.com/brokle-ai/brokle/blob/main/LICENSE", external: true },
+    { name: "Security", href: "https://github.com/brokle-ai/brokle/blob/main/SECURITY.md", external: true },
   ],
 }
 
