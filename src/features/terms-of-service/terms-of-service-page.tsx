@@ -1,48 +1,28 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { ArrowRight, Gavel, Scale, FileText } from "lucide-react"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { HeroBackground, DisplayHeading } from "@/components/shared"
 
 export default function TermsOfServicePage() {
   return (
     <>
       {/* Hero Section */}
-      <section className="py-16 md:py-24">
-        <div className="container px-4 mx-auto">
-          <div className="max-w-3xl mx-auto text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">Terms of Service</h1>
-            <p className="text-xl text-muted-foreground">
+      <section className="relative py-16 md:py-24 overflow-hidden">
+        <HeroBackground />
+        <div className="container px-4 mx-auto relative">
+          <div className="max-w-3xl mx-auto text-center">
+            <DisplayHeading as="h1">Terms of Service</DisplayHeading>
+            <p className="text-lg md:text-xl text-muted-foreground mt-6">
               Please read these terms carefully before using our services.
             </p>
-            <div className="flex justify-center gap-4 mt-6">
-              <Badge className="py-1 px-3 text-sm">Last Updated: March 1, 2025</Badge>
-            </div>
+            <p className="text-sm text-muted-foreground mt-4">
+              Last Updated: March 1, 2025
+            </p>
           </div>
+        </div>
+      </section>
 
+      {/* Terms Content */}
+      <section className="py-12">
+        <div className="container px-4 mx-auto">
           <div className="max-w-4xl mx-auto">
-            <Card className="mb-8">
-              <CardContent className="pt-6">
-                <div className="grid md:grid-cols-3 gap-6 mb-6">
-                  <div className="flex flex-col items-center text-center p-4">
-                    <Gavel className="h-10 w-10 text-primary mb-3" />
-                    <h3 className="font-medium mb-2">Legal Agreement</h3>
-                    <p className="text-sm text-muted-foreground">These terms form a binding legal agreement</p>
-                  </div>
-                  <div className="flex flex-col items-center text-center p-4">
-                    <Scale className="h-10 w-10 text-primary mb-3" />
-                    <h3 className="font-medium mb-2">Your Rights</h3>
-                    <p className="text-sm text-muted-foreground">Understand what you can and cannot do</p>
-                  </div>
-                  <div className="flex flex-col items-center text-center p-4">
-                    <FileText className="h-10 w-10 text-primary mb-3" />
-                    <h3 className="font-medium mb-2">Responsibilities</h3>
-                    <p className="text-sm text-muted-foreground">Know your obligations when using our services</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
             <div className="prose prose-lg max-w-none">
               <section className="mb-10">
                 <h2 className="text-2xl font-bold mb-4">1. Acceptance of Terms</h2>
@@ -57,7 +37,7 @@ export default function TermsOfServicePage() {
               <section className="mb-10">
                 <h2 className="text-2xl font-bold mb-4">2. Description of Services</h2>
                 <p>
-                  Brokle provides a data annotation and labeling platform that allows users to create, manage, and analyze datasets for machine learning and AI development. Our services include annotation tools, collaboration features, data management capabilities, and related functionality as described on our website.
+                  Brokle provides an open-source observability platform for LLM applications. Our services include tracing, evaluation, prompt management, cost analytics, and related functionality as described on our website.
                 </p>
                 <p>
                   We reserve the right to modify, suspend, or discontinue any part of our services at any time without notice or liability.
@@ -191,78 +171,6 @@ export default function TermsOfServicePage() {
                   <li>Phone: (555) 123-4567</li>
                 </ul>
               </section>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ Section */}
-      <section className="py-16 bg-muted/50">
-        <div className="container px-4 mx-auto">
-          <div className="max-w-3xl mx-auto">
-            <div className="text-center mb-12">
-              <Badge className="mb-4">Legal FAQ</Badge>
-              <h2 className="text-3xl font-bold mb-4">Common Legal Questions</h2>
-              <p className="text-xl text-muted-foreground">
-                Find answers to frequently asked questions about our terms and conditions.
-              </p>
-            </div>
-
-            <Accordion type="single" collapsible className="w-full">
-              <AccordionItem value="item-1">
-                <AccordionTrigger>How can I terminate my account?</AccordionTrigger>
-                <AccordionContent>
-                  You can terminate your account at any time by going to your account settings and selecting the &quot;Delete Account&quot; option, or by contacting our support team at support@brokle.com. Upon termination, you will lose access to our services, and we will delete your data in accordance with our Privacy Policy.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="item-2">
-                <AccordionTrigger>Who owns the data I upload to your platform?</AccordionTrigger>
-                <AccordionContent>
-                  You retain ownership of all data you upload to our platform. We only use your data as necessary to provide our services to you, as described in our Terms of Service. We do not claim ownership of your data, and we do not use it for purposes other than providing and improving our services.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="item-3">
-                <AccordionTrigger>Can I use your platform for commercial purposes?</AccordionTrigger>
-                <AccordionContent>
-                  Yes, you can use our platform for commercial purposes, including for your business or organization. However, you may not resell or redistribute access to our platform without our explicit permission, and you must comply with all terms and conditions regarding usage limits and prohibited uses.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="item-4">
-                <AccordionTrigger>What happens if you change the Terms of Service?</AccordionTrigger>
-                <AccordionContent>
-                  When we make material changes to our Terms of Service, we will provide notice through our website or by email at least 30 days before the changes take effect. Your continued use of our services after the changes take effect constitutes your acceptance of the new Terms. If you do not agree with the changes, you must stop using our services and terminate your account.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="item-5">
-                <AccordionTrigger>Is my subscription automatically renewed?</AccordionTrigger>
-                <AccordionContent>
-                  Yes, subscriptions automatically renew for additional periods equal to your original subscription term. You can cancel auto-renewal at any time through your account settings or by contacting our support team. If you cancel, you will still have access to the services until the end of your current billing period, at which point your subscription will not renew.
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-16">
-        <div className="container px-4 mx-auto">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl font-bold mb-6">Need Legal Assistance?</h2>
-            <p className="text-xl text-muted-foreground mb-8">
-              Our legal team is available to help with any questions about our terms of service.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="gap-2">
-                Contact Legal Team <ArrowRight className="h-4 w-4" />
-              </Button>
-              <Button size="lg" variant="outline" className="gap-2">
-                View Privacy Policy
-              </Button>
             </div>
           </div>
         </div>

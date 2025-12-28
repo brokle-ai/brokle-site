@@ -3,17 +3,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ArrowRight, Bug, Github, Lightbulb, Settings, Zap } from "lucide-react"
 import Link from "next/link"
+import { HeroBackground, DisplayHeading } from "@/components/shared"
 
 export default function ChangelogPage() {
   return (
     <>
       {/* Hero Section */}
-      <section className="py-16 md:py-24">
-        <div className="container px-4 mx-auto">
-          <div className="max-w-3xl mx-auto text-center mb-12">
-            <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">Product Updates</Badge>
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">Changelog</h1>
-            <p className="text-xl text-muted-foreground">
+      <section className="relative py-16 md:py-24 lg:py-32 overflow-hidden">
+        <HeroBackground />
+        <div className="container px-4 mx-auto relative">
+          <div className="max-w-3xl mx-auto text-center">
+            <DisplayHeading as="h1">Changelog</DisplayHeading>
+            <p className="text-lg md:text-xl text-muted-foreground mt-6 max-w-2xl mx-auto">
               Stay up to date with the latest features, improvements, and fixes in Brokle.
             </p>
           </div>
@@ -325,7 +326,6 @@ export default function ChangelogPage() {
         <div className="container px-4 mx-auto">
           <div className="max-w-3xl mx-auto">
             <div className="text-center mb-12">
-              <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">Coming Soon</Badge>
               <h2 className="text-3xl font-bold mb-4">Product Roadmap</h2>
               <p className="text-xl text-muted-foreground">
                 See what we&apos;re working on next. Have a feature request? Let us know!
@@ -408,23 +408,6 @@ export default function ChangelogPage() {
         </div>
       </section>
 
-      {/* Subscribe */}
-      <section className="py-16">
-        <div className="container px-4 mx-auto">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-2xl font-bold mb-4">Stay Updated</h2>
-            <p className="text-lg text-muted-foreground mb-6">
-              Follow our GitHub repository to get notified about new releases.
-            </p>
-            <Button variant="outline" className="gap-2" asChild>
-              <Link href="https://github.com/brokle-ai/brokle" target="_blank" rel="noopener noreferrer">
-                <Github className="h-4 w-4" />
-                Watch on GitHub
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </section>
     </>
   )
 }

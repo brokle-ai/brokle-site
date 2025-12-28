@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { ArrowRight, Calendar, Clock, User } from "lucide-react"
 import Link from "next/link"
+import { HeroBackground, DisplayHeading } from "@/components/shared"
 
 const featuredPost = {
   title: "Introducing Brokle: Open-Source LLM Observability",
@@ -77,12 +78,12 @@ export default function BlogPage() {
   return (
     <>
       {/* Hero Section */}
-      <section className="py-16 md:py-24">
-        <div className="container px-4 mx-auto">
-          <div className="max-w-3xl mx-auto text-center mb-12">
-            <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">Blog</Badge>
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">Insights & Updates</h1>
-            <p className="text-xl text-muted-foreground">
+      <section className="relative py-16 md:py-24 lg:py-32 overflow-hidden">
+        <HeroBackground />
+        <div className="container px-4 mx-auto relative">
+          <div className="max-w-3xl mx-auto text-center">
+            <DisplayHeading as="h1">Insights & Updates</DisplayHeading>
+            <p className="text-lg md:text-xl text-muted-foreground mt-6 max-w-2xl mx-auto">
               Engineering insights, product updates, and best practices for building
               production LLM applications.
             </p>
@@ -223,29 +224,6 @@ export default function BlogPage() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-16">
-        <div className="container px-4 mx-auto">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl font-bold mb-6">Ready to Get Started?</h2>
-            <p className="text-xl text-muted-foreground mb-8">
-              Try Brokle free and see what&apos;s happening inside your LLM applications.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="gap-2" asChild>
-                <Link href="https://app.brokle.ai/signup">
-                  Start Free <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild>
-                <Link href="/docs">
-                  Read the Docs
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
     </>
   )
 }

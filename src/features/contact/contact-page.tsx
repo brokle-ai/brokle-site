@@ -6,7 +6,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   CheckCircle,
   Github,
@@ -15,17 +14,18 @@ import {
 } from "lucide-react";
 import Link from "next/link"
 import { ContactForm } from "./contact-form";
+import { HeroBackground, DisplayHeading } from "@/components/shared"
 
 export default function ContactPage() {
   return (
     <>
       {/* Hero Section */}
-      <section className="py-16 md:py-24">
-        <div className="container px-4 mx-auto">
-          <div className="max-w-3xl mx-auto text-center mb-12">
-            <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">Contact Us</Badge>
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">Get in Touch</h1>
-            <p className="text-xl text-muted-foreground">
+      <section className="relative py-16 md:py-24 lg:py-32 overflow-hidden">
+        <HeroBackground />
+        <div className="container px-4 mx-auto relative">
+          <div className="max-w-3xl mx-auto text-center">
+            <DisplayHeading as="h1">Get in Touch</DisplayHeading>
+            <p className="text-lg md:text-xl text-muted-foreground mt-6 max-w-2xl mx-auto">
               Have questions about Brokle? Need help with your LLM observability setup?
               We&apos;re here to help.
             </p>
@@ -165,96 +165,6 @@ export default function ContactPage() {
         </div>
       </section>
 
-      {/* FAQ */}
-      <section className="py-16">
-        <div className="container px-4 mx-auto">
-          <div className="max-w-3xl mx-auto">
-            <div className="text-center mb-12">
-              <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">FAQ</Badge>
-              <h2 className="text-3xl font-bold mb-4">Frequently Asked Questions</h2>
-              <p className="text-xl text-muted-foreground">Quick answers to common questions.</p>
-            </div>
-
-            <div className="space-y-6">
-              <Card className="border-0 shadow-none bg-muted/30">
-                <CardHeader>
-                  <CardTitle className="text-lg">How quickly can I expect a response?</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">
-                    We typically respond to all inquiries within 24 hours during business days.
-                    For urgent technical issues, join our Discord for faster community support.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-none bg-muted/30">
-                <CardHeader>
-                  <CardTitle className="text-lg">Is there a free trial available?</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">
-                    Yes! Our Hobby plan is free forever with 50K traces/month. You can also
-                    self-host the open-source version without any limits.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-none bg-muted/30">
-                <CardHeader>
-                  <CardTitle className="text-lg">Do you offer technical support for open-source users?</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">
-                    Open-source users have access to our Discord community, GitHub discussions,
-                    and documentation. Paid plans include priority email support and dedicated
-                    help from our team.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-none bg-muted/30">
-                <CardHeader>
-                  <CardTitle className="text-lg">How do I report a security issue?</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">
-                    For security vulnerabilities, please email{" "}
-                    <a href="mailto:security@brokle.ai" className="text-primary hover:underline">
-                      security@brokle.ai
-                    </a>{" "}
-                    with details. We take security seriously and will respond promptly.
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-16 bg-muted/30">
-        <div className="container px-4 mx-auto">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl font-bold mb-6">Ready to Get Started?</h2>
-            <p className="text-xl text-muted-foreground mb-8">
-              Start tracing your LLM applications in minutes. Free forever with our Hobby plan.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" asChild>
-                <Link href="https://app.brokle.ai/signup">
-                  Start Free
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild>
-                <Link href="/docs">
-                  Read the Docs
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
     </>
   )
 }

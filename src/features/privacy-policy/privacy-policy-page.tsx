@@ -1,48 +1,28 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { ArrowRight, FileText, Shield, User } from "lucide-react"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { HeroBackground, DisplayHeading } from "@/components/shared"
 
 export default function PrivacyPolicyPage() {
   return (
     <>
       {/* Hero Section */}
-      <section className="py-16 md:py-24">
-        <div className="container px-4 mx-auto">
-          <div className="max-w-3xl mx-auto text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">Privacy Policy</h1>
-            <p className="text-xl text-muted-foreground">
+      <section className="relative py-16 md:py-24 overflow-hidden">
+        <HeroBackground />
+        <div className="container px-4 mx-auto relative">
+          <div className="max-w-3xl mx-auto text-center">
+            <DisplayHeading as="h1">Privacy Policy</DisplayHeading>
+            <p className="text-lg md:text-xl text-muted-foreground mt-6">
               Learn how we collect, use, and protect your personal information.
             </p>
-            <div className="flex justify-center gap-4 mt-6">
-              <Badge className="py-1 px-3 text-sm">Last Updated: March 1, 2025</Badge>
-            </div>
+            <p className="text-sm text-muted-foreground mt-4">
+              Last Updated: March 1, 2025
+            </p>
           </div>
+        </div>
+      </section>
 
+      {/* Policy Content */}
+      <section className="py-12">
+        <div className="container px-4 mx-auto">
           <div className="max-w-4xl mx-auto">
-            <Card className="mb-8">
-              <CardContent className="pt-6">
-                <div className="grid md:grid-cols-3 gap-6 mb-6">
-                  <div className="flex flex-col items-center text-center p-4">
-                    <Shield className="h-10 w-10 text-primary mb-3" />
-                    <h3 className="font-medium mb-2">Data Protection</h3>
-                    <p className="text-sm text-muted-foreground">We use industry-standard security measures to protect your data</p>
-                  </div>
-                  <div className="flex flex-col items-center text-center p-4">
-                    <User className="h-10 w-10 text-primary mb-3" />
-                    <h3 className="font-medium mb-2">Your Rights</h3>
-                    <p className="text-sm text-muted-foreground">You maintain control over your personal information</p>
-                  </div>
-                  <div className="flex flex-col items-center text-center p-4">
-                    <FileText className="h-10 w-10 text-primary mb-3" />
-                    <h3 className="font-medium mb-2">Transparency</h3>
-                    <p className="text-sm text-muted-foreground">We clearly explain how your data is used</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
             <div className="prose prose-lg max-w-none">
               <section className="mb-10">
                 <h2 className="text-2xl font-bold mb-4">1. Introduction</h2>
@@ -161,78 +141,6 @@ export default function PrivacyPolicyPage() {
                   <li>Phone: (555) 123-4567</li>
                 </ul>
               </section>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ Section */}
-      <section className="py-16 bg-muted/50">
-        <div className="container px-4 mx-auto">
-          <div className="max-w-3xl mx-auto">
-            <div className="text-center mb-12">
-              <Badge className="mb-4">Privacy FAQ</Badge>
-              <h2 className="text-3xl font-bold mb-4">Common Privacy Questions</h2>
-              <p className="text-xl text-muted-foreground">
-                Find answers to frequently asked questions about our privacy practices.
-              </p>
-            </div>
-
-            <Accordion type="single" collapsible className="w-full">
-              <AccordionItem value="item-1">
-                <AccordionTrigger>How do you protect my data?</AccordionTrigger>
-                <AccordionContent>
-                  We implement industry-standard security measures including encryption, access controls, regular security assessments, and ongoing monitoring to protect your data. All data is encrypted both in transit and at rest, and we maintain strict access controls to ensure only authorized personnel can access your information.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="item-2">
-                <AccordionTrigger>Can I request deletion of my personal information?</AccordionTrigger>
-                <AccordionContent>
-                  Yes, you can request deletion of your personal information at any time by contacting privacy@brokle.com. We will process your request within 30 days. Please note that some information may be retained for legal or business purposes, such as to comply with our legal obligations, resolve disputes, or enforce our agreements.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="item-3">
-                <AccordionTrigger>Do you share my data with third parties?</AccordionTrigger>
-                <AccordionContent>
-                  We only share your data with third-party service providers who help us operate our business and deliver services to you. These providers are contractually obligated to use your information only for the services they provide to us and are prohibited from using your information for their own purposes. We do not sell your personal information to third parties.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="item-4">
-                <AccordionTrigger>How long do you keep my data?</AccordionTrigger>
-                <AccordionContent>
-                  We retain your personal information for as long as necessary to fulfill the purposes for which we collected it, including to provide you with our services, comply with legal obligations, resolve disputes, and enforce our agreements. The specific retention period depends on the type of information and the purpose for which it was collected.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="item-5">
-                <AccordionTrigger>What happens to my data if I cancel my account?</AccordionTrigger>
-                <AccordionContent>
-                  When you cancel your account, your personal information will be deleted or anonymized within 30 days, except for information that we are required to keep for legal or business purposes. You can also request immediate deletion of your data by contacting our privacy team at privacy@brokle.com.
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-16">
-        <div className="container px-4 mx-auto">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl font-bold mb-6">Still Have Questions?</h2>
-            <p className="text-xl text-muted-foreground mb-8">
-              Our privacy team is here to help with any questions about your personal information.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="gap-2">
-                Contact Privacy Team <ArrowRight className="h-4 w-4" />
-              </Button>
-              <Button size="lg" variant="outline" className="gap-2">
-                View Terms of Service
-              </Button>
             </div>
           </div>
         </div>
