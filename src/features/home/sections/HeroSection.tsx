@@ -21,10 +21,12 @@ export function HeroSection() {
             >
               <Github className="h-4 w-4" />
               <span className="text-muted-foreground">Open Source</span>
+              {/* TODO: Uncomment when star count is meaningful
               <span className="flex items-center gap-1 text-foreground">
                 <Star className="h-3.5 w-3.5 fill-yellow-500 text-yellow-500" />
                 2.5K
               </span>
+              */}
             </Link>
 
             <DisplayHeading as="h1" className="mb-6 leading-[1.1]">

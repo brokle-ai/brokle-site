@@ -103,12 +103,14 @@ function GitHubStarsInline() {
       className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
     >
       <Github className="h-4 w-4" />
+{/* TODO: Uncomment when star count is meaningful
       {stars && (
         <Badge variant="secondary" className="h-5 px-1.5 text-xs">
           <Star className="h-3 w-3 mr-0.5 fill-current" />
           {stars}
         </Badge>
       )}
+      */}
     </Link>
   );
 }
