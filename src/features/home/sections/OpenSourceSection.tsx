@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button"
 const ossFeatures = [
   {
     icon: Github,
-    title: "Fully Open Source",
+    title: "Open Core",
     description:
-      "MIT licensed. View, modify, and contribute to the entire codebase. No proprietary lock-in.",
+      "Core platform is MIT licensed. View, modify, and contribute freely. Enterprise features available for teams that need them.",
   },
   {
     icon: GitFork,
@@ -31,10 +31,10 @@ export function OpenSourceSection() {
         {/* Section Header */}
         <div className="text-center mb-12">
           <DisplayHeading as="h2" className="mb-4">
-            100% open source
+            Open source at heart
           </DisplayHeading>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Brokle is MIT licensed and always will be. Self-host for free or use our managed cloud.
+            Our core platform is MIT licensed. Self-host for free or use our managed cloud with optional enterprise features.
           </p>
         </div>
 

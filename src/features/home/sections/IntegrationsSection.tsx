@@ -1,175 +1,117 @@
 import Link from "next/link"
 import Image from "next/image"
-import { ArrowRight, MoreHorizontal } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import { DisplayHeading } from "@/components/shared"
-import { Button } from "@/components/ui/button"
+import { Marquee } from "@/components/ui/marquee"
 
 const integrations = [
   // AI Providers
-  {
-    name: "OpenAI",
-    href: "/docs/integrations/openai",
-    icon: "/images/integrations/openai_icon.svg",
-  },
-  {
-    name: "Anthropic",
-    href: "/docs/integrations/anthropic",
-    icon: "/images/integrations/anthropic_icon.png",
-  },
-  {
-    name: "Google Gemini",
-    href: "/docs/integrations/google",
-    icon: "/images/integrations/google_gemini_icon.svg",
-  },
-  {
-    name: "Azure OpenAI",
-    href: "/docs/integrations/azure",
-    icon: "/images/integrations/microsoft_icon.svg",
-  },
-  {
-    name: "AWS Bedrock",
-    href: "/docs/integrations/bedrock",
-    icon: "/images/integrations/bedrock_icon.png",
-  },
-  {
-    name: "Mistral",
-    href: "/docs/integrations/mistral",
-    icon: "/images/integrations/mistral_icon.svg",
-    darkInvert: true,
-  },
-  {
-    name: "Cohere",
-    href: "/docs/integrations/cohere",
-    icon: "/images/integrations/cohere_icon.svg",
-  },
-  {
-    name: "Groq",
-    href: "/docs/integrations/groq",
-    icon: "/images/integrations/groq_icon.png",
-    darkInvert: true,
-  },
-  {
-    name: "Together AI",
-    href: "/docs/integrations/together",
-    icon: "/images/integrations/togetherai_icon.svg",
-  },
-  {
-    name: "Fireworks",
-    href: "/docs/integrations/fireworks",
-    icon: "/images/integrations/fireworks_ai_icon.svg",
-  },
-  {
-    name: "Ollama",
-    href: "/docs/integrations/ollama",
-    icon: "/images/integrations/ollama_icon.png",
-    darkInvert: true,
-  },
-  // Frameworks
-  {
-    name: "LangChain",
-    href: "/docs/integrations/langchain",
-    icon: "/images/integrations/langchain_icon.png",
-    darkInvert: true,
-  },
-  {
-    name: "LlamaIndex",
-    href: "/docs/integrations/llamaindex",
-    icon: "/images/integrations/llamaindex_icon.png",
-  },
-  {
-    name: "OpenTelemetry",
-    href: "/docs/integrations/opentelemetry",
-    icon: "/images/integrations/opentelemetry_icon.svg",
-  },
-  {
-    name: "Instructor",
-    href: "/docs/integrations/instructor",
-    icon: "/images/integrations/instructor_icon.svg",
-    darkInvert: true,
-  },
+  { name: "OpenAI", icon: "/images/integrations/openai_icon.svg", href: "/docs/integrations/openai" },
+  { name: "Anthropic", icon: "/images/integrations/anthropic_icon.png", href: "/docs/integrations/anthropic" },
+  { name: "Google Gemini", icon: "/images/integrations/google_gemini_icon.svg", href: "/docs/integrations/google" },
+  { name: "Azure OpenAI", icon: "/images/integrations/microsoft_icon.svg", href: "/docs/integrations/azure" },
+  { name: "AWS Bedrock", icon: "/images/integrations/bedrock_icon.png", href: "/docs/integrations/bedrock" },
+  { name: "Mistral", icon: "/images/integrations/mistral_icon.svg", darkInvert: true, href: "/docs/integrations/mistral" },
+  { name: "Cohere", icon: "/images/integrations/cohere_icon.svg", href: "/docs/integrations/cohere" },
+  { name: "Groq", icon: "/images/integrations/groq_icon.png", darkInvert: true, href: "/docs/integrations/groq" },
+  { name: "Together AI", icon: "/images/integrations/togetherai_icon.svg", href: "/docs/integrations/together" },
+  { name: "Fireworks", icon: "/images/integrations/fireworks_ai_icon.svg", href: "/docs/integrations/fireworks" },
+  { name: "Ollama", icon: "/images/integrations/ollama_icon.png", darkInvert: true, href: "/docs/integrations/ollama" },
+  // Frameworks & Tools
+  { name: "LangChain", icon: "/images/integrations/langchain_icon.png", darkInvert: true, href: "/docs/integrations/langchain" },
+  { name: "LlamaIndex", icon: "/images/integrations/llamaindex_icon.png", href: "/docs/integrations/llamaindex" },
+  { name: "OpenTelemetry", icon: "/images/integrations/opentelemetry_icon.svg", href: "/docs/integrations/opentelemetry" },
+  { name: "Instructor", icon: "/images/integrations/instructor_icon.svg", darkInvert: true, href: "/docs/integrations/instructor" },
 ]
 
-function IntegrationTile({
+// Split integrations into 3 rows with different arrangements
+const row1 = [...integrations]
+const row2 = [...integrations].reverse()
+const row3 = [...integrations.slice(7), ...integrations.slice(0, 7)]
+
+function IntegrationIcon({
   name,
-  href,
   icon,
   darkInvert,
+  href,
 }: {
   name: string
-  href: string
   icon: string
   darkInvert?: boolean
+  href: string
 }) {
   return (
     <Link
       href={href}
-      className="flex flex-col items-center gap-2 p-3 sm:p-4 rounded-xl border border-border/50 bg-card hover:shadow-md hover:border-border transition-all"
+      className="flex items-center justify-center w-16 h-16 mx-2 rounded-xl border bg-card hover:bg-muted/50 hover:scale-110 transition-all"
+      title={name}
     >
       <Image
         src={icon}
         alt={`${name} icon`}
-        width={32}
-        height={32}
+        width={36}
+        height={36}
         className={darkInvert ? "dark:invert" : ""}
       />
-      <span className="text-[10px] sm:text-xs text-muted-foreground text-center line-clamp-1">
-        {name}
-      </span>
-    </Link>
-  )
-}
-
-function MoreTile() {
-  return (
-    <Link
-      href="/docs/integrations"
-      className="flex flex-col items-center gap-2 p-3 sm:p-4 rounded-xl border border-border/50 bg-card hover:shadow-md hover:border-border transition-all"
-    >
-      <MoreHorizontal className="w-8 h-8 text-primary" />
-      <span className="text-[10px] sm:text-xs text-muted-foreground text-center">
-        More
-      </span>
     </Link>
   )
 }
 
 export function IntegrationsSection() {
   return (
-    <section className="py-20 md:py-28 lg:py-32 border-t">
+    <section className="py-20 md:py-28 lg:py-32 border-t overflow-hidden">
       <div className="container px-4 mx-auto max-w-7xl">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-12">
-          {/* Left - Text */}
-          <div className="lg:max-w-md">
-            <p className="text-sm text-muted-foreground uppercase tracking-wider mb-3">
-              Integrations
-            </p>
-            <DisplayHeading as="h2" className="mb-4">
-              Works with your entire stack
-            </DisplayHeading>
-            <p className="text-lg text-muted-foreground mb-6">
-              Native integrations with major AI providers and frameworks. Drop-in compatibility with your existing code.
-            </p>
-            <div className="flex items-center gap-4">
-              <Button asChild>
-                <Link href="/docs/quickstart">Get Started</Link>
-              </Button>
-              <Link
-                href="/docs/integrations"
-                className="inline-flex items-center gap-1 text-sm font-medium hover:text-foreground/70 transition-colors"
-              >
-                View all integrations
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-          </div>
+        {/* Centered Header */}
+        <div className="text-center mb-12">
+          <DisplayHeading as="h2" className="mb-4">
+            Works with your entire stack
+          </DisplayHeading>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Native integrations with 100+ AI providers and frameworks. Drop-in compatibility with your existing code.
+          </p>
+        </div>
+      </div>
 
-          {/* Right - Icon Grid */}
-          <div className="grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-4 gap-2 sm:gap-3">
-            {integrations.map((integration) => (
-              <IntegrationTile key={integration.name} {...integration} />
+      {/* 3-Row Marquee - Full width */}
+      <div className="relative">
+        {/* Fade edges */}
+        <div className="absolute left-0 inset-y-0 w-[15%] bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
+        <div className="absolute right-0 inset-y-0 w-[15%] bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+
+        <div className="flex flex-col gap-4">
+          {/* Row 1 - Normal direction */}
+          <Marquee pauseOnHover className="[--duration:50s]">
+            {row1.map((integration) => (
+              <IntegrationIcon key={`r1-${integration.name}`} {...integration} />
             ))}
-            <MoreTile />
-          </div>
+          </Marquee>
+
+          {/* Row 2 - Reverse direction */}
+          <Marquee pauseOnHover reverse className="[--duration:55s]">
+            {row2.map((integration) => (
+              <IntegrationIcon key={`r2-${integration.name}`} {...integration} />
+            ))}
+          </Marquee>
+
+          {/* Row 3 - Normal direction */}
+          <Marquee pauseOnHover className="[--duration:45s]">
+            {row3.map((integration) => (
+              <IntegrationIcon key={`r3-${integration.name}`} {...integration} />
+            ))}
+          </Marquee>
+        </div>
+      </div>
+
+      {/* CTA */}
+      <div className="container px-4 mx-auto max-w-7xl">
+        <div className="text-center mt-10">
+          <Link
+            href="/docs/integrations"
+            className="inline-flex items-center gap-1 text-sm font-medium hover:text-foreground/70 transition-colors"
+          >
+            View all integrations
+            <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
       </div>
     </section>

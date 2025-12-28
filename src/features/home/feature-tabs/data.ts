@@ -16,7 +16,7 @@ export const featureTabsData: FeatureTabData[] = [
     description:
       "Complete traces of your LLM applications. Debug failures, understand latency, and track costs across all requests.",
     image: {
-      src: null, // TODO: Replace with "/images/features/traces.png"
+      src: "/images/features/traces.png",
       alt: "Brokle traces dashboard showing LLM call hierarchy with timing and token usage",
     },
     code: {
@@ -57,7 +57,7 @@ const handleRequest = observe(async (text: string) => {
     description:
       "Real-time dashboards showing token usage, API costs, response times, and error rates across all your LLM providers.",
     image: {
-      src: null, // TODO: Replace with "/images/features/metrics.png"
+      src: "/images/features/metrics.png",
       alt: "Brokle metrics dashboard with cost breakdown, latency charts, and usage analytics",
     },
     code: {
@@ -97,7 +97,7 @@ brokle.track("response_length", { value: response.length });`,
     description:
       "Manage prompts as code. Version control, A/B testing, and instant rollbacks without code deployments.",
     image: {
-      src: null, // TODO: Replace with "/images/features/prompts.png"
+      src: "/images/features/prompts.png",
       alt: "Brokle prompt management interface with version history and deployment labels",
     },
     code: {
@@ -139,7 +139,7 @@ const response = await openai.chat.completions.create({
     description:
       "Automated evals with LLM-as-judge, custom scorers, and human annotation. Build quality benchmarks at scale.",
     image: {
-      src: null, // TODO: Replace with "/images/features/evaluations.png"
+      src: "/images/features/evaluations.png",
       alt: "Brokle evaluation results showing quality scores and benchmark comparisons",
     },
     code: {
@@ -183,7 +183,7 @@ const results = await brokle.evaluate({
     description:
       "Iterate on prompts in real-time. Compare outputs across models, test with different inputs, and save winning variants.",
     image: {
-      src: null, // TODO: Replace with "/images/features/playground.png"
+      src: "/images/features/playground.png",
       alt: "Brokle playground with side-by-side model comparison and variable substitution",
     },
     displayMode: "image-only",
