@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
 import { CheckCircle } from "lucide-react"
 import Link from "next/link"
 import { pricingTiers, addOns } from "@/data/pricing-tiers"
@@ -131,7 +130,6 @@ export default function PricingCards() {
       <section className="py-16 bg-muted/30">
         <div className="container px-4 mx-auto">
           <div className="max-w-3xl mx-auto text-center mb-12">
-            <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">Add-ons</Badge>
             <h2 className="text-3xl font-bold mb-4">Scale as you need</h2>
             <p className="text-lg text-muted-foreground">
               Need more capacity? Add these to any plan.

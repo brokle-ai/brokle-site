@@ -1,11 +1,9 @@
 import Link from "next/link"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { HeroBackground } from "@/components/shared"
 import { ArrowRight } from "lucide-react"
 
 interface ProductHeroProps {
-  badge: string
   title: string
   highlight: string
   description: string
@@ -20,7 +18,6 @@ interface ProductHeroProps {
 }
 
 export function ProductHero({
-  badge,
   title,
   highlight,
   description,
@@ -33,9 +30,6 @@ export function ProductHero({
 
       <div className="container px-4 mx-auto relative">
         <div className="max-w-4xl mx-auto text-center">
-          <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
-            {badge}
-          </Badge>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
             {title}{" "}
             <span className="text-primary">{highlight}</span>

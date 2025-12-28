@@ -1,17 +1,15 @@
-import { Badge } from "@/components/ui/badge"
+import { HeroBackground, DisplayHeading } from "@/components/shared"
 
 export default function PricingHero() {
   return (
-    <section className="py-16 md:py-24">
-      <div className="container px-4 mx-auto">
-        <div className="max-w-3xl mx-auto text-center mb-12">
-          <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
-            Pricing
-          </Badge>
-          <h1 className="text-4xl md:text-5xl font-bold mb-6">
+    <section className="relative py-16 md:py-24 lg:py-32 overflow-hidden">
+      <HeroBackground />
+      <div className="container px-4 mx-auto relative">
+        <div className="max-w-3xl mx-auto text-center">
+          <DisplayHeading as="h1">
             Simple, usage-based pricing
-          </h1>
-          <p className="text-xl text-muted-foreground">
+          </DisplayHeading>
+          <p className="text-lg md:text-xl text-muted-foreground mt-6 max-w-2xl mx-auto">
             Start free, scale as you grow. No hidden fees, no per-seat pricing.
             Pay only for the traces you use.
           </p>

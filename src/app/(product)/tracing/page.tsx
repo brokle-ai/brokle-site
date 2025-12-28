@@ -38,7 +38,6 @@ export default function TracingPage() {
   return (
     <>
       <ProductHero
-        badge="Tracing & Debugging"
         title="See inside every"
         highlight="LLM call"
         description="Debug complex chains and agents with detailed traces. Understand exactly what your LLM applications are doing, one span at a time."

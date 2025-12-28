@@ -1,4 +1,3 @@
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ArrowRight, Check, X } from "lucide-react"
@@ -10,7 +9,6 @@ export default function ComparisonTable() {
       <div className="container px-4 mx-auto">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
-            <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">Feature Comparison</Badge>
             <h2 className="text-3xl font-bold mb-4">Compare Plan Features</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               See exactly what&apos;s included in each plan to find the right fit for your team.

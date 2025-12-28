@@ -60,7 +60,7 @@ const resourceLinks = [
   },
   {
     title: "Integrations",
-    href: "/integrations",
+    href: "/docs/integrations",
     description: "SDKs and framework integrations",
     external: false,
   },
@@ -74,18 +74,6 @@ const resourceLinks = [
     title: "Changelog",
     href: "/changelog",
     description: "Product updates and new features",
-    external: false,
-  },
-  {
-    title: "Community",
-    href: "https://discord.gg/brokle",
-    description: "Join our Discord community",
-    external: true,
-  },
-  {
-    title: "Security",
-    href: "/security",
-    description: "Compliance and security information",
     external: false,
   },
 ]

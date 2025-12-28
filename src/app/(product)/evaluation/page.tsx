@@ -35,7 +35,6 @@ export default function EvaluationPage() {
   return (
     <>
       <ProductHero
-        badge="Evaluation Framework"
         title="Measure what"
         highlight="matters"
         description="Automated evaluations that go beyond vibes. Score outputs with LLM-as-judge, run A/B tests, and ship with confidence."

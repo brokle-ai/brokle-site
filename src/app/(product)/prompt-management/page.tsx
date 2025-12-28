@@ -35,7 +35,6 @@ export default function PromptManagementPage() {
   return (
     <>
       <ProductHero
-        badge="Prompt Management"
         title="Ship prompts with"
         highlight="confidence"
         description="Version, test, and deploy prompts without touching your codebase. A/B test in production, roll back instantly when things go wrong."

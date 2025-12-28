@@ -1,6 +1,5 @@
 'use client';
 
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { ArrowRight, HelpCircle, Github } from "lucide-react"
@@ -14,7 +13,6 @@ export default function PricingFAQ() {
         <div className="container px-4 mx-auto">
           <div className="max-w-3xl mx-auto">
             <div className="text-center mb-12">
-              <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">FAQ</Badge>
               <h2 className="text-3xl font-bold mb-4">Frequently Asked Questions</h2>
               <p className="text-lg text-muted-foreground">
                 Everything you need to know about Brokle pricing and plans.
