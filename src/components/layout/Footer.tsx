@@ -10,7 +10,6 @@ const footerLinks = {
     { name: "Tracing", href: "/tracing" },
     { name: "Prompt Management", href: "/prompt-management" },
     { name: "Evaluation", href: "/evaluation" },
-    { name: "Analytics", href: "/analytics" },
     { name: "Pricing", href: "/pricing" },
   ],
   developers: [

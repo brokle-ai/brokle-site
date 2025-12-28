@@ -1,135 +1,110 @@
-import type { Metadata } from "next";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight, GitBranch, History, FlaskConical, Rocket, Users, Lock } from "lucide-react";
-import Link from "next/link";
+import type { Metadata } from "next"
+import {
+  ProductHero,
+  ProductScreenshot,
+  ProductFeatureSection,
+  ProductCTA,
+} from "@/features/product"
+import {
+  FileEdit,
+  Variable,
+  Eye,
+  Clock,
+  GitCompare,
+  FileCheck,
+  Tag,
+  Undo2,
+  FlaskConical,
+} from "lucide-react"
 
 export const metadata: Metadata = {
   title: "Prompt Management - Brokle",
-  description: "Version, test, and deploy prompts with confidence. Track changes, compare performance, and roll back instantly.",
+  description:
+    "Version, test, and deploy prompts with confidence. Track changes, compare performance, and roll back instantly.",
   openGraph: {
     title: "Prompt Management - Brokle",
-    description: "Version, test, and deploy prompts with confidence. Track changes and roll back instantly.",
+    description:
+      "Version, test, and deploy prompts with confidence. Track changes and roll back instantly.",
     url: "https://brokle.ai/prompt-management",
     siteName: "Brokle",
     type: "website",
   },
-};
-
-const features = [
-  {
-    icon: GitBranch,
-    title: "Version Control",
-    description: "Track every change to your prompts with full version history and diff views.",
-  },
-  {
-    icon: History,
-    title: "Instant Rollback",
-    description: "Roll back to any previous version with one click. No code deployments needed.",
-  },
-  {
-    icon: FlaskConical,
-    title: "A/B Testing",
-    description: "Test prompt variations in production with automatic traffic splitting and metrics.",
-  },
-  {
-    icon: Rocket,
-    title: "Hot Swapping",
-    description: "Update prompts in production without code changes or deployments.",
-  },
-  {
-    icon: Users,
-    title: "Team Collaboration",
-    description: "Review prompts with your team. Comment, approve, and track who changed what.",
-  },
-  {
-    icon: Lock,
-    title: "Access Control",
-    description: "Control who can view, edit, and deploy prompts with role-based permissions.",
-  },
-];
+}
 
 export default function PromptManagementPage() {
   return (
     <>
-      {/* Hero Section */}
-      <section className="py-20 md:py-28">
-        <div className="container px-4 mx-auto">
-          <div className="max-w-4xl mx-auto text-center">
-            <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
-              Prompt Management
-            </Badge>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
-              Ship prompts with{" "}
-              <span className="text-primary">confidence</span>
-            </h1>
-            <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Version, test, and deploy prompts without touching your codebase.
-              A/B test in production, roll back instantly when things go wrong.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="gap-2" asChild>
-                <Link href="https://app.brokle.ai/signup">
-                  Get Started Free <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild>
-                <Link href="/docs/prompts">
-                  View Documentation
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
+      <ProductHero
+        badge="Prompt Management"
+        title="Ship prompts with"
+        highlight="confidence"
+        description="Version, test, and deploy prompts without touching your codebase. A/B test in production, roll back instantly when things go wrong."
+        primaryCta={{
+          text: "Get Started Free",
+          href: "https://app.brokle.ai/signup",
+        }}
+        secondaryCta={{
+          text: "View Documentation",
+          href: "/docs/prompts",
+        }}
+      />
 
-      {/* Features Grid */}
-      <section className="py-20 bg-muted/30">
-        <div className="container px-4 mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Prompts as a first-class citizen
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Everything you need to manage prompts at scale, from solo developers to enterprise teams.
-            </p>
-          </div>
+      <ProductScreenshot
+        src="/images/product/prompts/hero.png"
+        alt="Brokle prompt management interface with version history and deployment labels"
+      />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            {features.map((feature) => (
-              <Card key={feature.title} className="border-0 shadow-none bg-background">
-                <CardContent className="p-6">
-                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary mb-4">
-                    <feature.icon className="h-6 w-6" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
-                  <p className="text-muted-foreground text-sm">
-                    {feature.description}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
+      <ProductFeatureSection
+        title="Edit prompts visually"
+        description="Write and refine prompts in a rich editor with syntax highlighting, variable support, and real-time validation. Preview outputs before deploying."
+        image={{
+          src: "/images/product/prompts/editor.png",
+          alt: "Prompt editor with syntax highlighting and preview",
+        }}
+        features={[
+          { icon: FileEdit, text: "Syntax highlighting, autocomplete, and inline validation" },
+          { icon: Variable, text: "Use templates with dynamic placeholders for flexible prompts" },
+          { icon: Eye, text: "Test your prompts against sample inputs before saving" },
+        ]}
+      />
 
-      {/* CTA Section */}
-      <section className="py-20">
-        <div className="container px-4 mx-auto">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl font-bold mb-6">Ready to manage your prompts?</h2>
-            <p className="text-lg text-muted-foreground mb-8">
-              Stop hardcoding prompts. Start versioning, testing, and deploying with confidence.
-            </p>
-            <Button size="lg" className="gap-2" asChild>
-              <Link href="https://app.brokle.ai/signup">
-                Get Started Free <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </section>
+      <ProductFeatureSection
+        title="Track every change"
+        description="Full version history with diff views for every prompt. See who changed what and when. Compare versions side-by-side to understand the evolution of your prompts."
+        image={{
+          src: "/images/product/prompts/versions.png",
+          alt: "Version history with diff comparison",
+        }}
+        features={[
+          { icon: Clock, text: "Every change tracked with timestamps and author info" },
+          { icon: GitCompare, text: "Compare any two versions to see exactly what changed" },
+          { icon: FileCheck, text: "Full compliance-ready logs of all prompt modifications" },
+        ]}
+        reverse
+      />
+
+      <ProductFeatureSection
+        title="Deploy without code changes"
+        description="Use labels like 'production', 'staging', or 'canary' to control which prompt version is served. Hot-swap prompts in production with zero downtime."
+        image={{
+          src: "/images/product/prompts/deploy.png",
+          alt: "Deployment labels and environment configuration",
+        }}
+        features={[
+          { icon: Tag, text: "Separate production, staging, and development versions" },
+          { icon: Undo2, text: "Instantly revert to any previous version when issues arise" },
+          { icon: FlaskConical, text: "Split traffic between versions to test improvements safely" },
+        ]}
+      />
+
+      <ProductCTA
+        title="Ready to manage your prompts?"
+        description="Stop hardcoding prompts. Start versioning, testing, and deploying with confidence."
+        cta={{
+          text: "Get Started Free",
+          href: "https://app.brokle.ai/signup",
+        }}
+      />
     </>
-  );
+  )
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link'
-import { Menu, Search, MessageSquare, CheckSquare, BarChart3, Blocks, Github, Star, ExternalLink } from "lucide-react"
+import { Menu, Search, MessageSquare, CheckSquare, Blocks, Github, Star, ExternalLink } from "lucide-react"
 import { Button } from '@/components/ui/button'
 import { BrokleLogo } from '@/components/ui/brokle-logo'
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -48,12 +48,6 @@ const productLinks = [
     href: "/evaluation",
     description: "Automated evals with LLM-as-judge. Build custom evaluators and run A/B tests.",
     icon: CheckSquare,
-  },
-  {
-    title: "Analytics",
-    href: "/analytics",
-    description: "Track spend across providers. Monitor latency and optimize costs.",
-    icon: BarChart3,
   },
 ]
 

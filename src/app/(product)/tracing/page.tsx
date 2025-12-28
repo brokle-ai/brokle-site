@@ -1,135 +1,128 @@
-import type { Metadata } from "next";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight, Search, Layers, Clock, Zap, Bug, LineChart } from "lucide-react";
-import Link from "next/link";
+import type { Metadata } from "next"
+import {
+  ProductHero,
+  ProductScreenshot,
+  ProductFeatureSection,
+  ProductCTA,
+} from "@/features/product"
+import {
+  FileInput,
+  Settings2,
+  Tags,
+  Waves,
+  Gauge,
+  AlertTriangle,
+  FileStack,
+  RotateCcw,
+  ShieldAlert,
+  PieChart,
+  Bell,
+  TrendingUp,
+} from "lucide-react"
 
 export const metadata: Metadata = {
   title: "Tracing & Debugging - Brokle",
-  description: "Debug your LLM applications with detailed traces. See every LLM call, chain execution, and agent step. OpenTelemetry-native tracing for AI applications.",
+  description:
+    "Debug your LLM applications with detailed traces. See every LLM call, chain execution, and agent step. OpenTelemetry-native tracing for AI applications.",
   openGraph: {
     title: "Tracing & Debugging - Brokle",
-    description: "Debug your LLM applications with detailed traces. OpenTelemetry-native tracing for AI.",
+    description:
+      "Debug your LLM applications with detailed traces. OpenTelemetry-native tracing for AI.",
     url: "https://brokle.ai/tracing",
     siteName: "Brokle",
     type: "website",
   },
-};
-
-const features = [
-  {
-    icon: Search,
-    title: "Deep Visibility",
-    description: "See every LLM call with inputs, outputs, model parameters, and metadata in a single view.",
-  },
-  {
-    icon: Layers,
-    title: "Nested Spans",
-    description: "Visualize complex chains and agents with hierarchical span views showing the full execution flow.",
-  },
-  {
-    icon: Clock,
-    title: "Latency Breakdown",
-    description: "Identify bottlenecks with detailed timing for each operation in your LLM pipeline.",
-  },
-  {
-    icon: Zap,
-    title: "Real-time Streaming",
-    description: "Watch traces appear as they happen with live streaming support for async operations.",
-  },
-  {
-    icon: Bug,
-    title: "Error Tracking",
-    description: "Catch failures with detailed error messages, stack traces, and retry information.",
-  },
-  {
-    icon: LineChart,
-    title: "Token Counting",
-    description: "Track token usage per call with automatic cost calculation across providers.",
-  },
-];
+}
 
 export default function TracingPage() {
   return (
     <>
-      {/* Hero Section */}
-      <section className="py-20 md:py-28">
-        <div className="container px-4 mx-auto">
-          <div className="max-w-4xl mx-auto text-center">
-            <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
-              Tracing & Debugging
-            </Badge>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
-              See inside every{" "}
-              <span className="text-primary">LLM call</span>
-            </h1>
-            <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Debug complex chains and agents with detailed traces. Understand exactly
-              what your LLM applications are doing, one span at a time.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="gap-2" asChild>
-                <Link href="https://app.brokle.ai/signup">
-                  Start Tracing Free <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild>
-                <Link href="/docs/tracing">
-                  View Documentation
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
+      <ProductHero
+        badge="Tracing & Debugging"
+        title="See inside every"
+        highlight="LLM call"
+        description="Debug complex chains and agents with detailed traces. Understand exactly what your LLM applications are doing, one span at a time."
+        primaryCta={{
+          text: "Start Tracing Free",
+          href: "https://app.brokle.ai/signup",
+        }}
+        secondaryCta={{
+          text: "View Documentation",
+          href: "/docs/tracing",
+        }}
+      />
 
-      {/* Features Grid */}
-      <section className="py-20 bg-muted/30">
-        <div className="container px-4 mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Everything you need to debug LLMs
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Built on OpenTelemetry standards, designed for AI applications.
-            </p>
-          </div>
+      <ProductScreenshot
+        src="/images/product/tracing/hero.png"
+        alt="Brokle tracing dashboard showing LLM call hierarchy with timing and token usage"
+      />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            {features.map((feature) => (
-              <Card key={feature.title} className="border-0 shadow-none bg-background">
-                <CardContent className="p-6">
-                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary mb-4">
-                    <feature.icon className="h-6 w-6" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
-                  <p className="text-muted-foreground text-sm">
-                    {feature.description}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
+      <ProductFeatureSection
+        title="See every call in detail"
+        description="View every LLM call with inputs, outputs, model parameters, and metadata in a single view. No more guessing what went wrong—trace the exact path through your application."
+        image={{
+          src: "/images/product/tracing/spans.png",
+          alt: "Nested span view showing full execution flow",
+        }}
+        features={[
+          { icon: FileInput, text: "Capture complete request and response data for every LLM call" },
+          { icon: Settings2, text: "View temperature, max tokens, and all model configuration" },
+          { icon: Tags, text: "Add custom metadata to traces for filtering and analysis" },
+        ]}
+      />
 
-      {/* CTA Section */}
-      <section className="py-20">
-        <div className="container px-4 mx-auto">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl font-bold mb-6">Ready to debug your LLM apps?</h2>
-            <p className="text-lg text-muted-foreground mb-8">
-              Add tracing to your application in under 5 minutes. No code changes required.
-            </p>
-            <Button size="lg" className="gap-2" asChild>
-              <Link href="https://app.brokle.ai/signup">
-                Get Started Free <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </section>
+      <ProductFeatureSection
+        title="Identify bottlenecks instantly"
+        description="Understand where time is spent with detailed latency breakdowns. See p50, p95, and p99 latencies across your entire LLM pipeline to catch performance regressions early."
+        image={{
+          src: "/images/product/tracing/timeline.png",
+          alt: "Latency timeline showing performance breakdown",
+        }}
+        features={[
+          { icon: Waves, text: "Visualize timing of every operation in your pipeline" },
+          { icon: Gauge, text: "Monitor p50, p95, and p99 to understand real user experience" },
+          { icon: AlertTriangle, text: "Get alerted when performance degrades across deployments" },
+        ]}
+        reverse
+      />
+
+      <ProductFeatureSection
+        title="Catch errors before users do"
+        description="Track failures with detailed error messages, stack traces, and retry information. See exactly where and why things went wrong, from rate limits to malformed responses."
+        image={{
+          src: "/images/product/tracing/errors.png",
+          alt: "Error tracking view with stack traces and retry information",
+        }}
+        features={[
+          { icon: FileStack, text: "See full error context including line numbers and call stacks" },
+          { icon: RotateCcw, text: "Understand how retry logic behaves under real conditions" },
+          { icon: ShieldAlert, text: "Monitor API rate limits and quotas across all providers" },
+        ]}
+      />
+
+      <ProductFeatureSection
+        title="Track every dollar spent"
+        description="See costs across providers, models, and use cases. Set budget alerts, forecast spending, and identify optimization opportunities before they impact your bottom line."
+        image={{
+          src: "/images/product/tracing/costs.png",
+          alt: "Cost breakdown showing spend by provider and model",
+        }}
+        features={[
+          { icon: PieChart, text: "See costs across OpenAI, Anthropic, and other providers" },
+          { icon: Bell, text: "Get notified before you exceed spending limits" },
+          { icon: TrendingUp, text: "Project future spending based on current usage patterns" },
+        ]}
+        reverse
+      />
+
+      <ProductCTA
+        title="Ready to debug your LLM apps?"
+        description="Add tracing to your application in under 5 minutes. No code changes required."
+        cta={{
+          text: "Get Started Free",
+          href: "https://app.brokle.ai/signup",
+        }}
+      />
     </>
-  );
+  )
 }

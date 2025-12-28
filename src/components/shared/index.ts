@@ -1,5 +1,6 @@
 export { GradientSection } from "./GradientSection"
 export { DisplayHeading } from "./DisplayHeading"
+export { HeroBackground } from "./HeroBackground"
 export { IsometricIllustration } from "./IsometricIllustration"
 export { VideoBackground } from "./VideoBackground"
 export { Interactive3D } from "./Interactive3D"
