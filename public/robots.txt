@@ -1,0 +1,11 @@
+# Brokle - Open Source AI Observability Platform
+# https://brokle.com
+
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://brokle.com/sitemap.xml
+
+# Disallow admin/api paths (if any)
+Disallow: /api/

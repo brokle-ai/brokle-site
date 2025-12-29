@@ -60,10 +60,15 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
+    site: '@brokleai',
+    creator: '@brokleai',
     title: 'Brokle - Open Source AI Observability Platform',
     description:
       'Open source LLM observability. Debug, evaluate, and optimize AI applications. Self-host or cloud.',
     images: ['/images/twitter-card.png'],
+  },
+  alternates: {
+    canonical: '/',
   },
 };
 
