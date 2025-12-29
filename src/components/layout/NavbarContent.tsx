@@ -83,15 +83,24 @@ function GitHubStarsInline() {
 
   useEffect(() => {
     fetch('/api/github-stars')
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        return res.json();
+      })
       .then((data) => {
         const count = data.stars;
         if (typeof count === 'number') {
           setStars(count >= 1000 ? `${(count / 1000).toFixed(1)}k` : String(count));
         }
       })
-      .catch(() => {
-        // Silently fail - just show icon without count
+      .catch((error) => {
+        // Log in development only
+        if (process.env.NODE_ENV === 'development') {
+          console.debug('[GitHubStars] Fetch failed:', error.message);
+        }
+        // Silent fail is intentional - just don't show star count
       });
   }, []);
 

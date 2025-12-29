@@ -7,17 +7,8 @@ const config = {
   reactStrictMode: true,
   // URL consistency for SEO
   trailingSlash: false,
-  // Redirect www to non-www (handled at DNS/CDN level typically)
-  async redirects() {
-    return [
-      // Redirect any uppercase URLs to lowercase
-      {
-        source: '/:path((?:[A-Z])+.*)',
-        destination: '/:path',
-        permanent: true,
-      },
-    ];
-  },
+  // Note: www to non-www redirect is handled at DNS/CDN level
+  // Note: Lowercase URL enforcement removed - causes redirect loops with static files
 };
 
 export default withMDX(config);

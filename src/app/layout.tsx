@@ -101,7 +101,7 @@ export default function RootLayout({
           href="/blog/feed.xml"
         />
       </head>
-      <body className="flex min-h-screen flex-col antialiased">
+      <body className="flex min-h-screen flex-col antialiased" suppressHydrationWarning>
         <OrganizationSchema />
         <SoftwareApplicationSchema />
         <CookieConsentProvider>

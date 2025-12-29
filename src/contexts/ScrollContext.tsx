@@ -10,12 +10,13 @@ const ScrollContext = createContext<ScrollContextType>({ isScrolled: false });
 
 export function ScrollProvider({ children }: { children: ReactNode }) {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    // Set initial state
+    setIsMounted(true);
+    // Set initial state only after mount
     setIsScrolled(window.scrollY > 10);
 
-    // Simple, direct handler - matches old website pattern
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
@@ -24,8 +25,11 @@ export function ScrollProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Return false during SSR and initial client render for consistency
+  const value = { isScrolled: isMounted ? isScrolled : false };
+
   return (
-    <ScrollContext.Provider value={{ isScrolled }}>
+    <ScrollContext.Provider value={value}>
       {children}
     </ScrollContext.Provider>
   );

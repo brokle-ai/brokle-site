@@ -56,10 +56,14 @@ export const CookieConsent: React.FC = () => {
     preferences: false
   });
 
+  // Track if component is mounted (prevents hydration mismatch)
+  const [isMounted, setIsMounted] = useState(false);
+
   const isCookieSettingButtonEnabled = false;
 
   // Load saved preferences once on mount
   useEffect(() => {
+    setIsMounted(true);
     const savedPrefs = localStorage.getItem(COOKIE_CONSENT_KEY);
     if (savedPrefs) {
       setHasSavedPreferences(true);
@@ -75,6 +79,12 @@ export const CookieConsent: React.FC = () => {
       setTempPreferences({...preferences});
     }
   }, [showAdvancedDialog, preferences]);
+
+  // Don't render anything until mounted (prevents hydration mismatch)
+  // IMPORTANT: This must be AFTER all hooks to follow Rules of Hooks
+  if (!isMounted) {
+    return null;
+  }
 
   // Helper function to update temporary preferences
   const updateTempPreferences = (update: Partial<CookiePreferences>) => {

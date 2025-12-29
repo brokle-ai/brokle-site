@@ -30,7 +30,11 @@ export function AuthButtons({ className, mobile }: AuthButtonsProps) {
           setAuthState(res.ok ? 'authenticated' : 'unauthenticated');
         }
       })
-      .catch(() => {
+      .catch((error) => {
+        // Log in development for debugging
+        if (process.env.NODE_ENV === 'development') {
+          console.debug('[AuthButtons] Auth check failed:', error.message);
+        }
         if (isMounted) {
           setAuthState('unauthenticated');
         }
