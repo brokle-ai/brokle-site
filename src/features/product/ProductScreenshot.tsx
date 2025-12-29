@@ -17,6 +17,7 @@ export function ProductScreenshot({ src, alt }: ProductScreenshotProps) {
               fill
               className="object-cover object-top"
               priority
+              sizes="(max-width: 1280px) 100vw, 1152px"
             />
           </div>
         </div>
