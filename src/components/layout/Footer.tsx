@@ -62,9 +62,9 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label={social.name}
+                  aria-label={`Follow Brokle on ${social.name}`}
                 >
-                  <social.icon className="h-5 w-5" />
+                  <social.icon className="h-5 w-5" aria-hidden="true" />
                 </Link>
               ))}
             </div>

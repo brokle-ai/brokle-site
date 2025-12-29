@@ -109,9 +109,10 @@ function GitHubStarsInline() {
       href="https://github.com/brokle-ai/brokle"
       target="_blank"
       rel="noopener noreferrer"
+      aria-label="View Brokle on GitHub"
       className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
     >
-      <Github className="h-4 w-4" />
+      <Github className="h-4 w-4" aria-hidden="true" />
 {/* TODO: Uncomment when star count is meaningful
       {stars && (
         <Badge variant="secondary" className="h-5 px-1.5 text-xs">
@@ -126,9 +127,10 @@ function GitHubStarsInline() {
 
 export default function NavbarContent({ isScrolled, variant = 'default' }: NavbarContentProps) {
   // In docs variant, parent handles sticky/scroll styling
+  // min-h-14 ensures consistent height to prevent CLS
   const headerClasses = variant === 'docs'
-    ? 'w-full'
-    : `sticky top-0 z-40 w-full transition-all duration-300 ${
+    ? 'w-full min-h-14'
+    : `sticky top-0 z-40 w-full min-h-14 transition-all duration-300 ${
         isScrolled
           ? 'bg-background/80 backdrop-blur-md border-b border-border/50'
           : 'bg-transparent'

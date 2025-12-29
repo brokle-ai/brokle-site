@@ -17,9 +17,10 @@ export function HeroSection() {
               href="https://github.com/brokle-ai/brokle"
               target="_blank"
               rel="noopener noreferrer"
+              aria-label="View Brokle on GitHub - Open Source LLM Observability"
               className="inline-flex items-center gap-2 px-3 py-1.5 mb-6 text-sm font-medium rounded-full border bg-background/80 backdrop-blur-sm hover:bg-muted transition-colors"
             >
-              <Github className="h-4 w-4" />
+              <Github className="h-4 w-4" aria-hidden="true" />
               <span className="text-muted-foreground">Open Source</span>
               {/* TODO: Uncomment when star count is meaningful
               <span className="flex items-center gap-1 text-foreground">
@@ -43,18 +44,18 @@ export function HeroSection() {
             <div className="flex flex-col sm:flex-row gap-3">
               <Button size="lg" className="gap-2" asChild>
                 <Link href="https://app.brokle.com/signup">
-                  Get Started Free <ArrowRight className="h-4 w-4" />
+                  Get Started Free <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </Link>
               </Button>
               <Button size="lg" variant="outline" className="gap-2" asChild>
-                <Link href="https://github.com/brokle-ai/brokle" target="_blank" rel="noopener noreferrer">
-                  <Github className="h-4 w-4" />
+                <Link href="https://github.com/brokle-ai/brokle" target="_blank" rel="noopener noreferrer" aria-label="Star Brokle on GitHub">
+                  <Github className="h-4 w-4" aria-hidden="true" />
                   Star on GitHub
                 </Link>
               </Button>
               <Button size="lg" variant="ghost" className="gap-2 text-muted-foreground hover:text-foreground" asChild>
-                <Link href="/docs">
-                  <BookOpen className="h-4 w-4" />
+                <Link href="/docs" aria-label="View Brokle documentation">
+                  <BookOpen className="h-4 w-4" aria-hidden="true" />
                   View Docs
                 </Link>
               </Button>

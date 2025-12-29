@@ -12,6 +12,9 @@ interface TabContentProps {
   isActive: boolean
 }
 
+// Base64 encoded simple gray placeholder to prevent CLS during image load
+const blurDataURL = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiNlNWU3ZWIiLz48L3N2Zz4="
+
 function ImagePlaceholder({ label }: { label: string }) {
   return (
     <div className="w-full h-full bg-muted/50 flex flex-col items-center justify-center gap-3">
@@ -34,6 +37,8 @@ function ScreenshotBlock({ feature, isActive }: { feature: FeatureTabData; isAct
           className="object-cover object-left-top"
           sizes="(min-width: 1024px) 50vw, 100vw"
           priority={isActive}
+          placeholder="blur"
+          blurDataURL={blurDataURL}
         />
       </div>
     )
@@ -55,7 +60,8 @@ export function TabContent({ feature, isActive }: TabContentProps) {
       {/* Content Block - Langfuse style unified container */}
       {displayMode === 'default' && hasCode && (
         // Split layout: Code (left) + Image (right) - NO GAP
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 rounded-xl overflow-hidden border shadow-sm">
+        // min-h prevents CLS during tab transitions
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 rounded-xl overflow-hidden border shadow-sm min-h-[300px] sm:min-h-[350px] lg:min-h-[420px]">
           {/* Code - LEFT (6 cols) */}
           <div className="lg:col-span-6 order-2 lg:order-1 aspect-[6/5] border-b lg:border-b-0 lg:border-r">
             <CodeBlock code={feature.code!} className="h-full rounded-none border-0" />
@@ -68,8 +74,8 @@ export function TabContent({ feature, isActive }: TabContentProps) {
       )}
 
       {displayMode === 'image-only' && (
-        // Full-width image only
-        <div className="rounded-xl overflow-hidden border shadow-sm">
+        // Full-width image only - min-h prevents CLS
+        <div className="rounded-xl overflow-hidden border shadow-sm min-h-[200px] sm:min-h-[280px] lg:min-h-[350px]">
           <div className="aspect-[12/5] bg-muted/30">
             <ScreenshotBlock feature={feature} isActive={isActive} />
           </div>
@@ -77,15 +83,15 @@ export function TabContent({ feature, isActive }: TabContentProps) {
       )}
 
       {displayMode === 'code-only' && hasCode && (
-        // Full-width code only
-        <div className="rounded-xl overflow-hidden border shadow-sm">
+        // Full-width code only - min-h prevents CLS
+        <div className="rounded-xl overflow-hidden border shadow-sm min-h-[200px] sm:min-h-[280px] lg:min-h-[350px]">
           <CodeBlock code={feature.code!} className="aspect-[12/5]" />
         </div>
       )}
 
       {/* Fallback: if displayMode is default but no code, show image-only */}
       {displayMode === 'default' && !hasCode && (
-        <div className="rounded-xl overflow-hidden border shadow-sm">
+        <div className="rounded-xl overflow-hidden border shadow-sm min-h-[200px] sm:min-h-[280px] lg:min-h-[350px]">
           <div className="aspect-[12/5] bg-muted/30">
             <ScreenshotBlock feature={feature} isActive={isActive} />
           </div>
