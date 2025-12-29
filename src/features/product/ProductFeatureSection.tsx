@@ -1,5 +1,6 @@
 import Image from "next/image"
 import { DisplayHeading } from "@/components/shared/DisplayHeading"
+import { BLUR_PLACEHOLDER } from "@/lib/image-constants"
 import type { LucideIcon } from "lucide-react"
 
 interface FeatureItem {
@@ -51,13 +52,15 @@ export function ProductFeatureSection({
 
             {/* Image */}
             <div className={reverse ? "lg:order-1" : ""}>
-              <div className="relative aspect-[4/3] rounded-xl overflow-hidden shadow-lg">
+              <div className="relative aspect-[4/3] rounded-xl overflow-hidden shadow-lg min-h-[200px] sm:min-h-[250px] lg:min-h-[300px]">
                 <Image
                   src={image.src}
                   alt={image.alt}
                   fill
                   className="object-cover"
                   sizes="(max-width: 1024px) 100vw, 50vw"
+                  placeholder="blur"
+                  blurDataURL={BLUR_PLACEHOLDER}
                 />
               </div>
             </div>

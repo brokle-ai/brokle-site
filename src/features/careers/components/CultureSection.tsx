@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import Image from "next/image"
+import { BLUR_PLACEHOLDER } from "@/lib/image-constants"
 
 export function CultureSection() {
   return (
@@ -17,36 +18,44 @@ export function CultureSection() {
 
           {/* Team Photos Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-            <div className="aspect-square rounded-lg overflow-hidden relative">
+            <div className="aspect-square rounded-lg overflow-hidden relative min-h-[150px]">
               <Image
                 src="/placeholder.svg?height=300&width=300"
                 alt="Team building activity"
                 fill
                 className="object-cover"
+                placeholder="blur"
+                blurDataURL={BLUR_PLACEHOLDER}
               />
             </div>
-            <div className="aspect-square rounded-lg overflow-hidden relative">
+            <div className="aspect-square rounded-lg overflow-hidden relative min-h-[150px]">
               <Image
                 src="/placeholder.svg?height=300&width=300"
                 alt="Office environment"
                 fill
                 className="object-cover"
+                placeholder="blur"
+                blurDataURL={BLUR_PLACEHOLDER}
               />
             </div>
-            <div className="aspect-square rounded-lg overflow-hidden relative">
+            <div className="aspect-square rounded-lg overflow-hidden relative min-h-[150px]">
               <Image
                 src="/placeholder.svg?height=300&width=300"
                 alt="Team lunch"
                 fill
                 className="object-cover"
+                placeholder="blur"
+                blurDataURL={BLUR_PLACEHOLDER}
               />
             </div>
-            <div className="aspect-square rounded-lg overflow-hidden relative">
+            <div className="aspect-square rounded-lg overflow-hidden relative min-h-[150px]">
               <Image
                 src="/placeholder.svg?height=300&width=300"
                 alt="Company offsite"
                 fill
                 className="object-cover"
+                placeholder="blur"
+                blurDataURL={BLUR_PLACEHOLDER}
               />
             </div>
           </div>

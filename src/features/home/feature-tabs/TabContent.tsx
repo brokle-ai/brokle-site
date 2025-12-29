@@ -6,14 +6,12 @@ import { ExternalLink, Play, Monitor, ArrowRight } from "lucide-react"
 import { CodeBlock } from "./CodeBlock"
 import type { FeatureTabData } from "./types"
 import { cn } from "@/lib/utils"
+import { BLUR_PLACEHOLDER } from "@/lib/image-constants"
 
 interface TabContentProps {
   feature: FeatureTabData
   isActive: boolean
 }
-
-// Base64 encoded simple gray placeholder to prevent CLS during image load
-const blurDataURL = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiNlNWU3ZWIiLz48L3N2Zz4="
 
 function ImagePlaceholder({ label }: { label: string }) {
   return (
@@ -38,7 +36,7 @@ function ScreenshotBlock({ feature, isActive }: { feature: FeatureTabData; isAct
           sizes="(min-width: 1024px) 50vw, 100vw"
           priority={isActive}
           placeholder="blur"
-          blurDataURL={blurDataURL}
+          blurDataURL={BLUR_PLACEHOLDER}
         />
       </div>
     )

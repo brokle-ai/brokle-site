@@ -1,4 +1,5 @@
 import Image from "next/image"
+import { BLUR_PLACEHOLDER } from "@/lib/image-constants"
 
 interface ProductScreenshotProps {
   src: string
@@ -10,7 +11,7 @@ export function ProductScreenshot({ src, alt }: ProductScreenshotProps) {
     <section className="pb-20">
       <div className="container px-4 mx-auto">
         <div className="max-w-6xl mx-auto">
-          <div className="relative aspect-video rounded-xl overflow-hidden shadow-2xl">
+          <div className="relative aspect-video rounded-xl overflow-hidden shadow-2xl min-h-[200px] sm:min-h-[300px] lg:min-h-[400px]">
             <Image
               src={src}
               alt={alt}
@@ -18,6 +19,8 @@ export function ProductScreenshot({ src, alt }: ProductScreenshotProps) {
               className="object-cover object-top"
               priority
               sizes="(max-width: 1280px) 100vw, 1152px"
+              placeholder="blur"
+              blurDataURL={BLUR_PLACEHOLDER}
             />
           </div>
         </div>

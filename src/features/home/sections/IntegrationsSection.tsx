@@ -3,6 +3,7 @@ import Image from "next/image"
 import { ArrowRight } from "lucide-react"
 import { DisplayHeading } from "@/components/shared"
 import { Marquee } from "@/components/ui/marquee"
+import { BLUR_PLACEHOLDER_ICON } from "@/lib/image-constants"
 
 const integrations = [
   // AI Providers
@@ -52,6 +53,8 @@ function IntegrationIcon({
         width={36}
         height={36}
         className={darkInvert ? "dark:invert" : ""}
+        placeholder="blur"
+        blurDataURL={BLUR_PLACEHOLDER_ICON}
       />
     </Link>
   )

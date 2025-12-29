@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { ArrowRight, Users, Linkedin, Twitter } from "lucide-react"
 import Image from "next/image"
+import { BLUR_PLACEHOLDER_AVATAR } from "@/lib/image-constants"
 
 export function TestimonialsSection() {
   return (
@@ -19,12 +20,14 @@ export function TestimonialsSection() {
                 <Card className="bg-background/60 backdrop-blur">
                   <CardContent className="pt-6">
                     <div className="flex items-start gap-4">
-                      <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 relative">
+                      <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 relative min-w-[64px] min-h-[64px]">
                         <Image
                           src="/placeholder.svg?height=100&width=100"
                           alt="Sarah Chen"
                           fill
                           className="object-cover"
+                          placeholder="blur"
+                          blurDataURL={BLUR_PLACEHOLDER_AVATAR}
                         />
                       </div>
                       <div>
@@ -42,12 +45,14 @@ export function TestimonialsSection() {
                 <Card className="bg-background/60 backdrop-blur">
                   <CardContent className="pt-6">
                     <div className="flex items-start gap-4">
-                      <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 relative">
+                      <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 relative min-w-[64px] min-h-[64px]">
                         <Image
                           src="/placeholder.svg?height=100&width=100"
                           alt="Michael Rodriguez"
                           fill
                           className="object-cover"
+                          placeholder="blur"
+                          blurDataURL={BLUR_PLACEHOLDER_AVATAR}
                         />
                       </div>
                       <div>

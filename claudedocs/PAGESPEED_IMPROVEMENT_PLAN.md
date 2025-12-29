@@ -581,6 +581,11 @@ const config = {
 | `src/contexts/ScrollContext.tsx` | Throttled scroll handler (100ms) |
 | `src/features/home/sections/HeroSection.tsx` | Added aria-labels and aria-hidden to icons |
 | `src/components/layout/Footer.tsx` | Improved aria-labels for social links |
+| `src/features/product/ProductScreenshot.tsx` | Added blur placeholder + min-height (affects /tracing, /prompt-management, /evaluation) |
+| `src/features/product/ProductFeatureSection.tsx` | Added blur placeholder + min-height (affects all product pages) |
+| `src/features/home/sections/IntegrationsSection.tsx` | Added blur placeholder for integration icons |
+| `src/features/careers/components/CultureSection.tsx` | Added blur placeholder + min-height for team photos |
+| `src/features/careers/components/TestimonialsSection.tsx` | Added blur placeholder + min-height for avatar images |
 
 ### Summary of Improvements
 
@@ -588,6 +593,7 @@ const config = {
 2. **CLS Fixes**: min-height containers + blur placeholders to prevent layout shifts
 3. **TBT Reduction**: Dynamic imports + throttled scroll = reduced main thread blocking
 4. **Accessibility**: aria-labels on all icon-only links
+5. **Site-Wide Image Optimization**: Blur placeholders applied to ALL pages with images (product pages, careers, integrations)
 
 ---
 
