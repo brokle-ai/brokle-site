@@ -1,4 +1,5 @@
 import type { ComparisonPageData } from "@/types/comparison"
+import { FAQSchema } from "@/components/seo"
 import { ComparisonHero } from "./components/ComparisonHero"
 import { ComparisonTable } from "./components/ComparisonTable"
 import { ComparisonAdvantages } from "./components/ComparisonAdvantages"
@@ -12,6 +13,7 @@ interface ComparisonPageProps {
 export function ComparisonPage({ data }: ComparisonPageProps) {
   return (
     <>
+      <FAQSchema faqs={data.faqs} />
       <ComparisonHero data={data} />
       <ComparisonTable
         competitorName={data.competitorName}

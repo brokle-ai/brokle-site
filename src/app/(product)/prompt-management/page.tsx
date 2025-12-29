@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { ProductSchema } from "@/components/seo"
 import {
   ProductHero,
   ProductScreenshot,
@@ -34,6 +35,19 @@ export const metadata: Metadata = {
 export default function PromptManagementPage() {
   return (
     <>
+      <ProductSchema
+        name="Prompt Management"
+        description="Version, test, and deploy prompts with confidence. Track changes, compare performance, and roll back instantly."
+        url="https://brokle.com/prompt-management"
+        features={[
+          "Visual prompt editor",
+          "Version control for prompts",
+          "Deployment labels",
+          "A/B testing in production",
+          "Instant rollbacks",
+          "Template variables",
+        ]}
+      />
       <ProductHero
         title="Ship prompts with"
         highlight="confidence"

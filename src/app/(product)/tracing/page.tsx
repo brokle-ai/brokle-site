@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { ProductSchema } from "@/components/seo"
 import {
   ProductHero,
   ProductScreenshot,
@@ -37,6 +38,19 @@ export const metadata: Metadata = {
 export default function TracingPage() {
   return (
     <>
+      <ProductSchema
+        name="Tracing"
+        description="Debug your LLM applications with detailed traces. See every LLM call, chain execution, and agent step. OpenTelemetry-native tracing for AI applications."
+        url="https://brokle.com/tracing"
+        features={[
+          "Detailed trace visualization",
+          "Span-level debugging",
+          "Latency breakdown analysis",
+          "Error tracking with stack traces",
+          "Cost tracking per trace",
+          "OpenTelemetry native support",
+        ]}
+      />
       <ProductHero
         title="See inside every"
         highlight="LLM call"

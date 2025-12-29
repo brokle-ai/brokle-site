@@ -1,3 +1,6 @@
 export { OrganizationSchema } from "./OrganizationSchema"
 export { SoftwareApplicationSchema } from "./SoftwareApplicationSchema"
 export { FAQSchema } from "./FAQSchema"
+export { ProductSchema } from "./ProductSchema"
+export { BreadcrumbSchema } from "./BreadcrumbSchema"
+export { ArticleSchema } from "./ArticleSchema"

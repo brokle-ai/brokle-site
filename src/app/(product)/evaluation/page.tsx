@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { ProductSchema } from "@/components/seo"
 import {
   ProductHero,
   ProductScreenshot,
@@ -34,6 +35,19 @@ export const metadata: Metadata = {
 export default function EvaluationPage() {
   return (
     <>
+      <ProductSchema
+        name="Evaluation"
+        description="Automated LLM evaluation with LLM-as-judge. Build custom evaluators, run A/B tests, and score outputs at scale."
+        url="https://brokle.com/evaluation"
+        features={[
+          "LLM-as-judge evaluation",
+          "Pre-built quality scorers",
+          "Custom evaluator framework",
+          "A/B testing for models",
+          "CI/CD integration",
+          "Dataset management",
+        ]}
+      />
       <ProductHero
         title="Measure what"
         highlight="matters"
