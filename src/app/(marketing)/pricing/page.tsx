@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     title: 'Pricing - Brokle',
     description:
       'Simple, usage-based pricing for LLM observability. Start free, scale as you grow.',
-    url: 'https://brokle.ai/pricing',
+    url: 'https://brokle.com/pricing',
     siteName: 'Brokle',
     type: 'website',
   },

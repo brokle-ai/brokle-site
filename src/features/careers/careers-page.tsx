@@ -30,7 +30,7 @@ export default function CareersPage() {
                 interested in hearing from talented people.
               </p>
               <Button variant="outline" asChild>
-                <Link href="mailto:careers@brokle.ai">
+                <Link href="mailto:careers@brokle.com">
                   Send General Application
                 </Link>
               </Button>

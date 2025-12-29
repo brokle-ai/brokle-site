@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     title: 'Contact - Brokle',
     description:
       'Get in touch with the Brokle team. We are here to help with your AI observability needs.',
-    url: 'https://brokle.ai/contact',
+    url: 'https://brokle.com/contact',
     siteName: 'Brokle',
     type: 'website',
   },

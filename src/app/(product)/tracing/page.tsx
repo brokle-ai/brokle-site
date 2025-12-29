@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     title: "Tracing & Debugging - Brokle",
     description:
       "Debug your LLM applications with detailed traces. OpenTelemetry-native tracing for AI.",
-    url: "https://brokle.ai/tracing",
+    url: "https://brokle.com/tracing",
     siteName: "Brokle",
     type: "website",
   },
@@ -43,7 +43,7 @@ export default function TracingPage() {
         description="Debug complex chains and agents with detailed traces. Understand exactly what your LLM applications are doing, one span at a time."
         primaryCta={{
           text: "Start Tracing Free",
-          href: "https://app.brokle.ai/signup",
+          href: "https://app.brokle.com/signup",
         }}
         secondaryCta={{
           text: "View Documentation",
@@ -119,7 +119,7 @@ export default function TracingPage() {
         description="Add tracing to your application in under 5 minutes. No code changes required."
         cta={{
           text: "Get Started Free",
-          href: "https://app.brokle.ai/signup",
+          href: "https://app.brokle.com/signup",
         }}
       />
     </>

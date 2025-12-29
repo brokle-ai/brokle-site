@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Changelog - Brokle',
     description: 'Latest updates and improvements to the Brokle platform.',
-    url: 'https://brokle.ai/changelog',
+    url: 'https://brokle.com/changelog',
     siteName: 'Brokle',
     type: 'website',
   },

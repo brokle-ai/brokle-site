@@ -98,7 +98,7 @@ The client reads from environment variables if not provided:
 
 ```bash
 export BROKLE_API_KEY=bk_...
-export BROKLE_BASE_URL=https://api.brokle.ai
+export BROKLE_BASE_URL=https://api.brokle.com
 export BROKLE_ENVIRONMENT=production
 export BROKLE_SAMPLE_RATE=1.0
 export BROKLE_DEBUG=false
@@ -521,7 +521,7 @@ with client.start_as_current_span(name="operation") as span:
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `api_key` | str | Required | Brokle API key |
-| `base_url` | str | `https://api.brokle.ai` | API endpoint |
+| `base_url` | str | `https://api.brokle.com` | API endpoint |
 | `environment` | str | `"default"` | Environment name |
 | `sample_rate` | float | `1.0` | Sampling rate (0.0-1.0) |
 | `flush_at` | int | `100` | Batch size before flush |

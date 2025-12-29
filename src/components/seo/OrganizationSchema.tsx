@@ -3,8 +3,8 @@ export function OrganizationSchema() {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: "Brokle",
-    url: "https://brokle.ai",
-    logo: "https://brokle.ai/images/logo.png",
+    url: "https://brokle.com",
+    logo: "https://brokle.com/images/logo.png",
     description:
       "Open source AI observability platform for LLM applications. Debug, evaluate, and optimize with traces, evals, and analytics.",
     sameAs: [
@@ -15,7 +15,7 @@ export function OrganizationSchema() {
     contactPoint: {
       "@type": "ContactPoint",
       contactType: "sales",
-      url: "https://brokle.ai/contact",
+      url: "https://brokle.com/contact",
     },
   }
 

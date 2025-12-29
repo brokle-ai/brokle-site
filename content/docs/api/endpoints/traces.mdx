@@ -166,7 +166,7 @@ Common attributes for LLM observability:
 <Tabs>
   <Tab value="curl" label="cURL">
     ```bash
-    curl -X POST https://api.brokle.ai/v1/traces \
+    curl -X POST https://api.brokle.com/v1/traces \
       -H "Content-Type: application/json" \
       -H "X-API-Key: bk_your_api_key" \
       -d '{
@@ -204,7 +204,7 @@ Common attributes for LLM observability:
     end_time = start_time + int(1.5 * 1e9)
 
     response = requests.post(
-        "https://api.brokle.ai/v1/traces",
+        "https://api.brokle.com/v1/traces",
         headers={
             "Content-Type": "application/json",
             "X-API-Key": "bk_your_api_key"
@@ -310,7 +310,7 @@ Retrieve a paginated list of traces.
 <Tabs>
   <Tab value="curl" label="cURL">
     ```bash
-    curl -X GET "https://api.brokle.ai/api/v1/traces?projectId=proj_123&pageSize=50" \
+    curl -X GET "https://api.brokle.com/api/v1/traces?projectId=proj_123&pageSize=50" \
       -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..."
     ```
   </Tab>
@@ -319,7 +319,7 @@ Retrieve a paginated list of traces.
     import requests
 
     response = requests.get(
-        "https://api.brokle.ai/api/v1/traces",
+        "https://api.brokle.com/api/v1/traces",
         headers={
             "Authorization": "Bearer eyJhbGciOiJIUzI1NiIs..."
         },
@@ -439,7 +439,7 @@ No response body.
 ### Example
 
 ```bash
-curl -X DELETE "https://api.brokle.ai/api/v1/traces/trace_abc123" \
+curl -X DELETE "https://api.brokle.com/api/v1/traces/trace_abc123" \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..."
 ```
 
@@ -521,7 +521,7 @@ for span in spans:
 Enable gzip compression for large payloads:
 
 ```bash
-curl -X POST https://api.brokle.ai/v1/traces \
+curl -X POST https://api.brokle.com/v1/traces \
   -H "Content-Encoding: gzip" \
   -H "Content-Type: application/json" \
   -H "X-API-Key: bk_your_api_key" \

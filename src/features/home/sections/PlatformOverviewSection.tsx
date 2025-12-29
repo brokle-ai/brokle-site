@@ -10,7 +10,7 @@ const platforms = [
     description:
       "Let us handle the infrastructure. Focus on building your AI applications while we manage scaling, security, and uptime.",
     cta: "Explore Cloud",
-    href: "https://app.brokle.ai/signup",
+    href: "https://app.brokle.com/signup",
   },
   {
     icon: Server,

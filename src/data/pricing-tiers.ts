@@ -24,7 +24,7 @@ export const pricingTiers: PricingTier[] = [
     ],
     cta: {
       text: "Get Started",
-      href: "https://app.brokle.ai/signup",
+      href: "https://app.brokle.com/signup",
       variant: "outline",
     },
   },
@@ -54,7 +54,7 @@ export const pricingTiers: PricingTier[] = [
     ],
     cta: {
       text: "Start Free Trial",
-      href: "https://app.brokle.ai/signup?plan=pro",
+      href: "https://app.brokle.com/signup?plan=pro",
       variant: "default",
     },
   },
@@ -83,7 +83,7 @@ export const pricingTiers: PricingTier[] = [
     ],
     cta: {
       text: "Start Free Trial",
-      href: "https://app.brokle.ai/signup?plan=team",
+      href: "https://app.brokle.com/signup?plan=team",
       variant: "outline",
     },
   },

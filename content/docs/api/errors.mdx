@@ -481,7 +481,7 @@ try {
 
     for i in $(seq 1 $MAX_RETRIES); do
       response=$(curl -s -w "\n%{http_code}" \
-        -X POST https://api.brokle.ai/v1/traces \
+        -X POST https://api.brokle.com/v1/traces \
         -H "Content-Type: application/json" \
         -H "X-API-Key: $BROKLE_API_KEY" \
         -d '{"resourceSpans": [...]}')
@@ -509,7 +509,7 @@ try {
   <Tab value="parse" label="Parse Errors">
     ```bash
     response=$(curl -s \
-      -X POST https://api.brokle.ai/v1/traces \
+      -X POST https://api.brokle.com/v1/traces \
       -H "Content-Type: application/json" \
       -H "X-API-Key: $BROKLE_API_KEY" \
       -d '{"invalid": "payload"}')
@@ -568,8 +568,8 @@ If you encounter persistent errors:
 
 1. **Check the request ID**: Include it when contacting support
 2. **Review logs**: Look for patterns in error responses
-3. **Check status page**: [status.brokle.ai](https://status.brokle.ai)
-4. **Contact support**: support@brokle.ai with request ID and reproduction steps
+3. **Check status page**: [status.brokle.com](https://status.brokle.com)
+4. **Contact support**: support@brokle.com with request ID and reproduction steps
 
 <Callout type="info">
   Always include the `requestId` from the error response when contacting support. This helps us quickly locate and diagnose the issue.

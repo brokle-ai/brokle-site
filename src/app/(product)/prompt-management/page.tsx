@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     title: "Prompt Management - Brokle",
     description:
       "Version, test, and deploy prompts with confidence. Track changes and roll back instantly.",
-    url: "https://brokle.ai/prompt-management",
+    url: "https://brokle.com/prompt-management",
     siteName: "Brokle",
     type: "website",
   },
@@ -40,7 +40,7 @@ export default function PromptManagementPage() {
         description="Version, test, and deploy prompts without touching your codebase. A/B test in production, roll back instantly when things go wrong."
         primaryCta={{
           text: "Get Started Free",
-          href: "https://app.brokle.ai/signup",
+          href: "https://app.brokle.com/signup",
         }}
         secondaryCta={{
           text: "View Documentation",
@@ -101,7 +101,7 @@ export default function PromptManagementPage() {
         description="Stop hardcoding prompts. Start versioning, testing, and deploying with confidence."
         cta={{
           text: "Get Started Free",
-          href: "https://app.brokle.ai/signup",
+          href: "https://app.brokle.com/signup",
         }}
       />
     </>

@@ -42,7 +42,7 @@ export default function PricingCards() {
               </CardContent>
               <CardFooter>
                 <Button className="w-full" asChild>
-                  <Link href="https://app.brokle.ai/signup">
+                  <Link href="https://app.brokle.com/signup">
                     Get Started
                   </Link>
                 </Button>

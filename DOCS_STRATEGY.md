@@ -512,7 +512,7 @@ description: "Learn how to [outcome] with Brokle"
 - Bullet point 3
 
 **Prerequisites:**
-- Brokle account ([sign up](https://app.brokle.ai))
+- Brokle account ([sign up](https://app.brokle.com))
 - Python 3.8+ or Node.js 18+
 - Basic familiarity with [technology]
 
@@ -701,7 +701,7 @@ description: "API reference for [endpoint]"
 <Tabs>
   <Tab title="curl">
     ```bash
-    curl -X POST https://api.brokle.ai/v1/endpoint \
+    curl -X POST https://api.brokle.com/v1/endpoint \
       -H "X-API-Key: bk_your_api_key" \
       -H "Content-Type: application/json" \
       -d '{
@@ -715,7 +715,7 @@ description: "API reference for [endpoint]"
     import requests
 
     response = requests.post(
-        "https://api.brokle.ai/v1/endpoint",
+        "https://api.brokle.com/v1/endpoint",
         headers={"X-API-Key": "bk_your_api_key"},
         json={"param_1": "value"}
     )
@@ -723,7 +723,7 @@ description: "API reference for [endpoint]"
   </Tab>
   <Tab title="JavaScript">
     ```javascript
-    const response = await fetch('https://api.brokle.ai/v1/endpoint', {
+    const response = await fetch('https://api.brokle.com/v1/endpoint', {
       method: 'POST',
       headers: {
         'X-API-Key': 'bk_your_api_key',

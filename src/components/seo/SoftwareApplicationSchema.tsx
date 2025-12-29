@@ -7,7 +7,7 @@ export function SoftwareApplicationSchema() {
     operatingSystem: "Linux, macOS, Windows, Docker, Kubernetes",
     description:
       "Open source LLM observability platform. Trace, evaluate, and optimize AI applications with complete visibility.",
-    url: "https://brokle.ai",
+    url: "https://brokle.com",
     downloadUrl: "https://github.com/brokle-ai/brokle",
     softwareVersion: "1.0",
     author: {

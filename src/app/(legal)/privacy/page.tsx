@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Privacy Policy - Brokle',
     description: 'Brokle privacy policy. How we handle and protect your data.',
-    url: 'https://brokle.ai/privacy',
+    url: 'https://brokle.com/privacy',
     siteName: 'Brokle',
     type: 'website',
   },

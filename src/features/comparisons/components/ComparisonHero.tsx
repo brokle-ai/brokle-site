@@ -31,7 +31,7 @@ export function ComparisonHero({ data }: ComparisonHeroProps) {
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" className="gap-2" asChild>
-              <Link href="https://app.brokle.ai/signup">
+              <Link href="https://app.brokle.com/signup">
                 Try Brokle Free <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>

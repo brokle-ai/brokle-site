@@ -48,8 +48,8 @@ export default function ContactPage() {
                 <CardDescription className="text-base mb-4">
                   Send us an email and we&apos;ll get back to you within 24 hours.
                 </CardDescription>
-                <a href="mailto:hello@brokle.ai" className="text-primary hover:underline">
-                  hello@brokle.ai
+                <a href="mailto:hello@brokle.com" className="text-primary hover:underline">
+                  hello@brokle.com
                 </a>
               </CardContent>
             </Card>

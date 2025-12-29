@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     title: 'Brokle - Open Source LLM Observability Platform',
     description:
       'Debug and improve your LLM applications with traces, evals, prompt management, and metrics.',
-    url: 'https://brokle.ai',
+    url: 'https://brokle.com',
     siteName: 'Brokle',
     type: 'website',
   },

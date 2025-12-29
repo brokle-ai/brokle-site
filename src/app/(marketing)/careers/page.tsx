@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     title: 'Careers - Brokle',
     description:
       'Join the Brokle team. We are building the future of AI observability.',
-    url: 'https://brokle.ai/careers',
+    url: 'https://brokle.com/careers',
     siteName: 'Brokle',
     type: 'website',
   },

@@ -12,6 +12,7 @@ import type { Metadata } from 'next';
 import './global.css';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://brokle.com'),
   title: {
     default: 'Brokle - Open Source AI Observability Platform',
     template: '%s | Brokle',

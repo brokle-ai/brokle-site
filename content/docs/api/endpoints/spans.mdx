@@ -106,7 +106,7 @@ Retrieve a paginated list of spans with filtering.
 <Tabs>
   <Tab value="curl" label="cURL">
     ```bash
-    curl -X GET "https://api.brokle.ai/api/v1/spans?projectId=proj_123&type=generation&model=gpt-4" \
+    curl -X GET "https://api.brokle.com/api/v1/spans?projectId=proj_123&type=generation&model=gpt-4" \
       -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..."
     ```
   </Tab>
@@ -115,7 +115,7 @@ Retrieve a paginated list of spans with filtering.
     import requests
 
     response = requests.get(
-        "https://api.brokle.ai/api/v1/spans",
+        "https://api.brokle.com/api/v1/spans",
         headers={
             "Authorization": "Bearer eyJhbGciOiJIUzI1NiIs..."
         },
@@ -136,7 +136,7 @@ Retrieve a paginated list of spans with filtering.
   <Tab value="javascript" label="JavaScript">
     ```javascript
     const response = await fetch(
-      'https://api.brokle.ai/api/v1/spans?' + new URLSearchParams({
+      'https://api.brokle.com/api/v1/spans?' + new URLSearchParams({
         projectId: 'proj_123',
         type: 'generation',
         model: 'gpt-4',
@@ -356,7 +356,7 @@ GET /api/v1/spans/aggregate
 Aggregate span data for analytics.
 
 ```bash
-curl -X GET "https://api.brokle.ai/api/v1/spans/aggregate?projectId=proj_123&groupBy=model&metric=count" \
+curl -X GET "https://api.brokle.com/api/v1/spans/aggregate?projectId=proj_123&groupBy=model&metric=count" \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..."
 ```
 
@@ -404,7 +404,7 @@ GET /api/v1/spans/search
 Search across span inputs and outputs.
 
 ```bash
-curl -X GET "https://api.brokle.ai/api/v1/spans/search?projectId=proj_123&q=error+handling" \
+curl -X GET "https://api.brokle.com/api/v1/spans/search?projectId=proj_123&q=error+handling" \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..."
 ```
 

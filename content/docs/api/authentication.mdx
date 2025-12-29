@@ -66,7 +66,7 @@ Include your API key in the request header:
 <Tabs>
   <Tab value="header" label="X-API-Key Header">
     ```bash
-    curl -X POST https://api.brokle.ai/v1/traces \
+    curl -X POST https://api.brokle.com/v1/traces \
       -H "Content-Type: application/json" \
       -H "X-API-Key: bk_your_api_key" \
       -d '{"resourceSpans": [...]}'
@@ -74,7 +74,7 @@ Include your API key in the request header:
   </Tab>
   <Tab value="bearer" label="Authorization Header">
     ```bash
-    curl -X POST https://api.brokle.ai/v1/traces \
+    curl -X POST https://api.brokle.com/v1/traces \
       -H "Content-Type: application/json" \
       -H "Authorization: Bearer bk_your_api_key" \
       -d '{"resourceSpans": [...]}'
@@ -98,7 +98,7 @@ API keys can be scoped to specific permissions:
 Validate an API key programmatically:
 
 ```bash
-curl -X POST https://api.brokle.ai/v1/auth/validate-key \
+curl -X POST https://api.brokle.com/v1/auth/validate-key \
   -H "Content-Type: application/json" \
   -d '{"api_key": "bk_your_api_key"}'
 ```
@@ -134,7 +134,7 @@ JWT tokens are used for dashboard operations and user-authenticated requests.
 #### Login
 
 ```bash
-curl -X POST https://api.brokle.ai/api/v1/auth/login \
+curl -X POST https://api.brokle.com/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@example.com",
@@ -156,7 +156,7 @@ curl -X POST https://api.brokle.ai/api/v1/auth/login \
 #### Register
 
 ```bash
-curl -X POST https://api.brokle.ai/api/v1/auth/register \
+curl -X POST https://api.brokle.com/api/v1/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@example.com",
@@ -170,7 +170,7 @@ curl -X POST https://api.brokle.ai/api/v1/auth/register \
 Include the token in the Authorization header:
 
 ```bash
-curl -X GET https://api.brokle.ai/api/v1/projects \
+curl -X GET https://api.brokle.com/api/v1/projects \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
@@ -179,7 +179,7 @@ curl -X GET https://api.brokle.ai/api/v1/projects \
 Access tokens expire after 1 hour. Use the refresh token to obtain a new access token:
 
 ```bash
-curl -X POST https://api.brokle.ai/api/v1/auth/refresh \
+curl -X POST https://api.brokle.com/api/v1/auth/refresh \
   -H "Content-Type: application/json" \
   -d '{
     "refreshToken": "rt_abc123..."
@@ -200,7 +200,7 @@ curl -X POST https://api.brokle.ai/api/v1/auth/refresh \
 Invalidate tokens:
 
 ```bash
-curl -X POST https://api.brokle.ai/api/v1/auth/logout \
+curl -X POST https://api.brokle.com/api/v1/auth/logout \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 

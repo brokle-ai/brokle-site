@@ -12,8 +12,8 @@ interface AuthButtonsProps {
 }
 
 // Environment-configurable URLs with production fallbacks
-const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.brokle.ai';
-const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.brokle.ai';
+const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.brokle.com';
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.brokle.com';
 
 export function AuthButtons({ className, mobile }: AuthButtonsProps) {
   const [authState, setAuthState] = useState<AuthState>('loading');

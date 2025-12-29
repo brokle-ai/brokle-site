@@ -408,7 +408,7 @@ export default function ComparisonTable() {
 
           <div className="flex justify-center mt-8">
             <Button className="gap-2" asChild>
-              <Link href="https://app.brokle.ai/signup">
+              <Link href="https://app.brokle.com/signup">
                 Get Started Free <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>

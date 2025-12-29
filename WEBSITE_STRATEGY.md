@@ -172,7 +172,7 @@ Headline: "Open-Source AI Observability"
 Subheadline: "Trace, evaluate, and optimize your LLM applications.
              Self-host or use our cloud. No vendor lock-in."
 
-CTA Primary: "Get Started Free" -> app.brokle.ai/signup
+CTA Primary: "Get Started Free" -> app.brokle.com/signup
 CTA Secondary: "View Documentation" -> /docs
 CTA Tertiary: "Star on GitHub" -> github.com/brokle-ai/brokle
 ```
