@@ -5,6 +5,7 @@ import {
   ProductScreenshot,
   ProductFeatureSection,
   ProductCTA,
+  RelatedProducts,
 } from "@/features/product"
 import {
   CheckSquare,
@@ -109,6 +110,8 @@ export default function EvaluationPage() {
           { icon: History, text: "Track changes to test sets alongside your prompts" },
         ]}
       />
+
+      <RelatedProducts currentProduct="evaluation" />
 
       <ProductCTA
         title="Ready to evaluate your LLM outputs?"

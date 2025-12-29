@@ -20,6 +20,7 @@ export interface FeatureTabData {
   // Display mode: default (code+image), code-only, image-only
   displayMode?: TabDisplayMode
   docsHref: string
+  productHref?: string
   demoHref?: string
 }
 

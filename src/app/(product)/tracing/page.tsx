@@ -5,6 +5,7 @@ import {
   ProductScreenshot,
   ProductFeatureSection,
   ProductCTA,
+  RelatedProducts,
 } from "@/features/product"
 import {
   FileInput,
@@ -127,6 +128,8 @@ export default function TracingPage() {
         ]}
         reverse
       />
+
+      <RelatedProducts currentProduct="tracing" />
 
       <ProductCTA
         title="Ready to debug your LLM apps?"

@@ -47,6 +47,7 @@ const handleRequest = observe(async (text: string) => {
 });`,
     },
     docsHref: "/docs/tracing",
+    productHref: "/tracing",
     demoHref: "#",
   },
   {
@@ -129,6 +130,7 @@ const response = await openai.chat.completions.create({
 });`,
     },
     docsHref: "/docs/prompt-management",
+    productHref: "/prompt-management",
     demoHref: "#",
   },
   {
@@ -173,6 +175,7 @@ const results = await brokle.evaluate({
 // Results tracked in dashboard`,
     },
     docsHref: "/docs/evaluation",
+    productHref: "/evaluation",
     demoHref: "#",
   },
   {

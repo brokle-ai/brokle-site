@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { ExternalLink, Play, Monitor } from "lucide-react"
+import { ExternalLink, Play, Monitor, ArrowRight } from "lucide-react"
 import { CodeBlock } from "./CodeBlock"
 import type { FeatureTabData } from "./types"
 import { cn } from "@/lib/utils"
@@ -102,6 +102,15 @@ export function TabContent({ feature, isActive }: TabContentProps) {
 
         {/* Action links - 4 cols */}
         <div className="lg:col-span-4 space-y-2">
+          {feature.productHref && (
+            <Link
+              href={feature.productHref}
+              className="flex items-center justify-between gap-3 px-4 py-3 text-sm font-medium rounded-lg border bg-primary text-primary-foreground hover:bg-primary/90 transition-colors w-full"
+            >
+              <span>Learn more</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          )}
           <Link
             href={feature.docsHref}
             className="flex items-center justify-between gap-3 px-4 py-3 text-sm font-medium rounded-lg border bg-background hover:bg-muted transition-colors w-full"

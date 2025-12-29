@@ -5,6 +5,7 @@ import {
   ProductScreenshot,
   ProductFeatureSection,
   ProductCTA,
+  RelatedProducts,
 } from "@/features/product"
 import {
   FileEdit,
@@ -109,6 +110,8 @@ export default function PromptManagementPage() {
           { icon: FlaskConical, text: "Split traffic between versions to test improvements safely" },
         ]}
       />
+
+      <RelatedProducts currentProduct="prompt-management" />
 
       <ProductCTA
         title="Ready to manage your prompts?"

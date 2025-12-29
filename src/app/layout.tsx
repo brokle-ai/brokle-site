@@ -92,6 +92,14 @@ export default function RootLayout({
         {/* Preconnect to critical third-party origins */}
         <link rel="preconnect" href="https://www.googletagmanager.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://github.com" crossOrigin="anonymous" />
+
+        {/* RSS Feed */}
+        <link
+          rel="alternate"
+          type="application/rss+xml"
+          title="Brokle Blog RSS Feed"
+          href="/blog/feed.xml"
+        />
       </head>
       <body className="flex min-h-screen flex-col antialiased">
         <OrganizationSchema />
