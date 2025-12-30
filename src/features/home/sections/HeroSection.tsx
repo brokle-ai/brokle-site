@@ -1,8 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Github, Star, BookOpen } from "lucide-react"
-import { DisplayHeading, HeroBackground } from "@/components/shared"
-import { LazyIllustration } from "./LazyIllustration"
+import { DisplayHeading, HeroBackground, IsometricIllustration } from "@/components/shared"
 
 export function HeroSection() {
   return (
@@ -41,7 +40,7 @@ export function HeroSection() {
               100% open source. OpenTelemetry-native. Self-host anywhere.
             </p>
 
-            {/* CTAs - 3 buttons like Langfuse */}
+            {/* CTAs */}
             <div className="flex flex-col sm:flex-row gap-3">
               <Button size="lg" className="gap-2" asChild>
                 <Link href="https://app.brokle.com/signup">
@@ -63,9 +62,9 @@ export function HeroSection() {
             </div>
           </div>
 
-          {/* Right side: Illustration - Lazy loaded client component */}
+          {/* Right side: Illustration */}
           <div className="hidden lg:block relative">
-            <LazyIllustration className="w-full max-w-lg mx-auto" />
+            <IsometricIllustration className="w-full max-w-lg mx-auto" />
           </div>
         </div>
       </div>
