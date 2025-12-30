@@ -528,7 +528,7 @@ const config = {
 ## Implementation Checklist
 
 > **Last Updated**: December 29, 2025
-> **Implementation Status**: Phase 1-3 Complete
+> **Implementation Status**: Phase 1-4 Complete (LCP Fix Added)
 
 ### Phase 1: Quick Wins (1-2 hours) ✅ COMPLETE
 
@@ -552,14 +552,20 @@ const config = {
 - [x] Throttle scroll event handler ✅
 - [ ] Bundle analysis and tree-shaking audit (optional - lower priority)
 
-### Phase 4: Accessibility & SEO (2-3 hours) - PARTIAL
+### Phase 4: LCP Optimization ✅ COMPLETE
+
+- [x] Dynamic import IsometricIllustration with `ssr: false` ✅
+- [x] Remove 240+ lines of inline SVG from initial HTML payload ✅
+- [x] Add loading placeholder for illustration ✅
+
+### Phase 5: Accessibility & SEO (2-3 hours) - PARTIAL
 
 - [ ] Audit and fix color contrast issues (pending)
 - [ ] Fix heading hierarchy across all pages (pending)
 - [x] Replace generic link text with descriptive text ✅
 - [ ] Run Lighthouse accessibility audit (pending deployment)
 
-### Phase 5: Validation (1 hour) - PENDING
+### Phase 6: Validation (1 hour) - PENDING
 
 - [ ] Run PageSpeed Insights again (after deployment)
 - [ ] Verify all Core Web Vitals pass
@@ -579,7 +585,7 @@ const config = {
 | `src/components/layout/NavbarContent.tsx` | Added min-h-14 for consistent height |
 | `src/features/home/HomePage.tsx` | Dynamic imports for below-fold sections |
 | `src/contexts/ScrollContext.tsx` | Throttled scroll handler (100ms) |
-| `src/features/home/sections/HeroSection.tsx` | Added aria-labels and aria-hidden to icons |
+| `src/features/home/sections/HeroSection.tsx` | Added aria-labels, aria-hidden to icons, **dynamic import IsometricIllustration with ssr:false for LCP fix** |
 | `src/components/layout/Footer.tsx` | Improved aria-labels for social links |
 | `src/features/product/ProductScreenshot.tsx` | Added blur placeholder + min-height (affects /tracing, /prompt-management, /evaluation) |
 | `src/features/product/ProductFeatureSection.tsx` | Added blur placeholder + min-height (affects all product pages) |
@@ -594,6 +600,7 @@ const config = {
 3. **TBT Reduction**: Dynamic imports + throttled scroll = reduced main thread blocking
 4. **Accessibility**: aria-labels on all icon-only links
 5. **Site-Wide Image Optimization**: Blur placeholders applied to ALL pages with images (product pages, careers, integrations)
+6. **LCP Fix**: Dynamic import IsometricIllustration with `ssr: false` - removes 240+ lines of inline SVG from initial HTML payload (hidden on mobile anyway)
 
 ---
 

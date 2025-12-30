@@ -1,7 +1,8 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Github, Star, BookOpen } from "lucide-react"
-import { DisplayHeading, HeroBackground, IsometricIllustration } from "@/components/shared"
+import { DisplayHeading, HeroBackground } from "@/components/shared"
+import { LazyIllustration } from "./LazyIllustration"
 
 export function HeroSection() {
   return (
@@ -62,9 +63,9 @@ export function HeroSection() {
             </div>
           </div>
 
-          {/* Right side: Illustration */}
+          {/* Right side: Illustration - Lazy loaded client component */}
           <div className="hidden lg:block relative">
-            <IsometricIllustration className="w-full max-w-lg mx-auto" />
+            <LazyIllustration className="w-full max-w-lg mx-auto" />
           </div>
         </div>
       </div>
