@@ -32,6 +32,6 @@ export const pricingFaqs = [
   {
     question: "What compliance certifications do you have?",
     answer:
-      "Brokle Cloud is SOC 2 Type II certified and GDPR compliant. For HIPAA compliance, we recommend our Enterprise plan with a signed BAA, or self-hosting within your own HIPAA-compliant infrastructure.",
+      "We're working towards industry compliance certifications. For organizations with strict compliance requirements today, we recommend self-hosting within your own compliant infrastructure.",
   },
 ];

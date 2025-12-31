@@ -389,7 +389,7 @@ export default function ChangelogPage() {
                   <div>
                     <h3 className="font-medium text-lg">Compliance Reports</h3>
                     <p className="text-muted-foreground">
-                      Automated compliance reporting for SOC 2, GDPR, and HIPAA requirements.
+                      Automated compliance reporting and audit trail exports.
                     </p>
                   </div>
                 </CardContent>

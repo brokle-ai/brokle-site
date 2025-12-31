@@ -55,7 +55,7 @@ export function TabContent({ feature, isActive }: TabContentProps) {
         isActive ? "opacity-100" : "opacity-0 absolute inset-0 pointer-events-none"
       )}
     >
-      {/* Content Block - Langfuse style unified container */}
+      {/* Content Block - unified container */}
       {displayMode === 'default' && hasCode && (
         // Split layout: Code (left) + Image (right) - NO GAP
         // min-h prevents CLS during tab transitions
@@ -96,7 +96,7 @@ export function TabContent({ feature, isActive }: TabContentProps) {
         </div>
       )}
 
-      {/* Description Section - Langfuse style 8/4 grid */}
+      {/* Description Section - 8/4 grid layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 mt-6">
         {/* Title + Description - 8 cols */}
         <div className="lg:col-span-8">

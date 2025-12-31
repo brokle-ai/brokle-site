@@ -274,21 +274,6 @@ export default function ComparisonTable() {
                   <TableCell className="text-center">Advanced</TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell className="pl-8">SOC 2 Type II</TableCell>
-                  <TableCell className="text-center">
-                    <Check className="h-5 w-5 text-primary mx-auto" />
-                  </TableCell>
-                  <TableCell className="text-center bg-primary/5">
-                    <Check className="h-5 w-5 text-primary mx-auto" />
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Check className="h-5 w-5 text-primary mx-auto" />
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Check className="h-5 w-5 text-primary mx-auto" />
-                  </TableCell>
-                </TableRow>
-                <TableRow>
                   <TableCell className="pl-8">HIPAA Compliance</TableCell>
                   <TableCell className="text-center">
                     <X className="h-5 w-5 text-muted-foreground mx-auto" />

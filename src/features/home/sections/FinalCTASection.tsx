@@ -30,7 +30,7 @@ export function FinalCTASection() {
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
             <span>No credit card required</span>
             <span className="text-border">|</span>
-            <span>SOC 2 compliant</span>
+            <span>Enterprise ready</span>
           </div>
         </div>
       </div>

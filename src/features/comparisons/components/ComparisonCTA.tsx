@@ -33,7 +33,7 @@ export function ComparisonCTA({ competitorName }: ComparisonCTAProps) {
           </div>
 
           <p className="mt-6 text-sm text-muted-foreground">
-            No credit card required &bull; SOC 2 compliant &bull; Self-host available
+            No credit card required &bull; Self-host available
           </p>
         </div>
       </div>

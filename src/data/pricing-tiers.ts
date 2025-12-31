@@ -105,7 +105,6 @@ export const pricingTiers: PricingTier[] = [
       "Custom data retention",
       "Dedicated infrastructure",
       "SAML SSO",
-      "SOC 2, HIPAA, GDPR",
       "Self-hosting option",
       "Custom SLA",
       "Dedicated support",

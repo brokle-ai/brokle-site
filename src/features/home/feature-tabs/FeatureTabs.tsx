@@ -124,7 +124,7 @@ export function FeatureTabs({ features, autoAdvanceInterval = 10000 }: FeatureTa
         lastTickRef.current = Date.now() - (progress / 100) * autoAdvanceInterval
       }}
     >
-      {/* Tab buttons - Langfuse style */}
+      {/* Tab buttons */}
       <div className="flex justify-center">
         <div className="inline-flex items-center gap-6 border-b">
           {features.map((feature, index) => {

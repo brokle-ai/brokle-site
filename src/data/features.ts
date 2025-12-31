@@ -35,7 +35,7 @@ export const features: Feature[] = [
   {
     icon: Shield,
     title: "Enterprise Security",
-    description: "SOC 2, GDPR, HIPAA ready. Self-host option, SSO, and role-based access control.",
+    description: "Enterprise-grade security. Self-host option, SSO, and role-based access control.",
   },
 ]
 

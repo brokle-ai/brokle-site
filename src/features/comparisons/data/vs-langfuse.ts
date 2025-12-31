@@ -112,7 +112,7 @@ export const vsLangfuseData: ComparisonPageData = {
     {
       category: "Enterprise",
       feature: "SOC 2 Compliance",
-      brokle: true,
+      brokle: false,
       competitor: true,
     },
   ],
