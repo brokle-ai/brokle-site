@@ -37,7 +37,7 @@ export function HeroSection() {
 
             <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-xl leading-relaxed">
               Debug, evaluate, and optimize your LLM applications with complete visibility.
-              100% open source. OpenTelemetry-native. Self-host anywhere.
+              Open source at heart. OpenTelemetry-native. Self-host anywhere.
             </p>
 
             {/* CTAs */}

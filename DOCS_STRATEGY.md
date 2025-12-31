@@ -1253,7 +1253,7 @@ description: Brokle is an open-source AI observability platform for tracing, eva
 
 ## Open Source
 
-Brokle is fully open source. Star us on [GitHub](https://github.com/brokle-ai/brokle).
+Brokle is open source at heart. Star us on [GitHub](https://github.com/brokle-ai/brokle).
 ```
 
 ### 8.2 Quickstart Page Outline

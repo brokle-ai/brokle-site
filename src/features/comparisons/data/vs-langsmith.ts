@@ -43,7 +43,7 @@ export const vsLangsmithData: ComparisonPageData = {
     // Open Source
     {
       category: "Open Source",
-      feature: "Fully Open Source",
+      feature: "Open Core (MIT Licensed)",
       brokle: true,
       competitor: false,
     },
@@ -130,7 +130,7 @@ export const vsLangsmithData: ComparisonPageData = {
     },
   ],
   advantages: [
-    "100% open source with MIT license - no proprietary lock-in or forced cloud dependency",
+    "Open Core model with MIT-licensed core - self-host anywhere with optional enterprise features",
     "Self-host anywhere for complete data control and compliance requirements",
     "Framework agnostic - works with LangChain, LlamaIndex, OpenAI SDK, and any other framework",
     "OpenTelemetry-native architecture integrates with your existing observability stack",
@@ -141,7 +141,7 @@ export const vsLangsmithData: ComparisonPageData = {
     {
       question: "Why choose Brokle over LangSmith?",
       answer:
-        "Brokle is fully open source and can be self-hosted, giving you complete control over your data. LangSmith is a proprietary SaaS with no self-hosting option, which may not meet compliance requirements for many organizations.",
+        "Brokle's core is open source and can be self-hosted, giving you complete control over your data. LangSmith is a proprietary SaaS with no self-hosting option, which may not meet compliance requirements for many organizations.",
     },
     {
       question: "Does Brokle work with LangChain?",
