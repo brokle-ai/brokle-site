@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { DisplayHeading } from "@/components/shared"
 import { ArrowRight, Cloud, Server } from "lucide-react"
+import { getSignupUrl } from "@/lib/app-urls"
 
 const platforms = [
   {
@@ -10,7 +11,7 @@ const platforms = [
     description:
       "Let us handle the infrastructure. Focus on building your AI applications while we manage scaling, security, and uptime.",
     cta: "Explore Cloud",
-    href: "https://app.brokle.com/signup",
+    href: getSignupUrl(),
   },
   {
     icon: Server,

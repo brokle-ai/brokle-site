@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ArrowRight, Check, X } from "lucide-react"
 import Link from "next/link"
+import { getSignupUrl } from "@/lib/app-urls"
 
 export default function ComparisonTable() {
   return (
@@ -393,7 +394,7 @@ export default function ComparisonTable() {
 
           <div className="flex justify-center mt-8">
             <Button className="gap-2" asChild>
-              <Link href="https://app.brokle.com/signup">
+              <Link href={getSignupUrl()}>
                 Get Started Free <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>

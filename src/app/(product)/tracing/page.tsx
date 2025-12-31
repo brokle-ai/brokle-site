@@ -21,6 +21,7 @@ import {
   Bell,
   TrendingUp,
 } from "lucide-react"
+import { getSignupUrl } from "@/lib/app-urls"
 
 export const metadata: Metadata = {
   title: "Tracing & Debugging - Brokle",
@@ -58,7 +59,7 @@ export default function TracingPage() {
         description="Debug complex chains and agents with detailed traces. Understand exactly what your LLM applications are doing, one span at a time."
         primaryCta={{
           text: "Start Tracing Free",
-          href: "https://app.brokle.com/signup",
+          href: getSignupUrl(),
         }}
         secondaryCta={{
           text: "View Documentation",
@@ -136,7 +137,7 @@ export default function TracingPage() {
         description="Add tracing to your application in under 5 minutes. No code changes required."
         cta={{
           text: "Get Started Free",
-          href: "https://app.brokle.com/signup",
+          href: getSignupUrl(),
         }}
       />
     </>

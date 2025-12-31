@@ -240,20 +240,20 @@ header#nd-nav a[href*="signup"].inline-flex:hover,
   background-color: oklch(0.72 0.16 250) !important;
 }
 
-header#nd-nav a[href*="login"].inline-flex,
-#nd-nav a[href*="login"].inline-flex {
+header#nd-nav a[href*="signin"].inline-flex,
+#nd-nav a[href*="signin"].inline-flex {
   background-color: transparent !important;
   border-color: transparent !important;
   border-width: 0 !important;
 }
 
-header#nd-nav a[href*="login"].inline-flex:hover,
-#nd-nav a[href*="login"].inline-flex:hover {
+header#nd-nav a[href*="signin"].inline-flex:hover,
+#nd-nav a[href*="signin"].inline-flex:hover {
   background-color: oklch(0.97 0 0) !important;
 }
 
-.dark header#nd-nav a[href*="login"].inline-flex:hover,
-.dark #nd-nav a[href*="login"].inline-flex:hover {
+.dark header#nd-nav a[href*="signin"].inline-flex:hover,
+.dark #nd-nav a[href*="signin"].inline-flex:hover {
   background-color: oklch(0.269 0 0) !important;
 }
 

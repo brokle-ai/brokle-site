@@ -1,4 +1,5 @@
 import type { PricingTier, AddOn } from "@/types/pricing"
+import { getSignupUrl } from "@/lib/app-urls"
 
 export const pricingTiers: PricingTier[] = [
   {
@@ -24,7 +25,7 @@ export const pricingTiers: PricingTier[] = [
     ],
     cta: {
       text: "Get Started",
-      href: "https://app.brokle.com/signup",
+      href: getSignupUrl(),
       variant: "outline",
     },
   },
@@ -54,7 +55,7 @@ export const pricingTiers: PricingTier[] = [
     ],
     cta: {
       text: "Start Free Trial",
-      href: "https://app.brokle.com/signup?plan=pro",
+      href: getSignupUrl("pro"),
       variant: "default",
     },
   },
@@ -83,7 +84,7 @@ export const pricingTiers: PricingTier[] = [
     ],
     cta: {
       text: "Start Free Trial",
-      href: "https://app.brokle.com/signup?plan=team",
+      href: getSignupUrl("team"),
       variant: "outline",
     },
   },

@@ -18,6 +18,7 @@ import {
   GitPullRequest,
   History,
 } from "lucide-react"
+import { getSignupUrl } from "@/lib/app-urls"
 
 export const metadata: Metadata = {
   title: "Evaluation Framework - Brokle",
@@ -55,7 +56,7 @@ export default function EvaluationPage() {
         description="Automated evaluations that go beyond vibes. Score outputs with LLM-as-judge, run A/B tests, and ship with confidence."
         primaryCta={{
           text: "Start Evaluating Free",
-          href: "https://app.brokle.com/signup",
+          href: getSignupUrl(),
         }}
         secondaryCta={{
           text: "View Documentation",
@@ -118,7 +119,7 @@ export default function EvaluationPage() {
         description="Stop guessing about quality. Start measuring with automated evaluations."
         cta={{
           text: "Get Started Free",
-          href: "https://app.brokle.com/signup",
+          href: getSignupUrl(),
         }}
       />
     </>

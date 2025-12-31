@@ -18,6 +18,7 @@ import {
   Undo2,
   FlaskConical,
 } from "lucide-react"
+import { getSignupUrl } from "@/lib/app-urls"
 
 export const metadata: Metadata = {
   title: "Prompt Management - Brokle",
@@ -55,7 +56,7 @@ export default function PromptManagementPage() {
         description="Version, test, and deploy prompts without touching your codebase. A/B test in production, roll back instantly when things go wrong."
         primaryCta={{
           text: "Get Started Free",
-          href: "https://app.brokle.com/signup",
+          href: getSignupUrl(),
         }}
         secondaryCta={{
           text: "View Documentation",
@@ -118,7 +119,7 @@ export default function PromptManagementPage() {
         description="Stop hardcoding prompts. Start versioning, testing, and deploying with confidence."
         cta={{
           text: "Get Started Free",
-          href: "https://app.brokle.com/signup",
+          href: getSignupUrl(),
         }}
       />
     </>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { getSigninUrl, getSignupUrl, getDashboardUrl } from '@/lib/app-urls';
 
 type AuthState = 'loading' | 'authenticated' | 'unauthenticated';
 
@@ -13,7 +14,6 @@ interface AuthButtonsProps {
 
 // Environment-configurable URLs with production fallbacks
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.brokle.com';
-const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.brokle.com';
 
 export function AuthButtons({ className, mobile }: AuthButtonsProps) {
   const [authState, setAuthState] = useState<AuthState>('loading');
@@ -68,14 +68,14 @@ export function AuthButtons({ className, mobile }: AuthButtonsProps) {
       return (
         <div className={className}>
           <Button className="w-full justify-center" asChild>
-            <Link href={appUrl}>Dashboard</Link>
+            <Link href={getDashboardUrl()}>Dashboard</Link>
           </Button>
         </div>
       );
     }
     return (
       <Button size="sm" asChild className={className}>
-        <Link href={appUrl}>Dashboard</Link>
+        <Link href={getDashboardUrl()}>Dashboard</Link>
       </Button>
     );
   }
@@ -85,10 +85,10 @@ export function AuthButtons({ className, mobile }: AuthButtonsProps) {
     return (
       <div className={`space-y-2 ${className}`}>
         <Button variant="outline" className="w-full justify-center" asChild>
-          <Link href={`${appUrl}/login`}>Sign In</Link>
+          <Link href={getSigninUrl()}>Sign In</Link>
         </Button>
         <Button className="w-full justify-center" asChild>
-          <Link href={`${appUrl}/signup`}>Get Started</Link>
+          <Link href={getSignupUrl()}>Get Started</Link>
         </Button>
       </div>
     );
@@ -97,10 +97,10 @@ export function AuthButtons({ className, mobile }: AuthButtonsProps) {
   return (
     <>
       <Button variant="ghost" size="sm" asChild>
-        <Link href={`${appUrl}/login`}>Sign In</Link>
+        <Link href={getSigninUrl()}>Sign In</Link>
       </Button>
       <Button size="sm" asChild>
-        <Link href={`${appUrl}/signup`}>Get Started</Link>
+        <Link href={getSignupUrl()}>Get Started</Link>
       </Button>
     </>
   );

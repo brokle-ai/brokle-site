@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { CheckCircle, Clock } from "lucide-react"
 import Link from "next/link"
+import { getSignupUrl } from "@/lib/app-urls"
 
 const freeFeatures = [
   "Unlimited traces",
@@ -42,7 +43,7 @@ export default function PricingCards() {
               </CardContent>
               <CardFooter>
                 <Button className="w-full" asChild>
-                  <Link href="https://app.brokle.com/signup">
+                  <Link href={getSignupUrl()}>
                     Get Started
                   </Link>
                 </Button>

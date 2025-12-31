@@ -2,6 +2,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Github, Star, BookOpen } from "lucide-react"
 import { DisplayHeading, HeroBackground, IsometricIllustration } from "@/components/shared"
+import { getSignupUrl } from "@/lib/app-urls"
 
 export function HeroSection() {
   return (
@@ -43,7 +44,7 @@ export function HeroSection() {
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row gap-3">
               <Button size="lg" className="gap-2" asChild>
-                <Link href="https://app.brokle.com/signup">
+                <Link href={getSignupUrl()}>
                   Get Started Free <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </Link>
               </Button>
