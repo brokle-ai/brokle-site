@@ -37,7 +37,7 @@ const footerLinks = {
 
 const socialLinks = [
   { name: "GitHub", href: "https://github.com/brokle-ai/brokle", icon: Github },
-  { name: "Twitter", href: "https://twitter.com/brokle_ai", icon: Twitter },
+  { name: "Twitter", href: "https://twitter.com/brokleai", icon: Twitter },
   { name: "LinkedIn", href: "https://linkedin.com/company/brokle", icon: Linkedin },
 ]
 
