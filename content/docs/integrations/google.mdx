@@ -1,0 +1,526 @@
+---
+title: Google GenAI Integration
+description: Trace and monitor Google Generative AI (Gemini) API calls with Brokle
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+import { Steps, Step } from "fumadocs-ui/components/steps";
+
+# Google GenAI Integration
+
+Integrate Brokle with Google's Generative AI (Gemini) models to capture traces, monitor performance, and track costs across all your Gemini API calls.
+
+## Supported Features
+
+| Feature | Supported | Notes |
+|---------|-----------|-------|
+| Generate Content | ✅ | Full support |
+| Streaming | ✅ | With TTFT metrics |
+| Multi-turn Chat | ✅ | Conversation history traced |
+| Function Calling | ✅ | Tool definitions and calls |
+| Vision | ✅ | Image inputs supported |
+| Embeddings | ✅ | Text embeddings |
+| Token Counting | ✅ | Input/output tokens |
+| Cost Tracking | ✅ | Automatic calculation |
+
+## Quick Start
+
+<Steps>
+  <Step>
+    ### Install Dependencies
+
+    <Tabs>
+      <Tab value="python" label="Python">
+        ```bash
+        pip install brokle google-generativeai
+        ```
+      </Tab>
+      <Tab value="javascript" label="JavaScript">
+        ```bash
+        npm install brokle @google/generative-ai
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step>
+    ### Wrap the Client
+
+    <Tabs>
+      <Tab value="python" label="Python">
+        ```python
+        from brokle import Brokle
+        from brokle.wrappers import wrap_google
+        import google.generativeai as genai
+
+        # Configure Google AI
+        genai.configure(api_key="your-google-api-key")
+
+        # Initialize Brokle
+        brokle = Brokle(api_key="bk_...")
+
+        # Wrap the GenerativeModel
+        model = wrap_google(
+            genai.GenerativeModel("gemini-1.5-pro"),
+            brokle=brokle
+        )
+        ```
+      </Tab>
+      <Tab value="javascript" label="JavaScript">
+        ```javascript
+        import { Brokle } from 'brokle';
+        import { wrapGoogle } from 'brokle/google';
+        import { GoogleGenerativeAI } from '@google/generative-ai';
+
+        // Initialize Google AI
+        const genAI = new GoogleGenerativeAI('your-google-api-key');
+
+        // Initialize Brokle
+        const brokle = new Brokle({ apiKey: 'bk_...' });
+
+        // Wrap the client
+        const client = wrapGoogle(genAI, { brokle });
+        const model = client.getGenerativeModel({ model: 'gemini-1.5-pro' });
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step>
+    ### Make Traced Calls
+
+    <Tabs>
+      <Tab value="python" label="Python">
+        ```python
+        # All calls are automatically traced
+        response = model.generate_content(
+            "What is the capital of France?"
+        )
+
+        print(response.text)
+
+        # Ensure traces are sent
+        brokle.flush()
+        ```
+      </Tab>
+      <Tab value="javascript" label="JavaScript">
+        ```javascript
+        // All calls are automatically traced
+        const result = await model.generateContent(
+          'What is the capital of France?'
+        );
+
+        console.log(result.response.text());
+
+        // Ensure traces are sent
+        await brokle.shutdown();
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+</Steps>
+
+## Model Support
+
+### Gemini Models
+
+| Model | Model ID | Context | Best For |
+|-------|----------|---------|----------|
+| Gemini 1.5 Pro | `gemini-1.5-pro` | 2M tokens | Complex reasoning |
+| Gemini 1.5 Flash | `gemini-1.5-flash` | 1M tokens | Fast responses |
+| Gemini 1.0 Pro | `gemini-1.0-pro` | 32K tokens | General tasks |
+| Gemini 1.0 Pro Vision | `gemini-1.0-pro-vision` | 16K tokens | Image understanding |
+
+## Streaming
+
+Streaming is fully supported with time-to-first-token (TTFT) metrics:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    # Streaming with automatic tracing
+    response = model.generate_content(
+        "Write a story about AI",
+        stream=True
+    )
+
+    for chunk in response:
+        print(chunk.text, end="", flush=True)
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    // Streaming with automatic tracing
+    const result = await model.generateContentStream(
+      'Write a story about AI'
+    );
+
+    for await (const chunk of result.stream) {
+      process.stdout.write(chunk.text());
+    }
+
+    // Get aggregated response
+    const response = await result.response;
+    ```
+  </Tab>
+</Tabs>
+
+Streaming traces capture:
+
+| Metric | Description |
+|--------|-------------|
+| `time_to_first_token` | Time until first chunk received |
+| `streaming_duration` | Total time for all chunks |
+| `chunks_count` | Number of streaming events |
+| `aggregated_output` | Complete response text |
+
+## Multi-turn Chat
+
+Track conversation context with chat sessions:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    # Start a chat session
+    chat = model.start_chat(history=[])
+
+    # Each message is traced
+    response = chat.send_message("Hello! I'm learning about AI.")
+    print(response.text)
+
+    response = chat.send_message("What are neural networks?")
+    print(response.text)
+
+    # Full conversation history is captured
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    // Start a chat session
+    const chat = model.startChat({ history: [] });
+
+    // Each message is traced
+    let result = await chat.sendMessage("Hello! I'm learning about AI.");
+    console.log(result.response.text());
+
+    result = await chat.sendMessage('What are neural networks?');
+    console.log(result.response.text());
+
+    // Full conversation history is captured
+    ```
+  </Tab>
+</Tabs>
+
+## Function Calling
+
+Gemini's function calling is automatically traced:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    # Define functions
+    def get_weather(location: str) -> dict:
+        return {"temperature": 72, "condition": "sunny"}
+
+    tools = [
+        genai.protos.Tool(
+            function_declarations=[
+                genai.protos.FunctionDeclaration(
+                    name="get_weather",
+                    description="Get weather for a location",
+                    parameters=genai.protos.Schema(
+                        type=genai.protos.Type.OBJECT,
+                        properties={
+                            "location": genai.protos.Schema(
+                                type=genai.protos.Type.STRING
+                            )
+                        },
+                        required=["location"]
+                    )
+                )
+            ]
+        )
+    ]
+
+    model = wrap_google(
+        genai.GenerativeModel("gemini-1.5-pro", tools=tools),
+        brokle=brokle
+    )
+
+    response = model.generate_content("What's the weather in Paris?")
+
+    # Function calls are captured in the trace
+    for part in response.parts:
+        if fn := part.function_call:
+            print(f"Function: {fn.name}")
+            print(f"Args: {fn.args}")
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    const tools = [
+      {
+        functionDeclarations: [
+          {
+            name: 'get_weather',
+            description: 'Get weather for a location',
+            parameters: {
+              type: 'object',
+              properties: {
+                location: { type: 'string' }
+              },
+              required: ['location']
+            }
+          }
+        ]
+      }
+    ];
+
+    const model = client.getGenerativeModel({
+      model: 'gemini-1.5-pro',
+      tools
+    });
+
+    const result = await model.generateContent(
+      "What's the weather in Paris?"
+    );
+
+    // Function calls are captured in the trace
+    const response = result.response;
+    const calls = response.functionCalls();
+    if (calls) {
+      calls.forEach(call => {
+        console.log('Function:', call.name);
+        console.log('Args:', call.args);
+      });
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Vision
+
+Image inputs are fully supported:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    import PIL.Image
+
+    # From file
+    image = PIL.Image.open("image.jpg")
+
+    response = model.generate_content([
+        "What's in this image?",
+        image
+    ])
+
+    print(response.text)
+
+    # From URL (base64)
+    import base64
+    import httpx
+
+    image_data = base64.standard_b64encode(
+        httpx.get("https://example.com/image.jpg").content
+    ).decode("utf-8")
+
+    response = model.generate_content([
+        "Describe this image",
+        {"mime_type": "image/jpeg", "data": image_data}
+    ])
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    import fs from 'fs';
+
+    // From file
+    const imageData = fs.readFileSync('image.jpg').toString('base64');
+
+    const result = await model.generateContent([
+      "What's in this image?",
+      {
+        inlineData: {
+          mimeType: 'image/jpeg',
+          data: imageData
+        }
+      }
+    ]);
+
+    console.log(result.response.text());
+    ```
+  </Tab>
+</Tabs>
+
+<Callout type="info">
+  Image references are stored in traces. Brokle captures the image metadata but not the full image data by default.
+</Callout>
+
+## Embeddings
+
+Generate and trace embeddings:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    embed_model = wrap_google(
+        genai.GenerativeModel("models/embedding-001"),
+        brokle=brokle
+    )
+
+    result = genai.embed_content(
+        model="models/embedding-001",
+        content="Hello world",
+        task_type="retrieval_document"
+    )
+
+    print(f"Embedding dimension: {len(result['embedding'])}")
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    const embedModel = client.getGenerativeModel({
+      model: 'embedding-001'
+    });
+
+    const result = await embedModel.embedContent('Hello world');
+    console.log('Embedding dimension:', result.embedding.values.length);
+    ```
+  </Tab>
+</Tabs>
+
+## Cost Tracking
+
+Brokle automatically calculates costs based on Google's pricing:
+
+| Model | Input (per 1M tokens) | Output (per 1M tokens) |
+|-------|----------------------|------------------------|
+| Gemini 1.5 Pro | $3.50 | $10.50 |
+| Gemini 1.5 Flash | $0.075 | $0.30 |
+| Gemini 1.0 Pro | $0.50 | $1.50 |
+
+<Callout type="info">
+  Pricing is updated regularly. Check the Brokle dashboard for current rates.
+</Callout>
+
+## Safety Settings
+
+Configure and trace safety settings:
+
+```python
+from google.generativeai.types import HarmCategory, HarmBlockThreshold
+
+model = wrap_google(
+    genai.GenerativeModel(
+        "gemini-1.5-pro",
+        safety_settings={
+            HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+            HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+        }
+    ),
+    brokle=brokle
+)
+
+# Safety settings are captured in traces
+response = model.generate_content("Hello!")
+```
+
+## Error Handling
+
+Errors are automatically captured:
+
+```python
+try:
+    response = model.generate_content("Hello")
+except google.generativeai.types.BlockedPromptException as e:
+    # Captured in trace:
+    # - status: "error"
+    # - error_type: "BlockedPromptException"
+    print(f"Prompt blocked: {e}")
+except Exception as e:
+    print(f"Error: {e}")
+```
+
+## Configuration Options
+
+```python
+from brokle import Brokle
+from brokle.wrappers import wrap_google
+
+brokle = Brokle(
+    api_key="bk_...",
+    environment="production",
+    sample_rate=1.0,
+    debug=False
+)
+
+model = wrap_google(
+    genai.GenerativeModel("gemini-1.5-pro"),
+    brokle=brokle,
+    # Integration-specific options
+    capture_input=True,      # Capture prompt content
+    capture_output=True,     # Capture response content
+)
+```
+
+## Best Practices
+
+### 1. Add Context
+
+```python
+with brokle.start_as_current_span(name="gemini_chat") as span:
+    span.update_trace(user_id="user_123")
+    response = model.generate_content("Hello!")
+```
+
+### 2. Use Environment Variables
+
+```bash
+export BROKLE_API_KEY=bk_...
+export GOOGLE_API_KEY=your-google-key
+```
+
+```python
+import os
+genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
+brokle = Brokle()  # Reads from env
+```
+
+### 3. Graceful Shutdown
+
+```python
+import atexit
+atexit.register(brokle.shutdown)
+```
+
+## Troubleshooting
+
+### Missing Traces
+
+1. Verify both API keys are set
+2. Check `brokle.flush()` is called
+3. Enable debug: `Brokle(debug=True)`
+
+### Token Count Issues
+
+Gemini returns token counts in the response metadata. Ensure you're using SDK version >= 0.3.0.
+
+### Streaming Not Captured
+
+Use the correct streaming methods:
+- Python: `generate_content(stream=True)`
+- JavaScript: `generateContentStream()`
+
+## Related Integrations
+
+- [OpenAI](/docs/integrations/openai) - GPT models
+- [Anthropic](/docs/integrations/anthropic) - Claude models
+- [Vertex AI](/docs/integrations/vertex-ai) - Google Cloud AI
+
+## Next Steps
+
+- [Tracing Guide →](/docs/tracing)
+- [Cost Analytics →](/docs/concepts/cost-analytics)
+- [LangChain Integration →](/docs/integrations/rag-frameworks/langchain)

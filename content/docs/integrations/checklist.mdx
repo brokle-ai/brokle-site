@@ -1,0 +1,261 @@
+---
+title: Integration Checklist
+description: Validation requirements for Brokle SDK integrations
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+## Overview
+
+This checklist ensures all integrations meet Brokle's quality standards before merging. Use this as a validation guide when contributing or reviewing integrations.
+
+<Callout type="warn">
+All items marked as **Required** must be completed before an integration can be merged. **Recommended** items are strongly encouraged but not blocking.
+</Callout>
+
+## Code Implementation
+
+### Required
+
+- [ ] **Client Validation** - Wrapper validates client instance type before wrapping
+- [ ] **Passthrough Mode** - Returns unwrapped client when `BROKLE_ENABLED=false`
+- [ ] **Non-Streaming Support** - Traces standard request/response completions
+- [ ] **Error Handling** - Sets `SpanStatusCode.ERROR` and records exceptions on failure
+- [ ] **Span Naming** - Uses descriptive span names: `{operation} {model}` (e.g., `chat gpt-4`)
+- [ ] **Type Safety** - Full TypeScript types (JS) or type hints (Python)
+
+### Recommended
+
+- [ ] **Streaming Support** - Wraps async iterators with proper span lifecycle
+- [ ] **TTFT Capture** - Records time-to-first-token for streaming
+- [ ] **ITL Capture** - Records inter-token latency metrics
+- [ ] **Tool/Function Calls** - Traces function calling with arguments and results
+- [ ] **Retry Detection** - Identifies and links retry attempts
+
+## OpenTelemetry Attributes
+
+### Required Attributes
+
+Every integration MUST set these attributes on spans:
+
+| Attribute | Source | Example |
+|-----------|--------|---------|
+| `brokle.span_type` | Constant | `"generation"` |
+| `gen_ai.system` | Provider | `"openai"`, `"anthropic"` |
+| `gen_ai.operation.name` | Operation | `"chat"` |
+| `gen_ai.request.model` | Request | `"gpt-4o"` |
+
+### Conditional Attributes
+
+Set these when data is available:
+
+| Attribute | When | Source |
+|-----------|------|--------|
+| `gen_ai.usage.input_tokens` | Response has usage | `response.usage.prompt_tokens` |
+| `gen_ai.usage.output_tokens` | Response has usage | `response.usage.completion_tokens` |
+| `gen_ai.response.finish_reasons` | Non-streaming | `response.choices[0].finish_reason` |
+| `gen_ai.request.temperature` | Set by user | Request parameter |
+| `gen_ai.request.max_tokens` | Set by user | Request parameter |
+| `gen_ai.request.top_p` | Set by user | Request parameter |
+
+### Optional Attributes
+
+Capture when `capture_input`/`capture_output` are enabled:
+
+| Attribute | Content |
+|-----------|---------|
+| `gen_ai.prompt` | Input messages (JSON) |
+| `gen_ai.completion` | Output messages (JSON) |
+
+### Streaming-Specific Attributes
+
+| Attribute | Description |
+|-----------|-------------|
+| `brokle.streaming` | Boolean `true` |
+| `brokle.ttft_ms` | Time to first token (ms) |
+| `brokle.itl_ms` | Average inter-token latency (ms) |
+
+## Testing Requirements
+
+### Unit Tests (Required)
+
+- [ ] **Wrapper Creation** - Tests `wrap_provider()` with valid client
+- [ ] **Invalid Client** - Tests error when passed invalid/null client
+- [ ] **Non-Streaming** - Tests span creation for standard completions
+- [ ] **Streaming** - Tests span creation for streaming completions
+- [ ] **Disabled Mode** - Tests passthrough when Brokle disabled
+- [ ] **Error Handling** - Tests span status on provider errors
+
+### Integration Tests (Required)
+
+- [ ] **Attribute Accuracy** - Verifies correct span attributes
+- [ ] **Token Counting** - Verifies accurate token usage capture
+- [ ] **Parent-Child Linking** - Verifies nested span relationships
+- [ ] **End-to-End** - Tests with mocked provider responses
+
+### Test Coverage
+
+- [ ] Minimum 80% code coverage
+- [ ] Critical paths at 100% coverage
+- [ ] Edge cases documented and tested
+
+## Documentation Requirements
+
+### MDX File (Required)
+
+Create `content/docs/integrations/{provider}.mdx` with:
+
+- [ ] **Frontmatter** - Title, description
+- [ ] **Overview** - What the integration does (2-3 sentences)
+- [ ] **What Gets Traced** - Feature table with ✅/❌ status
+- [ ] **Installation** - Python and JavaScript tabs
+- [ ] **Quick Setup** - Copy-paste code examples
+- [ ] **Configuration Options** - Table with all options
+- [ ] **Troubleshooting** - At least 3 common issues
+
+### Recommended Sections
+
+- [ ] **Advanced Usage** - Complex scenarios
+- [ ] **Streaming Examples** - If supported
+- [ ] **Error Handling** - Provider-specific error patterns
+- [ ] **Related Integrations** - Links to related docs
+
+## Package Configuration
+
+### Python (Required)
+
+In `pyproject.toml`:
+
+```toml
+[project.optional-dependencies]
+provider = ["provider-sdk>=1.0.0"]
+```
+
+### JavaScript (Required)
+
+In `package.json`:
+
+```json
+{
+  "exports": {
+    "./provider": {
+      "types": "./dist/integrations/provider/index.d.ts",
+      "import": "./dist/integrations/provider/index.js"
+    }
+  },
+  "peerDependencies": {
+    "provider-sdk": "^1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "provider-sdk": { "optional": true }
+  }
+}
+```
+
+In `tsup.config.ts`:
+
+```typescript
+entry: {
+  'integrations/provider/index': 'src/integrations/provider/index.ts',
+}
+```
+
+## Navigation Updates
+
+- [ ] **meta.json** - Add provider to navigation array
+- [ ] **index.mdx** - Add to provider cards and tables
+- [ ] **Related Docs** - Add cross-references in related integrations
+
+## Performance Requirements
+
+- [ ] **Overhead** - Less than 3ms per traced call
+- [ ] **Memory** - No memory leaks in long-running processes
+- [ ] **Async Safety** - Non-blocking telemetry export
+
+## Security Checklist
+
+- [ ] **No Credential Logging** - API keys never captured in spans
+- [ ] **Masking Hooks** - Respects user masking configuration
+- [ ] **Input Validation** - Validates all user-provided options
+- [ ] **Safe Defaults** - Secure configuration out of the box
+
+## PR Checklist Summary
+
+Copy this checklist into your PR description:
+
+```markdown
+## Integration Checklist
+
+### Code
+- [ ] Client validation and passthrough mode
+- [ ] Non-streaming and streaming support
+- [ ] Error handling with SpanStatusCode.ERROR
+- [ ] Required OTEL attributes set
+
+### Tests
+- [ ] Unit tests for all code paths
+- [ ] Integration tests with mocked responses
+- [ ] 80%+ code coverage
+
+### Documentation
+- [ ] MDX file with all required sections
+- [ ] Code examples in Python and JavaScript
+- [ ] Troubleshooting section
+
+### Package
+- [ ] Optional dependency added
+- [ ] Package exports configured
+- [ ] Navigation updated
+
+### Performance & Security
+- [ ] <3ms overhead verified
+- [ ] No credential logging
+- [ ] Masking hooks respected
+```
+
+## Validation Commands
+
+Run these before submitting:
+
+```bash
+# Python
+make test-coverage    # Verify test coverage
+make lint             # Check code style
+make type-check       # Verify types
+
+# JavaScript
+pnpm test            # Run tests
+pnpm lint            # Check code style
+pnpm typecheck       # Verify types
+pnpm build           # Verify build succeeds
+```
+
+## Review Process
+
+1. **Automated CI** - All tests must pass
+2. **Code Review** - At least 1 SDK team approval
+3. **Docs Review** - Documentation team sign-off
+4. **Manual Testing** - Integration verified manually
+5. **Merge** - Squash and merge to main
+
+## Common Rejection Reasons
+
+| Issue | Solution |
+|-------|----------|
+| Missing tests | Add unit and integration tests |
+| Incomplete docs | Add missing sections per checklist |
+| No streaming support | Add streaming wrapper or document limitation |
+| Hardcoded values | Use configuration options |
+| Memory leaks | Ensure proper span lifecycle management |
+| Credential exposure | Never log API keys or tokens |
+
+## Getting Help
+
+- **Stuck?** Open a [Discussion](https://github.com/brokle-ai/brokle/discussions)
+- **Found a bug?** File an [Issue](https://github.com/brokle-ai/brokle/issues)
+- **Need review?** Tag `@brokle-ai/sdk-team` in your PR
+
+## Related
+
+- [Contributing Guide](/docs/integrations/contributing) - How to contribute
+- [SDK Reference](/docs/sdk-reference) - API documentation

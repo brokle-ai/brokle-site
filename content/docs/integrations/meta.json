@@ -5,7 +5,18 @@
     "---LLM Providers---",
     "openai",
     "anthropic",
+    "google",
+    "mistral",
+    "azure-openai",
+    "bedrock",
+    "cohere",
+    "---Gateways---",
+    "litellm",
     "---Frameworks---",
-    "rag-frameworks"
+    "vercel-ai",
+    "rag-frameworks",
+    "---Contributing---",
+    "contributing",
+    "checklist"
   ]
 }

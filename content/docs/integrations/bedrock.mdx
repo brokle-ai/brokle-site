@@ -1,0 +1,625 @@
+---
+title: AWS Bedrock Integration
+description: Trace and monitor Amazon Bedrock API calls with Brokle
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+import { Steps, Step } from "fumadocs-ui/components/steps";
+
+# AWS Bedrock Integration
+
+Integrate Brokle with Amazon Bedrock to capture traces, monitor performance, and track costs across all your Bedrock API calls including Claude, Titan, Llama, and more.
+
+## Supported Features
+
+| Feature | Supported | Notes |
+|---------|-----------|-------|
+| Converse API | ✅ | Full support |
+| Converse Stream | ✅ | With TTFT metrics |
+| InvokeModel | ✅ | Legacy API support |
+| Tool Use | ✅ | Function calling traced |
+| Vision | ✅ | Image inputs supported |
+| Guardrails | ✅ | Safety config traced |
+| Token Counting | ✅ | Input/output tokens |
+| Cost Tracking | ✅ | Automatic calculation |
+
+## Quick Start
+
+<Steps>
+  <Step>
+    ### Install Dependencies
+
+    <Tabs>
+      <Tab value="python" label="Python">
+        ```bash
+        pip install brokle boto3
+        ```
+      </Tab>
+      <Tab value="javascript" label="JavaScript">
+        ```bash
+        npm install brokle @aws-sdk/client-bedrock-runtime
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step>
+    ### Wrap the Client
+
+    <Tabs>
+      <Tab value="python" label="Python">
+        ```python
+        from brokle import Brokle
+        from brokle.wrappers import wrap_bedrock
+        import boto3
+
+        # Initialize Brokle
+        brokle = Brokle(api_key="bk_...")
+
+        # Wrap Bedrock client
+        bedrock = wrap_bedrock(
+            boto3.client("bedrock-runtime", region_name="us-east-1"),
+            brokle=brokle
+        )
+        ```
+      </Tab>
+      <Tab value="javascript" label="JavaScript">
+        ```javascript
+        import { Brokle } from 'brokle';
+        import { wrapBedrock } from 'brokle/bedrock';
+        import { BedrockRuntimeClient } from '@aws-sdk/client-bedrock-runtime';
+
+        // Initialize Brokle
+        const brokle = new Brokle({ apiKey: 'bk_...' });
+
+        // Wrap Bedrock client
+        const bedrock = wrapBedrock(
+          new BedrockRuntimeClient({ region: 'us-east-1' }),
+          { brokle }
+        );
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step>
+    ### Make Traced Calls
+
+    <Tabs>
+      <Tab value="python" label="Python">
+        ```python
+        # Using Converse API (recommended)
+        response = bedrock.converse(
+            modelId="anthropic.claude-3-sonnet-20240229-v1:0",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [{"text": "What is Amazon Bedrock?"}]
+                }
+            ]
+        )
+
+        print(response["output"]["message"]["content"][0]["text"])
+
+        # Ensure traces are sent
+        brokle.flush()
+        ```
+      </Tab>
+      <Tab value="javascript" label="JavaScript">
+        ```javascript
+        import { ConverseCommand } from '@aws-sdk/client-bedrock-runtime';
+
+        // Using Converse API (recommended)
+        const response = await bedrock.send(new ConverseCommand({
+          modelId: 'anthropic.claude-3-sonnet-20240229-v1:0',
+          messages: [
+            {
+              role: 'user',
+              content: [{ text: 'What is Amazon Bedrock?' }]
+            }
+          ]
+        }));
+
+        console.log(response.output.message.content[0].text);
+
+        // Ensure traces are sent
+        await brokle.shutdown();
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+</Steps>
+
+## Model Support
+
+### Claude Models (Anthropic)
+
+| Model | Model ID | Context | Best For |
+|-------|----------|---------|----------|
+| Claude 3 Opus | `anthropic.claude-3-opus-20240229-v1:0` | 200K | Complex reasoning |
+| Claude 3 Sonnet | `anthropic.claude-3-sonnet-20240229-v1:0` | 200K | Balanced performance |
+| Claude 3 Haiku | `anthropic.claude-3-haiku-20240307-v1:0` | 200K | Fast responses |
+| Claude 3.5 Sonnet | `anthropic.claude-3-5-sonnet-20241022-v2:0` | 200K | Best overall |
+
+### Amazon Titan Models
+
+| Model | Model ID | Context | Best For |
+|-------|----------|---------|----------|
+| Titan Text G1 Express | `amazon.titan-text-express-v1` | 8K | General tasks |
+| Titan Text G1 Premier | `amazon.titan-text-premier-v1:0` | 32K | Advanced tasks |
+| Titan Embeddings G1 | `amazon.titan-embed-text-v1` | 8K | Embeddings |
+
+### Meta Llama Models
+
+| Model | Model ID | Context | Best For |
+|-------|----------|---------|----------|
+| Llama 3 8B | `meta.llama3-8b-instruct-v1:0` | 8K | Fast inference |
+| Llama 3 70B | `meta.llama3-70b-instruct-v1:0` | 8K | Complex tasks |
+| Llama 3.1 405B | `meta.llama3-1-405b-instruct-v1:0` | 128K | Maximum capability |
+
+### Other Models
+
+| Model | Model ID | Provider |
+|-------|----------|----------|
+| Mistral Large | `mistral.mistral-large-2402-v1:0` | Mistral AI |
+| Cohere Command R+ | `cohere.command-r-plus-v1:0` | Cohere |
+| AI21 Jamba | `ai21.jamba-1-5-large-v1:0` | AI21 Labs |
+
+## Converse API (Recommended)
+
+The Converse API provides a unified interface across all models:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    response = bedrock.converse(
+        modelId="anthropic.claude-3-sonnet-20240229-v1:0",
+        messages=[
+            {
+                "role": "user",
+                "content": [{"text": "Hello!"}]
+            }
+        ],
+        inferenceConfig={
+            "maxTokens": 1024,
+            "temperature": 0.7,
+            "topP": 0.9
+        }
+    )
+
+    # Access response
+    output_message = response["output"]["message"]
+    print(output_message["content"][0]["text"])
+
+    # Token usage is captured in traces
+    usage = response["usage"]
+    print(f"Input tokens: {usage['inputTokens']}")
+    print(f"Output tokens: {usage['outputTokens']}")
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    import { ConverseCommand } from '@aws-sdk/client-bedrock-runtime';
+
+    const response = await bedrock.send(new ConverseCommand({
+      modelId: 'anthropic.claude-3-sonnet-20240229-v1:0',
+      messages: [
+        {
+          role: 'user',
+          content: [{ text: 'Hello!' }]
+        }
+      ],
+      inferenceConfig: {
+        maxTokens: 1024,
+        temperature: 0.7,
+        topP: 0.9
+      }
+    }));
+
+    // Access response
+    console.log(response.output.message.content[0].text);
+
+    // Token usage is captured in traces
+    console.log('Input tokens:', response.usage.inputTokens);
+    console.log('Output tokens:', response.usage.outputTokens);
+    ```
+  </Tab>
+</Tabs>
+
+## Streaming
+
+Streaming is supported via ConverseStream:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    response = bedrock.converse_stream(
+        modelId="anthropic.claude-3-sonnet-20240229-v1:0",
+        messages=[
+            {
+                "role": "user",
+                "content": [{"text": "Write a story about AI"}]
+            }
+        ]
+    )
+
+    for event in response["stream"]:
+        if "contentBlockDelta" in event:
+            delta = event["contentBlockDelta"]["delta"]
+            if "text" in delta:
+                print(delta["text"], end="", flush=True)
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    import { ConverseStreamCommand } from '@aws-sdk/client-bedrock-runtime';
+
+    const response = await bedrock.send(new ConverseStreamCommand({
+      modelId: 'anthropic.claude-3-sonnet-20240229-v1:0',
+      messages: [
+        {
+          role: 'user',
+          content: [{ text: 'Write a story about AI' }]
+        }
+      ]
+    }));
+
+    for await (const event of response.stream) {
+      if (event.contentBlockDelta) {
+        const text = event.contentBlockDelta.delta?.text;
+        if (text) {
+          process.stdout.write(text);
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+Streaming traces capture:
+
+| Metric | Description |
+|--------|-------------|
+| `time_to_first_token` | Time until first chunk |
+| `streaming_duration` | Total streaming time |
+| `chunks_count` | Number of stream events |
+| `aggregated_output` | Complete response text |
+
+## Tool Use
+
+Function calling with Bedrock:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    tools = [
+        {
+            "toolSpec": {
+                "name": "get_weather",
+                "description": "Get weather for a location",
+                "inputSchema": {
+                    "json": {
+                        "type": "object",
+                        "properties": {
+                            "location": {
+                                "type": "string",
+                                "description": "City name"
+                            }
+                        },
+                        "required": ["location"]
+                    }
+                }
+            }
+        }
+    ]
+
+    response = bedrock.converse(
+        modelId="anthropic.claude-3-sonnet-20240229-v1:0",
+        messages=[
+            {
+                "role": "user",
+                "content": [{"text": "What's the weather in Paris?"}]
+            }
+        ],
+        toolConfig={"tools": tools}
+    )
+
+    # Tool use is captured in traces
+    for block in response["output"]["message"]["content"]:
+        if "toolUse" in block:
+            print(f"Tool: {block['toolUse']['name']}")
+            print(f"Input: {block['toolUse']['input']}")
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    const tools = [
+      {
+        toolSpec: {
+          name: 'get_weather',
+          description: 'Get weather for a location',
+          inputSchema: {
+            json: {
+              type: 'object',
+              properties: {
+                location: {
+                  type: 'string',
+                  description: 'City name'
+                }
+              },
+              required: ['location']
+            }
+          }
+        }
+      }
+    ];
+
+    const response = await bedrock.send(new ConverseCommand({
+      modelId: 'anthropic.claude-3-sonnet-20240229-v1:0',
+      messages: [
+        {
+          role: 'user',
+          content: [{ text: "What's the weather in Paris?" }]
+        }
+      ],
+      toolConfig: { tools }
+    }));
+
+    // Tool use is captured in traces
+    response.output.message.content.forEach(block => {
+      if (block.toolUse) {
+        console.log('Tool:', block.toolUse.name);
+        console.log('Input:', block.toolUse.input);
+      }
+    });
+    ```
+  </Tab>
+</Tabs>
+
+## Vision
+
+Image inputs are supported:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    import base64
+
+    with open("image.jpg", "rb") as f:
+        image_data = base64.standard_b64encode(f.read()).decode("utf-8")
+
+    response = bedrock.converse(
+        modelId="anthropic.claude-3-sonnet-20240229-v1:0",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "image": {
+                            "format": "jpeg",
+                            "source": {"bytes": base64.b64decode(image_data)}
+                        }
+                    },
+                    {"text": "What's in this image?"}
+                ]
+            }
+        ]
+    )
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    import fs from 'fs';
+
+    const imageData = fs.readFileSync('image.jpg');
+
+    const response = await bedrock.send(new ConverseCommand({
+      modelId: 'anthropic.claude-3-sonnet-20240229-v1:0',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              image: {
+                format: 'jpeg',
+                source: { bytes: imageData }
+              }
+            },
+            { text: "What's in this image?" }
+          ]
+        }
+      ]
+    }));
+    ```
+  </Tab>
+</Tabs>
+
+## Guardrails
+
+Amazon Bedrock Guardrails are traced:
+
+```python
+response = bedrock.converse(
+    modelId="anthropic.claude-3-sonnet-20240229-v1:0",
+    messages=[{"role": "user", "content": [{"text": "Hello"}]}],
+    guardrailConfig={
+        "guardrailIdentifier": "your-guardrail-id",
+        "guardrailVersion": "1"
+    }
+)
+
+# Guardrail config is captured in traces:
+# - bedrock.guardrail_id
+# - bedrock.guardrail_version
+```
+
+## Cost Tracking
+
+Brokle tracks costs based on Bedrock pricing:
+
+| Model | Input (per 1K tokens) | Output (per 1K tokens) |
+|-------|----------------------|------------------------|
+| Claude 3 Opus | $0.015 | $0.075 |
+| Claude 3.5 Sonnet | $0.003 | $0.015 |
+| Claude 3 Sonnet | $0.003 | $0.015 |
+| Claude 3 Haiku | $0.00025 | $0.00125 |
+| Titan Text Express | $0.0002 | $0.0006 |
+| Llama 3 70B | $0.00265 | $0.0035 |
+
+<Callout type="info">
+  Bedrock pricing varies by region. Configure custom pricing in Brokle for accurate cost tracking.
+</Callout>
+
+## AWS Configuration
+
+### IAM Permissions
+
+Required IAM permissions for Bedrock:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream"
+      ],
+      "Resource": "arn:aws:bedrock:*::foundation-model/*"
+    }
+  ]
+}
+```
+
+### Region Configuration
+
+```python
+import boto3
+
+# Explicit region
+bedrock = wrap_bedrock(
+    boto3.client("bedrock-runtime", region_name="us-west-2"),
+    brokle=brokle
+)
+
+# From environment
+# AWS_DEFAULT_REGION=us-west-2
+bedrock = wrap_bedrock(
+    boto3.client("bedrock-runtime"),
+    brokle=brokle
+)
+```
+
+## Error Handling
+
+```python
+from botocore.exceptions import ClientError
+
+try:
+    response = bedrock.converse(
+        modelId="anthropic.claude-3-sonnet-20240229-v1:0",
+        messages=[{"role": "user", "content": [{"text": "Hello"}]}]
+    )
+except ClientError as e:
+    error_code = e.response["Error"]["Code"]
+    if error_code == "ThrottlingException":
+        # Rate limited - captured in trace
+        print("Rate limited")
+    elif error_code == "ValidationException":
+        # Invalid request
+        print(f"Validation error: {e}")
+    else:
+        print(f"Error: {e}")
+```
+
+## Configuration Options
+
+```python
+from brokle import Brokle
+from brokle.wrappers import wrap_bedrock
+
+brokle = Brokle(
+    api_key="bk_...",
+    environment="production",
+    sample_rate=1.0,
+    debug=False
+)
+
+bedrock = wrap_bedrock(
+    boto3.client("bedrock-runtime"),
+    brokle=brokle,
+    # Integration-specific options
+    capture_input=True,      # Capture message content
+    capture_output=True,     # Capture response content
+)
+```
+
+## Best Practices
+
+### 1. Use Converse API
+
+```python
+# Preferred: Unified API across models
+response = bedrock.converse(modelId="...", messages=[...])
+
+# Legacy: Model-specific formatting
+response = bedrock.invoke_model(modelId="...", body=json.dumps({...}))
+```
+
+### 2. Add Context
+
+```python
+with brokle.start_as_current_span(name="bedrock_chat") as span:
+    span.set_attribute("aws.region", "us-east-1")
+    response = bedrock.converse(...)
+```
+
+### 3. Handle Cross-Region
+
+```python
+# Primary region
+us_bedrock = wrap_bedrock(
+    boto3.client("bedrock-runtime", region_name="us-east-1"),
+    brokle=brokle
+)
+
+# Fallback region
+eu_bedrock = wrap_bedrock(
+    boto3.client("bedrock-runtime", region_name="eu-west-1"),
+    brokle=brokle
+)
+```
+
+## Troubleshooting
+
+### Access Denied
+
+1. Check IAM permissions
+2. Verify model access is enabled in Bedrock console
+3. Confirm region supports the model
+
+### Model Not Found
+
+1. Check model ID spelling
+2. Verify model is available in your region
+3. Ensure model access is requested and granted
+
+### Throttling
+
+1. Implement exponential backoff
+2. Request quota increases
+3. Use multiple regions for failover
+
+## Related Integrations
+
+- [Anthropic](/docs/integrations/anthropic) - Direct Claude API
+- [OpenAI](/docs/integrations/openai) - GPT models
+- [LangChain](/docs/integrations/rag-frameworks/langchain) - Framework integration
+
+## Next Steps
+
+- [Tracing Guide →](/docs/tracing)
+- [Cost Analytics →](/docs/concepts/cost-analytics)
+- [AWS Bedrock Docs →](https://docs.aws.amazon.com/bedrock/)

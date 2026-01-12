@@ -1,0 +1,538 @@
+---
+title: Vercel AI SDK Integration
+description: Trace and monitor Vercel AI SDK applications with Brokle
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+import { Steps, Step } from "fumadocs-ui/components/steps";
+
+# Vercel AI SDK Integration
+
+Integrate Brokle with the Vercel AI SDK to capture traces across all your AI-powered applications. Works seamlessly with Next.js, React, and Node.js.
+
+## Supported Features
+
+| Feature | Supported | Notes |
+|---------|-----------|-------|
+| generateText | ✅ | Full support |
+| streamText | ✅ | With TTFT metrics |
+| generateObject | ✅ | Structured outputs |
+| streamObject | ✅ | Streaming objects |
+| Tool Calling | ✅ | Function execution traced |
+| Multi-Provider | ✅ | OpenAI, Anthropic, Google, etc. |
+| Token Counting | ✅ | Input/output tokens |
+| Cost Tracking | ✅ | Automatic calculation |
+
+## Quick Start
+
+<Steps>
+  <Step>
+    ### Install Dependencies
+
+    ```bash
+    npm install brokle ai @ai-sdk/openai
+    ```
+  </Step>
+
+  <Step>
+    ### Configure Telemetry
+
+    The Vercel AI SDK has built-in OpenTelemetry support. Configure it to export to Brokle:
+
+    ```typescript
+    // lib/brokle.ts
+    import { Brokle } from 'brokle';
+
+    export const brokle = new Brokle({
+      apiKey: process.env.BROKLE_API_KEY,
+    });
+    ```
+  </Step>
+
+  <Step>
+    ### Use with Telemetry
+
+    ```typescript
+    import { generateText } from 'ai';
+    import { openai } from '@ai-sdk/openai';
+    import { brokle } from './lib/brokle';
+
+    const result = await generateText({
+      model: openai('gpt-4-turbo'),
+      prompt: 'What is the capital of France?',
+      experimental_telemetry: {
+        isEnabled: true,
+        functionId: 'my-function',
+        metadata: {
+          userId: 'user_123',
+        },
+      },
+    });
+
+    console.log(result.text);
+    ```
+  </Step>
+</Steps>
+
+<Callout type="info">
+  The Vercel AI SDK uses OpenTelemetry for telemetry. Brokle automatically captures these traces when configured as an OTLP exporter.
+</Callout>
+
+## Provider Support
+
+The Vercel AI SDK supports multiple providers, all traced by Brokle:
+
+### OpenAI
+
+```typescript
+import { openai } from '@ai-sdk/openai';
+
+const result = await generateText({
+  model: openai('gpt-4-turbo'),
+  prompt: 'Hello!',
+  experimental_telemetry: { isEnabled: true },
+});
+```
+
+### Anthropic
+
+```typescript
+import { anthropic } from '@ai-sdk/anthropic';
+
+const result = await generateText({
+  model: anthropic('claude-3-sonnet-20240229'),
+  prompt: 'Hello!',
+  experimental_telemetry: { isEnabled: true },
+});
+```
+
+### Google
+
+```typescript
+import { google } from '@ai-sdk/google';
+
+const result = await generateText({
+  model: google('gemini-1.5-pro'),
+  prompt: 'Hello!',
+  experimental_telemetry: { isEnabled: true },
+});
+```
+
+### Mistral
+
+```typescript
+import { mistral } from '@ai-sdk/mistral';
+
+const result = await generateText({
+  model: mistral('mistral-large-latest'),
+  prompt: 'Hello!',
+  experimental_telemetry: { isEnabled: true },
+});
+```
+
+## Core Functions
+
+### generateText
+
+Generate text completions with full tracing:
+
+```typescript
+import { generateText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+
+const result = await generateText({
+  model: openai('gpt-4-turbo'),
+  system: 'You are a helpful assistant.',
+  prompt: 'Explain quantum computing in simple terms.',
+  maxTokens: 500,
+  temperature: 0.7,
+  experimental_telemetry: {
+    isEnabled: true,
+    functionId: 'explain-concept',
+    metadata: {
+      category: 'education',
+    },
+  },
+});
+
+console.log(result.text);
+console.log('Tokens:', result.usage);
+```
+
+### streamText
+
+Stream text with TTFT metrics:
+
+```typescript
+import { streamText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+
+const result = await streamText({
+  model: openai('gpt-4-turbo'),
+  prompt: 'Write a story about AI.',
+  experimental_telemetry: {
+    isEnabled: true,
+    functionId: 'story-generator',
+  },
+});
+
+for await (const chunk of result.textStream) {
+  process.stdout.write(chunk);
+}
+
+// Get final usage stats
+const usage = await result.usage;
+console.log('\nTokens:', usage);
+```
+
+### generateObject
+
+Generate structured objects:
+
+```typescript
+import { generateObject } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { z } from 'zod';
+
+const result = await generateObject({
+  model: openai('gpt-4-turbo'),
+  schema: z.object({
+    name: z.string(),
+    age: z.number(),
+    email: z.string().email(),
+  }),
+  prompt: 'Generate a fictional user profile.',
+  experimental_telemetry: {
+    isEnabled: true,
+    functionId: 'user-generator',
+  },
+});
+
+console.log(result.object);
+// { name: 'John Doe', age: 30, email: 'john@example.com' }
+```
+
+### streamObject
+
+Stream structured objects:
+
+```typescript
+import { streamObject } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { z } from 'zod';
+
+const result = await streamObject({
+  model: openai('gpt-4-turbo'),
+  schema: z.object({
+    items: z.array(z.object({
+      name: z.string(),
+      description: z.string(),
+    })),
+  }),
+  prompt: 'List 5 AI applications.',
+  experimental_telemetry: {
+    isEnabled: true,
+    functionId: 'list-generator',
+  },
+});
+
+for await (const partialObject of result.partialObjectStream) {
+  console.log(partialObject);
+}
+```
+
+## Tool Calling
+
+Tools and function calls are automatically traced:
+
+```typescript
+import { generateText, tool } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { z } from 'zod';
+
+const result = await generateText({
+  model: openai('gpt-4-turbo'),
+  prompt: "What's the weather in Paris?",
+  tools: {
+    getWeather: tool({
+      description: 'Get weather for a location',
+      parameters: z.object({
+        location: z.string().describe('City name'),
+      }),
+      execute: async ({ location }) => {
+        // Your weather API call
+        return { temperature: 72, condition: 'sunny' };
+      },
+    }),
+  },
+  experimental_telemetry: {
+    isEnabled: true,
+    functionId: 'weather-assistant',
+  },
+});
+
+console.log(result.text);
+// Tool calls and results are captured in traces
+```
+
+## Next.js Integration
+
+### App Router (Server Components)
+
+```typescript
+// app/api/chat/route.ts
+import { streamText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+
+export async function POST(req: Request) {
+  const { messages } = await req.json();
+
+  const result = await streamText({
+    model: openai('gpt-4-turbo'),
+    messages,
+    experimental_telemetry: {
+      isEnabled: true,
+      functionId: 'chat-api',
+      metadata: {
+        route: '/api/chat',
+      },
+    },
+  });
+
+  return result.toDataStreamResponse();
+}
+```
+
+### Server Actions
+
+```typescript
+// app/actions.ts
+'use server';
+
+import { generateText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+
+export async function generateResponse(prompt: string) {
+  const result = await generateText({
+    model: openai('gpt-4-turbo'),
+    prompt,
+    experimental_telemetry: {
+      isEnabled: true,
+      functionId: 'server-action',
+    },
+  });
+
+  return result.text;
+}
+```
+
+### useChat Hook
+
+```typescript
+// app/page.tsx
+'use client';
+
+import { useChat } from 'ai/react';
+
+export default function Chat() {
+  const { messages, input, handleInputChange, handleSubmit } = useChat({
+    api: '/api/chat',
+  });
+
+  return (
+    <div>
+      {messages.map((m) => (
+        <div key={m.id}>
+          {m.role}: {m.content}
+        </div>
+      ))}
+      <form onSubmit={handleSubmit}>
+        <input value={input} onChange={handleInputChange} />
+        <button type="submit">Send</button>
+      </form>
+    </div>
+  );
+}
+```
+
+## Telemetry Configuration
+
+### Global Configuration
+
+```typescript
+// instrumentation.ts (Next.js)
+import { registerOTel } from '@vercel/otel';
+
+export function register() {
+  registerOTel({
+    serviceName: 'my-nextjs-app',
+  });
+}
+```
+
+### Per-Request Telemetry
+
+```typescript
+const result = await generateText({
+  model: openai('gpt-4-turbo'),
+  prompt: 'Hello!',
+  experimental_telemetry: {
+    isEnabled: true,
+    functionId: 'my-function',      // Identifies the function
+    metadata: {                      // Custom attributes
+      userId: 'user_123',
+      sessionId: 'session_456',
+      feature: 'chat',
+    },
+    tracer: customTracer,           // Optional custom tracer
+  },
+});
+```
+
+## What Gets Traced
+
+### Request Attributes
+
+| Attribute | Description |
+|-----------|-------------|
+| `ai.model.id` | Model identifier |
+| `ai.model.provider` | Provider name |
+| `ai.prompt` | Input prompt (if enabled) |
+| `ai.settings.*` | Model settings (temperature, etc.) |
+
+### Response Attributes
+
+| Attribute | Description |
+|-----------|-------------|
+| `ai.response.text` | Generated text |
+| `ai.response.finishReason` | Why generation stopped |
+| `ai.usage.promptTokens` | Input token count |
+| `ai.usage.completionTokens` | Output token count |
+
+### Tool Attributes
+
+| Attribute | Description |
+|-----------|-------------|
+| `ai.toolCall.name` | Tool/function name |
+| `ai.toolCall.args` | Tool arguments |
+| `ai.toolCall.result` | Tool execution result |
+
+## Environment Variables
+
+```bash
+# Brokle configuration
+BROKLE_API_KEY=bk_...
+BROKLE_BASE_URL=https://api.brokle.com
+
+# Provider API keys
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+GOOGLE_GENERATIVE_AI_API_KEY=...
+```
+
+## Error Handling
+
+Errors are automatically captured in traces:
+
+```typescript
+try {
+  const result = await generateText({
+    model: openai('gpt-4-turbo'),
+    prompt: 'Hello!',
+    experimental_telemetry: { isEnabled: true },
+  });
+} catch (error) {
+  // Error is captured in the trace with:
+  // - error.type
+  // - error.message
+  // - error.stack
+  console.error('Generation failed:', error);
+}
+```
+
+## Best Practices
+
+### 1. Enable Telemetry Consistently
+
+```typescript
+// Create a helper function
+function withTelemetry(functionId: string, metadata?: Record<string, string>) {
+  return {
+    isEnabled: true,
+    functionId,
+    metadata,
+  };
+}
+
+// Use consistently
+const result = await generateText({
+  model: openai('gpt-4-turbo'),
+  prompt: 'Hello!',
+  experimental_telemetry: withTelemetry('chat', { feature: 'support' }),
+});
+```
+
+### 2. Add User Context
+
+```typescript
+const result = await generateText({
+  model: openai('gpt-4-turbo'),
+  prompt: userMessage,
+  experimental_telemetry: {
+    isEnabled: true,
+    functionId: 'user-chat',
+    metadata: {
+      userId: user.id,
+      sessionId: session.id,
+      plan: user.subscription,
+    },
+  },
+});
+```
+
+### 3. Use Function IDs
+
+```typescript
+// Good: Descriptive function IDs
+experimental_telemetry: {
+  functionId: 'customer-support-chat',
+}
+
+// Bad: Generic or missing IDs
+experimental_telemetry: {
+  functionId: 'chat',
+}
+```
+
+## Troubleshooting
+
+### Traces Not Appearing
+
+1. Verify `experimental_telemetry.isEnabled` is `true`
+2. Check BROKLE_API_KEY is set
+3. Ensure OTLP exporter is configured
+4. Enable debug logging
+
+### Missing Token Counts
+
+Some providers may not return usage in streaming mode. Check provider documentation for streaming usage support.
+
+### High Latency
+
+The telemetry adds minimal overhead. If experiencing latency:
+- Check network connectivity to Brokle
+- Use batch export (default)
+- Consider sampling for high-volume applications
+
+## Related Integrations
+
+- [OpenAI](/docs/integrations/openai) - Direct OpenAI SDK
+- [Anthropic](/docs/integrations/anthropic) - Direct Anthropic SDK
+- [LangChain](/docs/integrations/rag-frameworks/langchain) - LangChain framework
+
+## Next Steps
+
+- [Tracing Guide →](/docs/tracing)
+- [Next.js Integration →](/docs/cookbook/integration-recipes/nextjs-app)
+- [Vercel AI SDK Docs →](https://sdk.vercel.ai/docs)

@@ -1,0 +1,560 @@
+---
+title: Cohere Integration
+description: Trace and monitor Cohere API calls with Brokle
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+import { Steps, Step } from "fumadocs-ui/components/steps";
+
+# Cohere Integration
+
+Integrate Brokle with Cohere to capture traces, monitor performance, and track costs across all your Cohere API calls including Chat, Embed, and Rerank.
+
+## Supported Features
+
+| Feature | Supported | Notes |
+|---------|-----------|-------|
+| Chat | ✅ | Full support |
+| Chat Streaming | ✅ | With TTFT metrics |
+| Embed | ✅ | Text embeddings |
+| Rerank | ✅ | Document reranking |
+| Tool Use | ✅ | Function calling |
+| RAG | ✅ | Retrieval-augmented generation |
+| Token Counting | ✅ | Billed tokens tracked |
+| Cost Tracking | ✅ | Automatic calculation |
+
+## Quick Start
+
+<Steps>
+  <Step>
+    ### Install Dependencies
+
+    <Tabs>
+      <Tab value="python" label="Python">
+        ```bash
+        pip install brokle cohere
+        ```
+      </Tab>
+      <Tab value="javascript" label="JavaScript">
+        ```bash
+        npm install brokle cohere-ai
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step>
+    ### Wrap the Client
+
+    <Tabs>
+      <Tab value="python" label="Python">
+        ```python
+        from brokle import Brokle
+        from brokle.wrappers import wrap_cohere
+        import cohere
+
+        # Initialize Brokle
+        brokle = Brokle(api_key="bk_...")
+
+        # Wrap Cohere client
+        client = wrap_cohere(
+            cohere.ClientV2(api_key="your-cohere-api-key"),
+            brokle=brokle
+        )
+        ```
+      </Tab>
+      <Tab value="javascript" label="JavaScript">
+        ```javascript
+        import { Brokle } from 'brokle';
+        import { wrapCohere } from 'brokle/cohere';
+        import { CohereClient } from 'cohere-ai';
+
+        // Initialize Brokle
+        const brokle = new Brokle({ apiKey: 'bk_...' });
+
+        // Wrap Cohere client
+        const client = wrapCohere(
+          new CohereClient({ token: 'your-cohere-api-key' }),
+          { brokle }
+        );
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step>
+    ### Make Traced Calls
+
+    <Tabs>
+      <Tab value="python" label="Python">
+        ```python
+        # All calls are automatically traced
+        response = client.chat(
+            model="command-r-plus",
+            messages=[
+                {"role": "user", "content": "What is Cohere?"}
+            ]
+        )
+
+        print(response.message.content[0].text)
+
+        # Ensure traces are sent
+        brokle.flush()
+        ```
+      </Tab>
+      <Tab value="javascript" label="JavaScript">
+        ```javascript
+        // All calls are automatically traced
+        const response = await client.chat({
+          model: 'command-r-plus',
+          messages: [
+            { role: 'user', content: 'What is Cohere?' }
+          ]
+        });
+
+        console.log(response.message.content[0].text);
+
+        // Ensure traces are sent
+        await brokle.shutdown();
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+</Steps>
+
+## Model Support
+
+### Chat Models
+
+| Model | Model ID | Context | Best For |
+|-------|----------|---------|----------|
+| Command R+ | `command-r-plus` | 128K | Complex reasoning, RAG |
+| Command R | `command-r` | 128K | General tasks |
+| Command | `command` | 4K | Fast responses |
+| Command Light | `command-light` | 4K | Lightweight tasks |
+
+### Embedding Models
+
+| Model | Model ID | Dimensions | Best For |
+|-------|----------|------------|----------|
+| Embed English v3 | `embed-english-v3.0` | 1024 | English text |
+| Embed Multilingual v3 | `embed-multilingual-v3.0` | 1024 | Multilingual |
+| Embed English Light v3 | `embed-english-light-v3.0` | 384 | Fast embeddings |
+
+### Rerank Models
+
+| Model | Model ID | Best For |
+|-------|----------|----------|
+| Rerank English v3 | `rerank-english-v3.0` | English reranking |
+| Rerank Multilingual v3 | `rerank-multilingual-v3.0` | Multilingual reranking |
+
+## Streaming
+
+Streaming is fully supported with time-to-first-token (TTFT) metrics:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    # Streaming with automatic tracing
+    stream = client.chat_stream(
+        model="command-r-plus",
+        messages=[
+            {"role": "user", "content": "Write a poem about AI"}
+        ]
+    )
+
+    for event in stream:
+        if event.type == "content-delta":
+            print(event.delta.message.content.text, end="", flush=True)
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    // Streaming with automatic tracing
+    const stream = await client.chatStream({
+      model: 'command-r-plus',
+      messages: [
+        { role: 'user', content: 'Write a poem about AI' }
+      ]
+    });
+
+    for await (const event of stream) {
+      if (event.type === 'content-delta') {
+        process.stdout.write(event.delta?.message?.content?.text || '');
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+Streaming traces capture:
+
+| Metric | Description |
+|--------|-------------|
+| `time_to_first_token` | Time until first chunk |
+| `streaming_duration` | Total streaming time |
+| `chunks_count` | Number of stream events |
+| `aggregated_output` | Complete response text |
+
+## Tool Use
+
+Cohere's function calling is automatically traced:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "get_weather",
+                "description": "Get weather for a location",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "location": {
+                            "type": "string",
+                            "description": "City name"
+                        }
+                    },
+                    "required": ["location"]
+                }
+            }
+        }
+    ]
+
+    response = client.chat(
+        model="command-r-plus",
+        messages=[
+            {"role": "user", "content": "What's the weather in Paris?"}
+        ],
+        tools=tools
+    )
+
+    # Tool calls are captured in traces
+    if response.message.tool_calls:
+        for tool_call in response.message.tool_calls:
+            print(f"Tool: {tool_call.function.name}")
+            print(f"Args: {tool_call.function.arguments}")
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    const tools = [
+      {
+        type: 'function',
+        function: {
+          name: 'get_weather',
+          description: 'Get weather for a location',
+          parameters: {
+            type: 'object',
+            properties: {
+              location: {
+                type: 'string',
+                description: 'City name'
+              }
+            },
+            required: ['location']
+          }
+        }
+      }
+    ];
+
+    const response = await client.chat({
+      model: 'command-r-plus',
+      messages: [
+        { role: 'user', content: "What's the weather in Paris?" }
+      ],
+      tools
+    });
+
+    // Tool calls are captured in traces
+    if (response.message.toolCalls) {
+      response.message.toolCalls.forEach(toolCall => {
+        console.log('Tool:', toolCall.function.name);
+        console.log('Args:', toolCall.function.arguments);
+      });
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Embeddings
+
+Generate and trace embeddings:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    response = client.embed(
+        model="embed-english-v3.0",
+        texts=["Hello world", "Goodbye world"],
+        input_type="search_document"
+    )
+
+    for i, embedding in enumerate(response.embeddings):
+        print(f"Text {i}: {len(embedding)} dimensions")
+
+    # Traces include:
+    # - Input text count
+    # - Model used
+    # - Embedding dimensions
+    # - Billed units
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    const response = await client.embed({
+      model: 'embed-english-v3.0',
+      texts: ['Hello world', 'Goodbye world'],
+      inputType: 'search_document'
+    });
+
+    response.embeddings.forEach((embedding, i) => {
+      console.log(`Text ${i}: ${embedding.length} dimensions`);
+    });
+    ```
+  </Tab>
+</Tabs>
+
+## Reranking
+
+Rerank documents with tracing:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    documents = [
+        "Python is a programming language",
+        "Paris is the capital of France",
+        "Machine learning is a subset of AI"
+    ]
+
+    response = client.rerank(
+        model="rerank-english-v3.0",
+        query="What is Python?",
+        documents=documents,
+        top_n=2
+    )
+
+    for result in response.results:
+        print(f"Index: {result.index}, Score: {result.relevance_score}")
+        print(f"Document: {documents[result.index]}")
+
+    # Traces include:
+    # - Query text
+    # - Document count
+    # - Rerank scores
+    # - Search units billed
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    const documents = [
+      'Python is a programming language',
+      'Paris is the capital of France',
+      'Machine learning is a subset of AI'
+    ];
+
+    const response = await client.rerank({
+      model: 'rerank-english-v3.0',
+      query: 'What is Python?',
+      documents,
+      topN: 2
+    });
+
+    response.results.forEach(result => {
+      console.log(`Index: ${result.index}, Score: ${result.relevanceScore}`);
+      console.log(`Document: ${documents[result.index]}`);
+    });
+    ```
+  </Tab>
+</Tabs>
+
+## RAG (Retrieval-Augmented Generation)
+
+Cohere's built-in RAG capabilities are traced:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    documents = [
+        {"title": "Python", "text": "Python is a programming language..."},
+        {"title": "AI", "text": "Artificial Intelligence is..."}
+    ]
+
+    response = client.chat(
+        model="command-r-plus",
+        messages=[
+            {"role": "user", "content": "What is Python?"}
+        ],
+        documents=documents
+    )
+
+    # RAG traces include:
+    # - Documents provided
+    # - Citations in response
+    # - Source references
+    print(response.message.content[0].text)
+
+    if response.message.citations:
+        for citation in response.message.citations:
+            print(f"Citation: {citation}")
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    const documents = [
+      { title: 'Python', text: 'Python is a programming language...' },
+      { title: 'AI', text: 'Artificial Intelligence is...' }
+    ];
+
+    const response = await client.chat({
+      model: 'command-r-plus',
+      messages: [
+        { role: 'user', content: 'What is Python?' }
+      ],
+      documents
+    });
+
+    console.log(response.message.content[0].text);
+
+    if (response.message.citations) {
+      response.message.citations.forEach(citation => {
+        console.log('Citation:', citation);
+      });
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Cost Tracking
+
+Brokle tracks costs based on Cohere's pricing:
+
+| Model | Input (per 1M tokens) | Output (per 1M tokens) |
+|-------|----------------------|------------------------|
+| Command R+ | $3.00 | $15.00 |
+| Command R | $0.50 | $1.50 |
+| Command | $1.00 | $2.00 |
+| Embed v3 | $0.10 | - |
+| Rerank v3 | $2.00 per 1K searches | - |
+
+<Callout type="info">
+  Cohere uses a unique billing model with "search units" for rerank and "billed tokens" for generation. Brokle captures both for accurate cost tracking.
+</Callout>
+
+## Cohere-Specific Metrics
+
+Brokle captures Cohere-specific billing information:
+
+| Attribute | Description |
+|-----------|-------------|
+| `cohere.billed_input_tokens` | Tokens billed for input |
+| `cohere.billed_output_tokens` | Tokens billed for output |
+| `cohere.search_units` | Search units for rerank |
+| `cohere.generation_id` | Unique generation ID |
+
+## Error Handling
+
+```python
+from cohere import CohereAPIError, RateLimitedError
+
+try:
+    response = client.chat(
+        model="command-r-plus",
+        messages=[{"role": "user", "content": "Hello"}]
+    )
+except RateLimitedError as e:
+    # Rate limited - captured in trace
+    print(f"Rate limited: {e}")
+except CohereAPIError as e:
+    print(f"API error: {e}")
+```
+
+## Configuration Options
+
+```python
+from brokle import Brokle
+from brokle.wrappers import wrap_cohere
+
+brokle = Brokle(
+    api_key="bk_...",
+    environment="production",
+    sample_rate=1.0,
+    debug=False
+)
+
+client = wrap_cohere(
+    cohere.ClientV2(api_key="..."),
+    brokle=brokle,
+    # Integration-specific options
+    capture_input=True,      # Capture message content
+    capture_output=True,     # Capture response content
+    capture_documents=True   # Capture RAG documents
+)
+```
+
+## Best Practices
+
+### 1. Use Input Types for Embeddings
+
+```python
+# Document embeddings
+doc_embeddings = client.embed(
+    texts=documents,
+    input_type="search_document"
+)
+
+# Query embeddings
+query_embedding = client.embed(
+    texts=[query],
+    input_type="search_query"
+)
+```
+
+### 2. Add Context
+
+```python
+with brokle.start_as_current_span(name="cohere_rag") as span:
+    span.update_trace(user_id="user_123")
+    response = client.chat(...)
+```
+
+### 3. Graceful Shutdown
+
+```python
+import atexit
+atexit.register(brokle.shutdown)
+```
+
+## Troubleshooting
+
+### Missing Traces
+
+1. Verify both API keys are set
+2. Check `brokle.flush()` is called
+3. Enable debug: `Brokle(debug=True)`
+
+### Billing Discrepancies
+
+Cohere's billed tokens may differ from actual tokens due to their pricing model. Brokle captures the official billed amounts.
+
+### Embedding Dimension Mismatch
+
+Ensure you're using the correct model for your embedding dimensions:
+- v3 models: 1024 dimensions
+- Light models: 384 dimensions
+
+## Related Integrations
+
+- [OpenAI](/docs/integrations/openai) - GPT models
+- [Anthropic](/docs/integrations/anthropic) - Claude models
+- [LangChain](/docs/integrations/rag-frameworks/langchain) - Framework integration
+
+## Next Steps
+
+- [Tracing Guide →](/docs/tracing)
+- [Cost Analytics →](/docs/concepts/cost-analytics)
+- [Cohere Documentation →](https://docs.cohere.com/)

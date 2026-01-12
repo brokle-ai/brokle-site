@@ -44,23 +44,55 @@ Integrate directly with LLM provider APIs for the most control.
     description="Claude 3 Opus, Sonnet, Haiku models"
     href="/docs/integrations/anthropic"
   />
+  <Card
+    title="Google GenAI"
+    description="Gemini 1.5 Pro, Flash, and embeddings"
+    href="/docs/integrations/google"
+  />
+  <Card
+    title="Mistral AI"
+    description="Mistral Large, Medium, Small, Codestral"
+    href="/docs/integrations/mistral"
+  />
+  <Card
+    title="Azure OpenAI"
+    description="Azure-hosted OpenAI models"
+    href="/docs/integrations/azure-openai"
+  />
+  <Card
+    title="AWS Bedrock"
+    description="Claude, Titan, Llama on AWS"
+    href="/docs/integrations/bedrock"
+  />
+  <Card
+    title="Cohere"
+    description="Command R+, embeddings, reranking"
+    href="/docs/integrations/cohere"
+  />
 </Cards>
 
 ### Supported Providers
 
 | Provider | Python | JavaScript | Features |
 |----------|--------|------------|----------|
-| OpenAI | ✅ | ✅ | Chat, embeddings, streaming |
-| Anthropic | ✅ | ✅ | Messages, streaming |
-| Azure OpenAI | ✅ | ✅ | Same as OpenAI |
-| Google AI | 🔜 | 🔜 | Coming soon |
-| AWS Bedrock | 🔜 | 🔜 | Coming soon |
+| OpenAI | ✅ | ✅ | Chat, embeddings, streaming, vision |
+| Anthropic | ✅ | ✅ | Messages, streaming, vision |
+| Google GenAI | ✅ | ✅ | Gemini models, streaming, vision |
+| Mistral AI | ✅ | ✅ | Chat, embeddings, streaming |
+| Azure OpenAI | ✅ | ✅ | Same as OpenAI, Azure AD auth |
+| AWS Bedrock | ✅ | ✅ | Multi-model, Converse API |
+| Cohere | ✅ | ✅ | Chat, embeddings, reranking |
 
 ## Framework Integrations
 
 For higher-level frameworks that orchestrate multiple LLM calls.
 
 <Cards>
+  <Card
+    title="Vercel AI SDK"
+    description="Next.js and React AI applications"
+    href="/docs/integrations/vercel-ai"
+  />
   <Card
     title="LangChain"
     description="Chains, agents, and retrieval workflows"
@@ -71,15 +103,21 @@ For higher-level frameworks that orchestrate multiple LLM calls.
     description="Data indexing and RAG applications"
     href="/docs/integrations/rag-frameworks/llamaindex"
   />
+  <Card
+    title="CrewAI"
+    description="Multi-agent orchestration workflows"
+    href="/docs/integrations/rag-frameworks/crewai"
+  />
 </Cards>
 
 ### Framework Support
 
 | Framework | Python | JavaScript | Features |
 |-----------|--------|------------|----------|
+| Vercel AI SDK | ❌ | ✅ | generateText, streamText, tools |
 | LangChain | ✅ | ✅ | Chains, agents, callbacks |
 | LlamaIndex | ✅ | ❌ | Query engines, indexes |
-| Vercel AI SDK | ❌ | 🔜 | Coming soon |
+| CrewAI | ✅ | ❌ | Multi-agent, tasks, tools |
 | DSPy | 🔜 | ❌ | Coming soon |
 
 ## Integration Patterns
@@ -280,6 +318,22 @@ The integration adds less than 1ms overhead. If experiencing latency:
 - Enable sampling: `Brokle(sample_rate=0.1)`
 - Reduce batch size: `Brokle(flush_at=20)`
 
+## Gateway Integrations
+
+For unified LLM routing and load balancing.
+
+<Cards>
+  <Card
+    title="LiteLLM"
+    description="Unified interface for 100+ LLMs"
+    href="/docs/integrations/litellm"
+  />
+</Cards>
+
+| Gateway | Features |
+|---------|----------|
+| LiteLLM | 100+ models, load balancing, fallbacks, OTLP export |
+
 ## Next Steps
 
 <Cards>
@@ -289,9 +343,9 @@ The integration adds less than 1ms overhead. If experiencing latency:
     href="/docs/integrations/openai"
   />
   <Card
-    title="Anthropic Integration"
-    description="Claude models integration"
-    href="/docs/integrations/anthropic"
+    title="Vercel AI SDK"
+    description="Next.js AI applications"
+    href="/docs/integrations/vercel-ai"
   />
   <Card
     title="LangChain Integration"

@@ -1,0 +1,527 @@
+---
+title: Azure OpenAI Integration
+description: Trace and monitor Azure OpenAI Service API calls with Brokle
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+import { Steps, Step } from "fumadocs-ui/components/steps";
+
+# Azure OpenAI Integration
+
+Integrate Brokle with Azure OpenAI Service to capture traces, monitor performance, and track costs across all your Azure-hosted OpenAI API calls.
+
+## Supported Features
+
+| Feature | Supported | Notes |
+|---------|-----------|-------|
+| Chat Completions | ✅ | Full support |
+| Streaming | ✅ | With TTFT metrics |
+| Function Calling | ✅ | Tool definitions traced |
+| Embeddings | ✅ | Text embeddings |
+| Vision | ✅ | GPT-4 Vision support |
+| Token Counting | ✅ | Input/output tokens |
+| Cost Tracking | ✅ | Automatic calculation |
+| Deployment Names | ✅ | Azure-specific tracking |
+
+## Quick Start
+
+<Steps>
+  <Step>
+    ### Install Dependencies
+
+    <Tabs>
+      <Tab value="python" label="Python">
+        ```bash
+        pip install brokle openai
+        ```
+      </Tab>
+      <Tab value="javascript" label="JavaScript">
+        ```bash
+        npm install brokle openai
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step>
+    ### Wrap the Client
+
+    <Tabs>
+      <Tab value="python" label="Python">
+        ```python
+        from brokle import Brokle
+        from brokle.wrappers import wrap_azure_openai
+        from openai import AzureOpenAI
+
+        # Initialize Brokle
+        brokle = Brokle(api_key="bk_...")
+
+        # Wrap Azure OpenAI client
+        client = wrap_azure_openai(
+            AzureOpenAI(
+                api_key="your-azure-api-key",
+                api_version="2024-02-15-preview",
+                azure_endpoint="https://your-resource.openai.azure.com"
+            ),
+            brokle=brokle
+        )
+        ```
+      </Tab>
+      <Tab value="javascript" label="JavaScript">
+        ```javascript
+        import { Brokle } from 'brokle';
+        import { wrapAzureOpenAI } from 'brokle/azure';
+        import { AzureOpenAI } from 'openai';
+
+        // Initialize Brokle
+        const brokle = new Brokle({ apiKey: 'bk_...' });
+
+        // Wrap Azure OpenAI client
+        const client = wrapAzureOpenAI(
+          new AzureOpenAI({
+            apiKey: 'your-azure-api-key',
+            apiVersion: '2024-02-15-preview',
+            endpoint: 'https://your-resource.openai.azure.com'
+          }),
+          { brokle }
+        );
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step>
+    ### Make Traced Calls
+
+    <Tabs>
+      <Tab value="python" label="Python">
+        ```python
+        # All calls are automatically traced
+        response = client.chat.completions.create(
+            model="gpt-4-deployment",  # Your deployment name
+            messages=[
+                {"role": "user", "content": "What is Azure OpenAI?"}
+            ]
+        )
+
+        print(response.choices[0].message.content)
+
+        # Ensure traces are sent
+        brokle.flush()
+        ```
+      </Tab>
+      <Tab value="javascript" label="JavaScript">
+        ```javascript
+        // All calls are automatically traced
+        const response = await client.chat.completions.create({
+          model: 'gpt-4-deployment',  // Your deployment name
+          messages: [
+            { role: 'user', content: 'What is Azure OpenAI?' }
+          ]
+        });
+
+        console.log(response.choices[0].message.content);
+
+        // Ensure traces are sent
+        await brokle.shutdown();
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+</Steps>
+
+<Callout type="info">
+  In Azure OpenAI, the `model` parameter refers to your deployment name, not the underlying model. Brokle captures both the deployment name and the base model for comprehensive tracking.
+</Callout>
+
+## Azure-Specific Features
+
+### Deployment Tracking
+
+Brokle automatically captures Azure-specific metadata:
+
+| Attribute | Description |
+|-----------|-------------|
+| `azure.deployment_name` | Your deployment name |
+| `azure.resource_name` | Azure resource name |
+| `azure.api_version` | API version used |
+| `gen_ai.request.model` | Underlying model (gpt-4, etc.) |
+
+### Environment Configuration
+
+Using environment variables (recommended):
+
+```bash
+export AZURE_OPENAI_API_KEY=your-api-key
+export AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com
+export AZURE_OPENAI_API_VERSION=2024-02-15-preview
+```
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    from openai import AzureOpenAI
+
+    # Client reads from environment
+    client = wrap_azure_openai(AzureOpenAI(), brokle=brokle)
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    // Client reads from environment
+    const client = wrapAzureOpenAI(new AzureOpenAI(), { brokle });
+    ```
+  </Tab>
+</Tabs>
+
+### Azure AD Authentication
+
+Support for Azure Active Directory authentication:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+    from openai import AzureOpenAI
+
+    # Get token provider
+    token_provider = get_bearer_token_provider(
+        DefaultAzureCredential(),
+        "https://cognitiveservices.azure.com/.default"
+    )
+
+    client = wrap_azure_openai(
+        AzureOpenAI(
+            azure_ad_token_provider=token_provider,
+            azure_endpoint="https://your-resource.openai.azure.com",
+            api_version="2024-02-15-preview"
+        ),
+        brokle=brokle
+    )
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    import { DefaultAzureCredential, getBearerTokenProvider } from '@azure/identity';
+
+    const credential = new DefaultAzureCredential();
+    const scope = 'https://cognitiveservices.azure.com/.default';
+    const azureADTokenProvider = getBearerTokenProvider(credential, scope);
+
+    const client = wrapAzureOpenAI(
+      new AzureOpenAI({
+        azureADTokenProvider,
+        endpoint: 'https://your-resource.openai.azure.com',
+        apiVersion: '2024-02-15-preview'
+      }),
+      { brokle }
+    );
+    ```
+  </Tab>
+</Tabs>
+
+## Model Support
+
+### Available Models on Azure
+
+| Model | Typical Deployment | Context | Best For |
+|-------|-------------------|---------|----------|
+| GPT-4 Turbo | `gpt-4-turbo` | 128K | Complex tasks |
+| GPT-4 | `gpt-4` | 8K/32K | Reasoning |
+| GPT-4 Vision | `gpt-4-vision` | 128K | Image analysis |
+| GPT-3.5 Turbo | `gpt-35-turbo` | 16K | Fast responses |
+| text-embedding-ada-002 | `text-embedding-ada-002` | 8K | Embeddings |
+
+<Callout type="warning">
+  Deployment names are customizable in Azure. Use your actual deployment name, not the base model name.
+</Callout>
+
+## Streaming
+
+Streaming works identically to OpenAI:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    stream = client.chat.completions.create(
+        model="gpt-4-deployment",
+        messages=[{"role": "user", "content": "Tell me a story"}],
+        stream=True
+    )
+
+    for chunk in stream:
+        if chunk.choices[0].delta.content:
+            print(chunk.choices[0].delta.content, end="", flush=True)
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    const stream = await client.chat.completions.create({
+      model: 'gpt-4-deployment',
+      messages: [{ role: 'user', content: 'Tell me a story' }],
+      stream: true
+    });
+
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content;
+      if (content) {
+        process.stdout.write(content);
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Function Calling
+
+Function calling is fully supported:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "get_weather",
+                "description": "Get weather for a location",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "location": {"type": "string"}
+                    },
+                    "required": ["location"]
+                }
+            }
+        }
+    ]
+
+    response = client.chat.completions.create(
+        model="gpt-4-deployment",
+        messages=[{"role": "user", "content": "Weather in Seattle?"}],
+        tools=tools
+    )
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    const tools = [
+      {
+        type: 'function',
+        function: {
+          name: 'get_weather',
+          description: 'Get weather for a location',
+          parameters: {
+            type: 'object',
+            properties: {
+              location: { type: 'string' }
+            },
+            required: ['location']
+          }
+        }
+      }
+    ];
+
+    const response = await client.chat.completions.create({
+      model: 'gpt-4-deployment',
+      messages: [{ role: 'user', content: 'Weather in Seattle?' }],
+      tools
+    });
+    ```
+  </Tab>
+</Tabs>
+
+## Embeddings
+
+Generate embeddings with Azure OpenAI:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    response = client.embeddings.create(
+        model="text-embedding-ada-002-deployment",
+        input=["Hello world", "Goodbye world"]
+    )
+
+    for i, data in enumerate(response.data):
+        print(f"Text {i}: {len(data.embedding)} dimensions")
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    const response = await client.embeddings.create({
+      model: 'text-embedding-ada-002-deployment',
+      input: ['Hello world', 'Goodbye world']
+    });
+
+    response.data.forEach((data, i) => {
+      console.log(`Text ${i}: ${data.embedding.length} dimensions`);
+    });
+    ```
+  </Tab>
+</Tabs>
+
+## Cost Tracking
+
+Brokle tracks costs based on Azure OpenAI pricing:
+
+| Model | Input (per 1K tokens) | Output (per 1K tokens) |
+|-------|----------------------|------------------------|
+| GPT-4 Turbo | $0.01 | $0.03 |
+| GPT-4 (8K) | $0.03 | $0.06 |
+| GPT-4 (32K) | $0.06 | $0.12 |
+| GPT-3.5 Turbo | $0.0005 | $0.0015 |
+| text-embedding-ada-002 | $0.0001 | - |
+
+<Callout type="info">
+  Azure pricing may vary by region. Configure custom pricing in Brokle for enterprise agreements.
+</Callout>
+
+## Content Filtering
+
+Azure OpenAI includes content filtering. Brokle captures filter results:
+
+```python
+response = client.chat.completions.create(
+    model="gpt-4-deployment",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+
+# Content filter results are captured in traces:
+# - content_filter.hate
+# - content_filter.self_harm
+# - content_filter.sexual
+# - content_filter.violence
+```
+
+## Error Handling
+
+Azure-specific errors are captured:
+
+```python
+from openai import APIError, RateLimitError, ContentFilterError
+
+try:
+    response = client.chat.completions.create(
+        model="gpt-4-deployment",
+        messages=[{"role": "user", "content": "Hello"}]
+    )
+except RateLimitError as e:
+    # Azure rate limiting
+    print(f"Rate limited: {e}")
+except ContentFilterError as e:
+    # Content filter triggered
+    print(f"Content filtered: {e}")
+except APIError as e:
+    print(f"API error: {e}")
+```
+
+## Multi-Region Deployments
+
+Track requests across multiple Azure regions:
+
+```python
+# US East deployment
+us_client = wrap_azure_openai(
+    AzureOpenAI(azure_endpoint="https://us-east.openai.azure.com"),
+    brokle=brokle
+)
+
+# Europe deployment
+eu_client = wrap_azure_openai(
+    AzureOpenAI(azure_endpoint="https://eu-west.openai.azure.com"),
+    brokle=brokle
+)
+
+# Traces include region information for analysis
+```
+
+## Configuration Options
+
+```python
+from brokle import Brokle
+from brokle.wrappers import wrap_azure_openai
+
+brokle = Brokle(
+    api_key="bk_...",
+    environment="production",
+    sample_rate=1.0,
+    debug=False
+)
+
+client = wrap_azure_openai(
+    AzureOpenAI(...),
+    brokle=brokle,
+    # Integration-specific options
+    capture_input=True,           # Capture message content
+    capture_output=True,          # Capture response content
+    capture_deployment_info=True  # Capture Azure deployment details
+)
+```
+
+## Best Practices
+
+### 1. Use Managed Identity
+
+```python
+# Production: Use Azure AD instead of API keys
+from azure.identity import ManagedIdentityCredential
+
+credential = ManagedIdentityCredential()
+token_provider = get_bearer_token_provider(
+    credential,
+    "https://cognitiveservices.azure.com/.default"
+)
+```
+
+### 2. Add Deployment Context
+
+```python
+with brokle.start_as_current_span(name="azure_chat") as span:
+    span.set_attribute("azure.region", "eastus")
+    span.set_attribute("azure.deployment", "gpt-4-prod")
+    response = client.chat.completions.create(...)
+```
+
+### 3. Handle Regional Failover
+
+```python
+try:
+    response = primary_client.chat.completions.create(...)
+except Exception:
+    # Failover to secondary region
+    response = secondary_client.chat.completions.create(...)
+```
+
+## Troubleshooting
+
+### Authentication Errors
+
+1. Verify API key or Azure AD credentials
+2. Check endpoint URL format
+3. Confirm API version is supported
+
+### Deployment Not Found
+
+1. Verify deployment name (case-sensitive)
+2. Check deployment is in "Succeeded" state
+3. Ensure model capacity is available
+
+### Content Filter Errors
+
+1. Review Azure content filter settings
+2. Check prompt for policy violations
+3. Consider using a less restrictive filter configuration
+
+## Related Integrations
+
+- [OpenAI](/docs/integrations/openai) - Direct OpenAI API
+- [LangChain](/docs/integrations/rag-frameworks/langchain) - LangChain framework
+- [LiteLLM](/docs/integrations/litellm) - Multi-provider gateway
+
+## Next Steps
+
+- [Tracing Guide →](/docs/tracing)
+- [Cost Analytics →](/docs/concepts/cost-analytics)
+- [Azure Documentation →](https://learn.microsoft.com/azure/ai-services/openai/)

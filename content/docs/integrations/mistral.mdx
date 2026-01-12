@@ -1,0 +1,526 @@
+---
+title: Mistral AI Integration
+description: Trace and monitor Mistral AI API calls with Brokle
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+import { Steps, Step } from "fumadocs-ui/components/steps";
+
+# Mistral AI Integration
+
+Integrate Brokle with Mistral AI to capture traces, monitor performance, and track costs across all your Mistral API calls.
+
+## Supported Features
+
+| Feature | Supported | Notes |
+|---------|-----------|-------|
+| Chat Completions | ✅ | Full support |
+| Streaming | ✅ | With TTFT metrics |
+| Function Calling | ✅ | Tool definitions traced |
+| Embeddings | ✅ | Text embeddings |
+| JSON Mode | ✅ | Structured outputs |
+| Token Counting | ✅ | Input/output tokens |
+| Cost Tracking | ✅ | Automatic calculation |
+
+## Quick Start
+
+<Steps>
+  <Step>
+    ### Install Dependencies
+
+    <Tabs>
+      <Tab value="python" label="Python">
+        ```bash
+        pip install brokle mistralai
+        ```
+      </Tab>
+      <Tab value="javascript" label="JavaScript">
+        ```bash
+        npm install brokle @mistralai/mistralai
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step>
+    ### Wrap the Client
+
+    <Tabs>
+      <Tab value="python" label="Python">
+        ```python
+        from brokle import Brokle
+        from brokle.wrappers import wrap_mistral
+        from mistralai import Mistral
+
+        # Initialize Brokle
+        brokle = Brokle(api_key="bk_...")
+
+        # Wrap Mistral client
+        client = wrap_mistral(
+            Mistral(api_key="your-mistral-api-key"),
+            brokle=brokle
+        )
+        ```
+      </Tab>
+      <Tab value="javascript" label="JavaScript">
+        ```javascript
+        import { Brokle } from 'brokle';
+        import { wrapMistral } from 'brokle/mistral';
+        import { Mistral } from '@mistralai/mistralai';
+
+        // Initialize Brokle
+        const brokle = new Brokle({ apiKey: 'bk_...' });
+
+        // Wrap Mistral client
+        const client = wrapMistral(
+          new Mistral({ apiKey: 'your-mistral-api-key' }),
+          { brokle }
+        );
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step>
+    ### Make Traced Calls
+
+    <Tabs>
+      <Tab value="python" label="Python">
+        ```python
+        # All calls are automatically traced
+        response = client.chat.complete(
+            model="mistral-large-latest",
+            messages=[
+                {"role": "user", "content": "What is machine learning?"}
+            ]
+        )
+
+        print(response.choices[0].message.content)
+
+        # Ensure traces are sent
+        brokle.flush()
+        ```
+      </Tab>
+      <Tab value="javascript" label="JavaScript">
+        ```javascript
+        // All calls are automatically traced
+        const response = await client.chat.complete({
+          model: 'mistral-large-latest',
+          messages: [
+            { role: 'user', content: 'What is machine learning?' }
+          ]
+        });
+
+        console.log(response.choices[0].message.content);
+
+        // Ensure traces are sent
+        await brokle.shutdown();
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+</Steps>
+
+## Model Support
+
+### Mistral Models
+
+| Model | Model ID | Context | Best For |
+|-------|----------|---------|----------|
+| Mistral Large | `mistral-large-latest` | 128K | Complex reasoning |
+| Mistral Medium | `mistral-medium-latest` | 32K | Balanced performance |
+| Mistral Small | `mistral-small-latest` | 32K | Fast, simple tasks |
+| Codestral | `codestral-latest` | 32K | Code generation |
+| Mistral Embed | `mistral-embed` | 8K | Embeddings |
+
+### Open Source Models
+
+| Model | Model ID | Context | Best For |
+|-------|----------|---------|----------|
+| Mistral 7B | `open-mistral-7b` | 32K | Lightweight tasks |
+| Mixtral 8x7B | `open-mixtral-8x7b` | 32K | MoE performance |
+| Mixtral 8x22B | `open-mixtral-8x22b` | 64K | Advanced reasoning |
+
+## Streaming
+
+Streaming is fully supported with time-to-first-token (TTFT) metrics:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    # Streaming with automatic tracing
+    stream = client.chat.stream(
+        model="mistral-large-latest",
+        messages=[
+            {"role": "user", "content": "Write a poem about AI"}
+        ]
+    )
+
+    for chunk in stream:
+        if chunk.data.choices[0].delta.content:
+            print(chunk.data.choices[0].delta.content, end="", flush=True)
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    // Streaming with automatic tracing
+    const stream = await client.chat.stream({
+      model: 'mistral-large-latest',
+      messages: [
+        { role: 'user', content: 'Write a poem about AI' }
+      ]
+    });
+
+    for await (const chunk of stream) {
+      const content = chunk.data.choices[0]?.delta?.content;
+      if (content) {
+        process.stdout.write(content);
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+Streaming traces capture:
+
+| Metric | Description |
+|--------|-------------|
+| `time_to_first_token` | Time until first chunk received |
+| `streaming_duration` | Total time for all chunks |
+| `chunks_count` | Number of streaming events |
+| `aggregated_output` | Complete response text |
+
+## Function Calling
+
+Mistral's function calling is automatically traced:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "get_weather",
+                "description": "Get current weather for a location",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "location": {
+                            "type": "string",
+                            "description": "City name"
+                        }
+                    },
+                    "required": ["location"]
+                }
+            }
+        }
+    ]
+
+    response = client.chat.complete(
+        model="mistral-large-latest",
+        messages=[
+            {"role": "user", "content": "What's the weather in Paris?"}
+        ],
+        tools=tools,
+        tool_choice="auto"
+    )
+
+    # Tool calls are captured in the trace
+    for choice in response.choices:
+        if choice.message.tool_calls:
+            for tool_call in choice.message.tool_calls:
+                print(f"Function: {tool_call.function.name}")
+                print(f"Args: {tool_call.function.arguments}")
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    const tools = [
+      {
+        type: 'function',
+        function: {
+          name: 'get_weather',
+          description: 'Get current weather for a location',
+          parameters: {
+            type: 'object',
+            properties: {
+              location: {
+                type: 'string',
+                description: 'City name'
+              }
+            },
+            required: ['location']
+          }
+        }
+      }
+    ];
+
+    const response = await client.chat.complete({
+      model: 'mistral-large-latest',
+      messages: [
+        { role: 'user', content: "What's the weather in Paris?" }
+      ],
+      tools,
+      toolChoice: 'auto'
+    });
+
+    // Tool calls are captured in the trace
+    response.choices.forEach(choice => {
+      if (choice.message.toolCalls) {
+        choice.message.toolCalls.forEach(toolCall => {
+          console.log('Function:', toolCall.function.name);
+          console.log('Args:', toolCall.function.arguments);
+        });
+      }
+    });
+    ```
+  </Tab>
+</Tabs>
+
+## JSON Mode
+
+Structured JSON outputs are traced:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    response = client.chat.complete(
+        model="mistral-large-latest",
+        messages=[
+            {
+                "role": "user",
+                "content": "List 3 programming languages as JSON"
+            }
+        ],
+        response_format={"type": "json_object"}
+    )
+
+    import json
+    data = json.loads(response.choices[0].message.content)
+    print(data)
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    const response = await client.chat.complete({
+      model: 'mistral-large-latest',
+      messages: [
+        {
+          role: 'user',
+          content: 'List 3 programming languages as JSON'
+        }
+      ],
+      responseFormat: { type: 'json_object' }
+    });
+
+    const data = JSON.parse(response.choices[0].message.content);
+    console.log(data);
+    ```
+  </Tab>
+</Tabs>
+
+## Embeddings
+
+Generate and trace embeddings:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    response = client.embeddings.create(
+        model="mistral-embed",
+        inputs=["Hello world", "Goodbye world"]
+    )
+
+    for i, embedding in enumerate(response.data):
+        print(f"Text {i}: {len(embedding.embedding)} dimensions")
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    const response = await client.embeddings.create({
+      model: 'mistral-embed',
+      inputs: ['Hello world', 'Goodbye world']
+    });
+
+    response.data.forEach((embedding, i) => {
+      console.log(`Text ${i}: ${embedding.embedding.length} dimensions`);
+    });
+    ```
+  </Tab>
+</Tabs>
+
+## Cost Tracking
+
+Brokle automatically calculates costs based on Mistral's pricing:
+
+| Model | Input (per 1M tokens) | Output (per 1M tokens) |
+|-------|----------------------|------------------------|
+| Mistral Large | $4.00 | $12.00 |
+| Mistral Medium | $2.70 | $8.10 |
+| Mistral Small | $1.00 | $3.00 |
+| Codestral | $1.00 | $3.00 |
+| Mistral Embed | $0.10 | - |
+| Open Mistral 7B | $0.25 | $0.25 |
+| Open Mixtral 8x7B | $0.70 | $0.70 |
+
+<Callout type="info">
+  Pricing is updated regularly. Check the Brokle dashboard for current rates.
+</Callout>
+
+## System Messages
+
+System messages are captured separately:
+
+```python
+response = client.chat.complete(
+    model="mistral-large-latest",
+    messages=[
+        {
+            "role": "system",
+            "content": "You are a helpful coding assistant."
+        },
+        {
+            "role": "user",
+            "content": "How do I reverse a string in Python?"
+        }
+    ]
+)
+```
+
+The trace captures:
+- System message as a separate field
+- User messages
+- Assistant response
+- Token breakdown
+
+## Error Handling
+
+Errors are automatically captured:
+
+```python
+from mistralai import APIError, RateLimitError
+
+try:
+    response = client.chat.complete(
+        model="mistral-large-latest",
+        messages=[{"role": "user", "content": "Hello"}]
+    )
+except RateLimitError as e:
+    # Captured in trace:
+    # - status: "error"
+    # - error_type: "RateLimitError"
+    print(f"Rate limited: {e}")
+except APIError as e:
+    print(f"API error: {e}")
+```
+
+## Async Support
+
+Full async support:
+
+<Tabs>
+  <Tab value="python" label="Python">
+    ```python
+    from brokle import AsyncBrokle
+    from brokle.wrappers import wrap_mistral
+    from mistralai import Mistral
+
+    brokle = AsyncBrokle(api_key="bk_...")
+    client = wrap_mistral(Mistral(api_key="..."), brokle=brokle)
+
+    async def chat():
+        response = await client.chat.complete_async(
+            model="mistral-large-latest",
+            messages=[{"role": "user", "content": "Hello!"}]
+        )
+        return response.choices[0].message.content
+    ```
+  </Tab>
+  <Tab value="javascript" label="JavaScript">
+    ```javascript
+    // JavaScript client is async by default
+    const response = await client.chat.complete({
+      model: 'mistral-large-latest',
+      messages: [{ role: 'user', content: 'Hello!' }]
+    });
+    ```
+  </Tab>
+</Tabs>
+
+## Configuration Options
+
+```python
+from brokle import Brokle
+from brokle.wrappers import wrap_mistral
+
+brokle = Brokle(
+    api_key="bk_...",
+    environment="production",
+    sample_rate=1.0,
+    debug=False
+)
+
+client = wrap_mistral(
+    Mistral(api_key="..."),
+    brokle=brokle,
+    # Integration-specific options
+    capture_input=True,      # Capture message content
+    capture_output=True,     # Capture response content
+)
+```
+
+## Best Practices
+
+### 1. Add Context
+
+```python
+with brokle.start_as_current_span(name="mistral_chat") as span:
+    span.update_trace(user_id="user_123")
+    response = client.chat.complete(...)
+```
+
+### 2. Use Environment Variables
+
+```bash
+export BROKLE_API_KEY=bk_...
+export MISTRAL_API_KEY=your-mistral-key
+```
+
+### 3. Graceful Shutdown
+
+```python
+import atexit
+atexit.register(brokle.shutdown)
+```
+
+## Troubleshooting
+
+### Missing Traces
+
+1. Verify both API keys are set
+2. Check `brokle.flush()` is called
+3. Enable debug: `Brokle(debug=True)`
+
+### Token Count Mismatch
+
+Mistral returns exact token counts. Ensure you're using SDK version >= 1.0.0.
+
+### Streaming Not Captured
+
+Use the correct streaming methods:
+- Python: `client.chat.stream()`
+- JavaScript: `client.chat.stream()`
+
+## Related Integrations
+
+- [OpenAI](/docs/integrations/openai) - GPT models
+- [Anthropic](/docs/integrations/anthropic) - Claude models
+- [Google GenAI](/docs/integrations/google) - Gemini models
+
+## Next Steps
+
+- [Tracing Guide →](/docs/tracing)
+- [Cost Analytics →](/docs/concepts/cost-analytics)
+- [LangChain Integration →](/docs/integrations/rag-frameworks/langchain)

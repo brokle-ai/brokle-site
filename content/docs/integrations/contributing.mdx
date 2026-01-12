@@ -1,0 +1,405 @@
+---
+title: Contributing Integrations
+description: Guide for contributing new integrations to the Brokle SDK ecosystem
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+import { Steps, Step } from "fumadocs-ui/components/steps";
+
+## Overview
+
+This guide explains how to contribute new integrations to the Brokle SDK. Whether you're adding support for a new LLM provider, framework, or tool, this document will walk you through the process.
+
+<Callout type="info">
+Before starting, review our [integration checklist](/docs/integrations/checklist) to understand all requirements for a complete integration.
+</Callout>
+
+## Integration Patterns
+
+Brokle uses three main integration patterns. Choose the right one for your use case:
+
+| Pattern | When to Use | Complexity | Examples |
+|---------|-------------|------------|----------|
+| **Wrapper** | Provider SDKs (OpenAI, Anthropic) | Low | `wrap_openai()`, `wrap_anthropic()` |
+| **Callback Handler** | Framework lifecycle hooks | Medium | `BrokleLangChainCallback` |
+| **Instrumentation** | Native OTEL integration | Medium | Direct span creation |
+
+## Getting Started
+
+<Steps>
+<Step>
+### Fork and Clone
+
+Fork the Brokle repository and clone your fork:
+
+```bash
+git clone https://github.com/YOUR_USERNAME/brokle.git
+cd brokle/sdk
+```
+</Step>
+
+<Step>
+### Use the Integration Template
+
+We provide templates to accelerate development:
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+```bash
+# Copy template to your integration directory
+cp -r templates/integration-python sdk/python/brokle/wrappers/YOUR_PROVIDER/
+
+# Replace placeholders
+# {{provider_name}} → YourProvider
+# {{provider_lower}} → yourprovider
+# {{client_class}} → YourClient
+```
+</Tab>
+<Tab value="JavaScript">
+```bash
+# Copy template to your integration directory
+cp -r templates/integration-javascript sdk/javascript/src/integrations/YOUR_PROVIDER/
+
+# Replace placeholders
+# {{provider_name}} → YourProvider
+# {{provider_lower}} → yourprovider
+# {{ClientClass}} → YourClient
+```
+</Tab>
+</Tabs>
+</Step>
+
+<Step>
+### Implement the Wrapper
+
+The template provides a starting point. Focus on these key areas:
+
+1. **Client Detection**: Validate the client instance
+2. **Response Parsing**: Extract tokens, messages, finish reasons
+3. **Streaming Support**: Handle async iterators if applicable
+4. **Error Handling**: Map provider errors to Brokle patterns
+</Step>
+
+<Step>
+### Write Tests
+
+Every integration needs comprehensive tests:
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+```python
+# tests/test_wrapper.py
+import pytest
+from unittest.mock import Mock, patch
+
+def test_wrap_provider_non_streaming():
+    """Test non-streaming completions."""
+    mock_client = create_mock_client()
+    wrapped = wrap_provider(mock_client)
+
+    response = wrapped.chat.completions.create(
+        model="test-model",
+        messages=[{"role": "user", "content": "Hello"}],
+    )
+
+    assert response is not None
+    # Verify spans were created
+
+def test_wrap_provider_streaming():
+    """Test streaming completions."""
+    # Test streaming iterator behavior
+    pass
+
+def test_wrap_provider_disabled():
+    """Test passthrough when Brokle disabled."""
+    pass
+```
+</Tab>
+<Tab value="JavaScript">
+```typescript
+// wrapper.test.ts
+import { describe, it, expect, vi } from 'vitest';
+
+describe('wrapProvider', () => {
+  it('traces non-streaming completions', async () => {
+    const mockClient = createMockClient();
+    const wrapped = wrapProvider(mockClient);
+
+    const response = await wrapped.chat.completions.create({
+      model: 'test-model',
+      messages: [{ role: 'user', content: 'Hello' }],
+    });
+
+    expect(response).toBeDefined();
+    // Verify span attributes
+  });
+
+  it('traces streaming completions', async () => {
+    // Test async iterator behavior
+  });
+
+  it('passes through when disabled', () => {
+    // Test passthrough mode
+  });
+});
+```
+</Tab>
+</Tabs>
+</Step>
+
+<Step>
+### Write Documentation
+
+Create an MDX file in `brokle-site/content/docs/integrations/`:
+
+```mdx
+---
+title: YourProvider Integration
+description: Trace and monitor YourProvider API calls with Brokle
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+
+## Overview
+
+Brief description of the integration.
+
+## What Gets Traced
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Chat Completions | ✅ | Full support |
+| Streaming | ✅ | With TTFT/ITL |
+| Token Usage | ✅ | Automatic |
+
+## Installation
+
+[Include installation steps]
+
+## Quick Setup
+
+[Include code examples]
+
+## Configuration Options
+
+[Include options table]
+
+## Troubleshooting
+
+[Include common issues]
+```
+</Step>
+
+<Step>
+### Submit Pull Request
+
+1. Ensure all tests pass
+2. Verify documentation is complete
+3. Update navigation in `meta.json`
+4. Submit PR with description
+</Step>
+</Steps>
+
+## Wrapper Implementation Guide
+
+### Required Attributes
+
+Every integration MUST capture these OpenTelemetry GenAI semantic attributes:
+
+```typescript
+// Required attributes (OpenTelemetry GenAI 1.28+)
+span.setAttribute(Attrs.GEN_AI_PROVIDER_NAME, 'provider-name');
+span.setAttribute(Attrs.GEN_AI_OPERATION_NAME, 'chat');
+span.setAttribute(Attrs.GEN_AI_REQUEST_MODEL, model);
+
+// Token usage (when available)
+span.setAttribute(Attrs.GEN_AI_USAGE_INPUT_TOKENS, inputTokens);
+span.setAttribute(Attrs.GEN_AI_USAGE_OUTPUT_TOKENS, outputTokens);
+
+// Messages (optional, respects capture settings)
+span.setAttribute(Attrs.GEN_AI_INPUT_MESSAGES, JSON.stringify(messages));
+span.setAttribute(Attrs.GEN_AI_OUTPUT_MESSAGES, JSON.stringify(output));
+```
+
+### Streaming Support
+
+For providers with streaming, use the `StreamingAccumulator`:
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+```python
+from brokle.streaming import StreamingAccumulator
+
+accumulator = StreamingAccumulator(start_time=time.time())
+
+async for chunk in stream:
+    accumulator.on_chunk(chunk)
+    yield chunk
+
+result = accumulator.finalize()
+span.set_attributes(result.to_attributes())
+```
+</Tab>
+<Tab value="JavaScript">
+```typescript
+import { StreamingAccumulator } from 'brokle';
+
+const accumulator = new StreamingAccumulator(Date.now());
+
+for await (const chunk of stream) {
+  accumulator.onChunk(chunk);
+  yield chunk;
+}
+
+const result = accumulator.finalize();
+const attrs = result.toAttributes();
+// Set span attributes
+```
+</Tab>
+</Tabs>
+
+### Error Handling
+
+Always set span status on errors:
+
+```typescript
+try {
+  const response = await originalFn(params);
+  span.setStatus({ code: SpanStatusCode.OK });
+  return response;
+} catch (error) {
+  span.setStatus({ code: SpanStatusCode.ERROR, message: String(error) });
+  span.recordException(error);
+  throw error;
+}
+```
+
+## Callback Handler Implementation
+
+For frameworks like LangChain or CrewAI, implement callback handlers:
+
+```python
+from brokle.integration import BaseIntegration, IntegrationMetadata
+
+class MyFrameworkIntegration(BaseIntegration):
+    @property
+    def metadata(self) -> IntegrationMetadata:
+        return IntegrationMetadata(
+            name="brokle-myframework",
+            version="1.0.0",
+            type=IntegrationType.CALLBACK,
+            provider="myframework",
+        )
+
+    def _on_enable(self) -> None:
+        # Set up callback hooks
+        pass
+
+    def _on_disable(self) -> None:
+        # Remove callback hooks
+        pass
+```
+
+## Testing Requirements
+
+### Unit Tests
+
+- Test wrapper creation and validation
+- Test non-streaming completions
+- Test streaming completions
+- Test disabled mode (passthrough)
+- Test error handling
+
+### Integration Tests
+
+- Test with mocked provider responses
+- Test span attribute correctness
+- Test parent-child span linking
+- Test token usage accuracy
+
+### Test Utilities
+
+Use the shared test utilities:
+
+```python
+from brokle.testing import MockSpanExporter, create_test_client
+
+def test_integration():
+    exporter = MockSpanExporter()
+    client = create_test_client(exporter=exporter)
+
+    # Run your integration
+
+    spans = exporter.get_finished_spans()
+    assert len(spans) == 1
+    assert spans[0].attributes['gen_ai.request.model'] == 'test-model'
+```
+
+## Documentation Standards
+
+Every integration documentation MUST include:
+
+1. **Overview** - What the integration does, who it's for
+2. **What Gets Traced** - Feature table with status
+3. **Installation** - Step-by-step with package managers
+4. **Quick Setup** - 30-second copy-paste code
+5. **Configuration** - All options with defaults
+6. **Troubleshooting** - Top 5 issues with solutions
+7. **Related Integrations** - Links to related docs
+
+## Package Configuration
+
+### Python
+
+Add to `pyproject.toml`:
+
+```toml
+[project.optional-dependencies]
+yourprovider = ["yourprovider>=1.0.0"]
+```
+
+### JavaScript
+
+Add to `package.json`:
+
+```json
+{
+  "exports": {
+    "./yourprovider": {
+      "types": "./dist/integrations/yourprovider/index.d.ts",
+      "import": "./dist/integrations/yourprovider/index.js",
+      "require": "./dist/integrations/yourprovider/index.cjs"
+    }
+  },
+  "peerDependencies": {
+    "yourprovider": "^1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "yourprovider": {
+      "optional": true
+    }
+  }
+}
+```
+
+## Review Process
+
+1. **Automated Checks** - CI runs tests and linting
+2. **Code Review** - SDK team reviews implementation
+3. **Documentation Review** - Docs team reviews MDX
+4. **Integration Testing** - Manual verification
+5. **Merge and Release** - Published in next release
+
+## Getting Help
+
+- **Questions**: Open a [GitHub Discussion](https://github.com/brokle-ai/brokle/discussions)
+- **Bugs**: File a [GitHub Issue](https://github.com/brokle-ai/brokle/issues)
+- **Chat**: Join our [Discord](https://discord.gg/brokle)
+
+## Related Resources
+
+- [Integration Checklist](/docs/integrations/checklist) - Validation requirements
+- [SDK Reference](/docs/sdk-reference) - API documentation
+- [OpenTelemetry GenAI](https://opentelemetry.io/docs/specs/semconv/gen-ai/) - Semantic conventions
