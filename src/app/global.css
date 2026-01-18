@@ -164,6 +164,10 @@
 
   /* Map Fumadocs border */
   --color-fd-border: var(--border);
+
+  /* Map Fumadocs accent (for hover states including footer nav) */
+  --color-fd-accent: oklch(0.97 0.01 255);
+  --color-fd-accent-foreground: var(--foreground);
 }
 
 .dark {
@@ -174,6 +178,10 @@
   --color-fd-background: var(--background);
   --color-fd-foreground: var(--foreground);
   --color-fd-border: var(--border);
+
+  /* Map Fumadocs accent (for hover states including footer nav) */
+  --color-fd-accent: oklch(0.22 0.01 250);
+  --color-fd-accent-foreground: var(--foreground);
 }
 
 /* =====================================================
@@ -186,6 +194,23 @@
 /* Target card icon wrapper - make icons darker/more visible */
 [data-card] > div:first-child:has(svg) {
   color: var(--foreground);
+}
+
+/* =====================================================
+   Fumadocs Card Hover Enhancement
+
+   Override default Fumadocs heavy gray hover with a
+   subtle, light background tint (like Langfuse style).
+   ===================================================== */
+
+/* Light mode: Very subtle brand blue tint on hover */
+[data-card] {
+  --color-fd-accent: oklch(0.97 0.01 255);
+}
+
+/* Dark mode: Subtle brand blue tint on hover */
+.dark [data-card] {
+  --color-fd-accent: oklch(0.22 0.01 250);
 }
 
 @theme inline {
