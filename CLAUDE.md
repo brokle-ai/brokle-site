@@ -73,6 +73,10 @@ Uses Fumadocs MDX for documentation:
 - **Config**: `source.config.ts` - Frontmatter schema and MDX options
 - **Source**: `src/lib/source.ts` - Content loader configuration
 - **Generated**: `.source/` - Auto-generated from fumadocs-mdx (gitignored)
+- **MDX Component Customization**: Override default Fumadocs components in `src/mdx-components.tsx`:
+  - Import components from `fumadocs-ui/components/codeblock` or `fumadocs-ui/mdx`
+  - Spread `defaultMdxComponents` first, then override specific components
+  - Example: Custom `pre` component with modified styling classes
 
 ### UI Components
 
@@ -95,6 +99,7 @@ NEXT_PUBLIC_GA_MEASUREMENT_ID=                 # Google Analytics (optional)
 |------|---------|
 | `source.config.ts` | Fumadocs MDX configuration |
 | `src/lib/source.ts` | Documentation source loader |
+| `src/mdx-components.tsx` | MDX component overrides for docs |
 | `components.json` | shadcn/ui configuration |
 | `src/app/global.css` | Global styles and Tailwind |
 

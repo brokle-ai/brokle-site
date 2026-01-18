@@ -141,6 +141,53 @@
   --brand-glow-strong: 0 0 40px oklch(0.65 0.16 250 / 45%);
 }
 
+/* =====================================================
+   Fumadocs Color Variable Mapping
+
+   Map Fumadocs' fd-* variables to project color system.
+   This ensures Fumadocs components (Cards, etc.) use our
+   theme colors instead of their default gray neutrals.
+   ===================================================== */
+
+:root {
+  /* Map Fumadocs muted colors to project colors */
+  --color-fd-muted: var(--muted);
+  --color-fd-muted-foreground: var(--muted-foreground);
+
+  /* Map Fumadocs card colors */
+  --color-fd-card: var(--card);
+  --color-fd-card-foreground: var(--card-foreground);
+
+  /* Map Fumadocs background/foreground */
+  --color-fd-background: var(--background);
+  --color-fd-foreground: var(--foreground);
+
+  /* Map Fumadocs border */
+  --color-fd-border: var(--border);
+}
+
+.dark {
+  --color-fd-muted: var(--muted);
+  --color-fd-muted-foreground: var(--muted-foreground);
+  --color-fd-card: var(--card);
+  --color-fd-card-foreground: var(--card-foreground);
+  --color-fd-background: var(--background);
+  --color-fd-foreground: var(--foreground);
+  --color-fd-border: var(--border);
+}
+
+/* =====================================================
+   Fumadocs Card Icon Enhancement
+
+   Card icons should be more prominent than description text.
+   Use foreground color instead of muted-foreground for icons.
+   ===================================================== */
+
+/* Target card icon wrapper - make icons darker/more visible */
+[data-card] > div:first-child:has(svg) {
+  color: var(--foreground);
+}
+
 @theme inline {
   /* Fonts */
   --font-sans: var(--font-geist-sans);
@@ -374,3 +421,4 @@ header#nd-nav a[href*="signin"].inline-flex:hover,
   color: var(--shiki-dark);
   background-color: transparent !important;
 }
+
