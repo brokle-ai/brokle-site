@@ -12,8 +12,8 @@ export default function AboutPage() {
           <div className="max-w-3xl mx-auto text-center">
             <DisplayHeading as="h1">About Brokle</DisplayHeading>
             <p className="text-lg md:text-xl text-muted-foreground mt-6 max-w-2xl mx-auto">
-              We&apos;re building the open-source observability platform that helps teams
-              understand, debug, and improve their LLM applications.
+              We&apos;re building the AI engineering platform that helps teams
+              observe, evaluate, and ship their AI agents and applications.
             </p>
           </div>
         </div>
@@ -23,16 +23,15 @@ export default function AboutPage() {
       <section className="py-12 bg-muted/30">
         <div className="container px-4 mx-auto">
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl font-bold mb-6 text-center">Making AI Systems Observable</h2>
+            <h2 className="text-3xl font-bold mb-6 text-center">Making AI Teams Successful</h2>
             <p className="text-lg text-muted-foreground mb-6">
-              As LLMs become central to software applications, teams need visibility into how
-              their AI systems behave. Traditional monitoring tools weren&apos;t built for the
-              unique challenges of LLM applications—non-deterministic outputs, complex prompt
-              chains, and opaque model behavior.
+              As AI becomes central to software applications, teams need tools to build with confidence.
+              Traditional monitoring wasn&apos;t built for the unique challenges of AI—non-deterministic
+              outputs, complex agent workflows, and the need for continuous quality evaluation.
             </p>
             <p className="text-lg text-muted-foreground">
-              Brokle provides the observability layer that makes LLM applications transparent,
-              debuggable, and improvable. We believe that open-source infrastructure is
+              Brokle provides the engineering platform that makes AI applications observable,
+              testable, and improvable. We believe that open-source infrastructure is
               essential for building trustworthy AI systems.
             </p>
           </div>
@@ -106,7 +105,7 @@ export default function AboutPage() {
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-3xl font-bold mb-6">Why We Built Brokle</h2>
             <p className="text-lg text-muted-foreground mb-6">
-              We started building LLM applications and quickly hit a wall—when something
+              We started building AI applications and quickly hit a wall—when something
               went wrong, we had no way to understand what happened inside our AI pipelines.
             </p>
             <p className="text-lg text-muted-foreground">

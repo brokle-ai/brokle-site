@@ -13,8 +13,8 @@ export function FinalCTASection() {
             Start building reliable AI today
           </DisplayHeading>
           <p className="text-lg text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed">
-            Join thousands of developers using Brokle to debug, evaluate,
-            and improve their LLM applications.
+            Join hundreds of AI teams using Brokle to observe, evaluate,
+            and ship their AI agents and applications.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-10">
             <Button size="lg" className="gap-2" asChild>

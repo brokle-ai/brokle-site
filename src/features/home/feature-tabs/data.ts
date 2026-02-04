@@ -12,12 +12,12 @@ export const featureTabsData: FeatureTabData[] = [
     id: "observability",
     icon: Search,
     label: "Observability",
-    title: "Capture every LLM call",
+    title: "Capture every AI call",
     description:
-      "Complete traces of your LLM applications. Debug failures, understand latency, and track costs across all requests.",
+      "Complete traces of your AI applications and agents. Debug failures, understand latency, and track costs across all requests.",
     image: {
       src: "/images/features/traces.png",
-      alt: "Brokle traces dashboard showing LLM call hierarchy with timing and token usage",
+      alt: "Brokle traces dashboard showing AI call hierarchy with timing and token usage",
     },
     code: {
       python: `from brokle import observe
@@ -56,7 +56,7 @@ const handleRequest = observe(async (text: string) => {
     label: "Metrics",
     title: "Track cost, latency, and quality",
     description:
-      "Real-time dashboards showing token usage, API costs, response times, and error rates across all your LLM providers.",
+      "Real-time dashboards showing token usage, API costs, response times, and error rates across all your AI providers.",
     image: {
       src: "/images/features/metrics.png",
       alt: "Brokle metrics dashboard with cost breakdown, latency charts, and usage analytics",

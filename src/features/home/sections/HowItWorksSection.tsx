@@ -13,9 +13,9 @@ const steps = [
   {
     step: 2,
     icon: Eye,
-    title: "See every LLM call",
+    title: "See every AI call",
     description:
-      "Traces appear in real-time. Debug failures, track latency, and understand token usage across your entire pipeline.",
+      "Traces appear in real-time. Debug failures, track latency, and understand token usage across your entire AI pipeline.",
     code: null,
   },
   {

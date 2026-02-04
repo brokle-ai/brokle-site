@@ -2,22 +2,22 @@ import HomePageComponent from '@/features/home/HomePage';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Brokle - Open Source LLM Observability Platform',
+  title: 'Brokle - The open source platform for AI teams',
   description:
-    'Debug and improve your LLM applications with traces, evals, prompt management, and metrics. Open source, OpenTelemetry-native, enterprise-ready.',
+    'Debug, evaluate, and optimize your LLM applications with complete visibility. Open source. OpenTelemetry-native. Self-host anywhere.',
   openGraph: {
-    title: 'Brokle - Open Source LLM Observability Platform',
+    title: 'Brokle - The open source platform for AI teams',
     description:
-      'Debug and improve your LLM applications with traces, evals, prompt management, and metrics.',
+      'Debug, evaluate, and optimize your LLM applications with complete visibility. Open source. OpenTelemetry-native. Self-host anywhere.',
     url: 'https://brokle.com',
     siteName: 'Brokle',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Brokle - Open Source LLM Observability Platform',
+    title: 'Brokle - The open source platform for AI teams',
     description:
-      'Debug and improve your LLM applications with traces, evals, prompt management, and metrics.',
+      'Debug, evaluate, and optimize your LLM applications with complete visibility. Open source. OpenTelemetry-native. Self-host anywhere.',
   },
 };
 

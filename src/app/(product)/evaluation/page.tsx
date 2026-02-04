@@ -23,11 +23,11 @@ import { getSignupUrl } from "@/lib/app-urls"
 export const metadata: Metadata = {
   title: "Evaluation Framework - Brokle",
   description:
-    "Automated LLM evaluation with LLM-as-judge. Build custom evaluators, run A/B tests, and score outputs at scale.",
+    "Automated AI evaluation with LLM-as-judge. Build custom evaluators, run A/B tests, and score outputs at scale.",
   openGraph: {
     title: "Evaluation Framework - Brokle",
     description:
-      "Automated LLM evaluation with LLM-as-judge. Build custom evaluators and score outputs at scale.",
+      "Automated AI evaluation with LLM-as-judge. Build custom evaluators and score outputs at scale.",
     url: "https://brokle.com/evaluation",
     siteName: "Brokle",
     type: "website",
@@ -39,7 +39,7 @@ export default function EvaluationPage() {
     <>
       <ProductSchema
         name="Evaluation"
-        description="Automated LLM evaluation with LLM-as-judge. Build custom evaluators, run A/B tests, and score outputs at scale."
+        description="Automated AI evaluation with LLM-as-judge. Build custom evaluators, run A/B tests, and score outputs at scale."
         url="https://brokle.com/evaluation"
         features={[
           "LLM-as-judge evaluation",
@@ -115,7 +115,7 @@ export default function EvaluationPage() {
       <RelatedProducts currentProduct="evaluation" />
 
       <ProductCTA
-        title="Ready to evaluate your LLM outputs?"
+        title="Ready to evaluate your AI outputs?"
         description="Stop guessing about quality. Start measuring with automated evaluations."
         cta={{
           text: "Get Started Free",

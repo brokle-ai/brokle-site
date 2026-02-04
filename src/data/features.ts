@@ -10,7 +10,7 @@ export const features: Feature[] = [
   {
     icon: Search,
     title: "Tracing & Debugging",
-    description: "Detailed traces of every LLM call. Debug complex chains, identify failures, and understand model behavior.",
+    description: "Detailed traces of every AI call. Debug complex chains, agents, and understand model behavior.",
   },
   {
     icon: MessageSquare,

@@ -31,7 +31,7 @@ export function PlatformOverviewSection() {
         {/* Section Header */}
         <div className="text-center mb-16">
           <DisplayHeading as="h2" className="mb-4">
-            The complete LLM operations platform
+            The complete AI engineering platform
           </DisplayHeading>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Choose the deployment that fits your needs. Same powerful features,

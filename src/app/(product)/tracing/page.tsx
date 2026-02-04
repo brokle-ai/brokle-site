@@ -26,11 +26,11 @@ import { getSignupUrl } from "@/lib/app-urls"
 export const metadata: Metadata = {
   title: "Tracing & Debugging - Brokle",
   description:
-    "Debug your LLM applications with detailed traces. See every LLM call, chain execution, and agent step. OpenTelemetry-native tracing for AI applications.",
+    "Debug your AI applications with detailed traces. See every AI call, chain execution, and agent step. OpenTelemetry-native tracing for AI applications.",
   openGraph: {
     title: "Tracing & Debugging - Brokle",
     description:
-      "Debug your LLM applications with detailed traces. OpenTelemetry-native tracing for AI.",
+      "Debug your AI applications with detailed traces. OpenTelemetry-native tracing for AI.",
     url: "https://brokle.com/tracing",
     siteName: "Brokle",
     type: "website",
@@ -42,7 +42,7 @@ export default function TracingPage() {
     <>
       <ProductSchema
         name="Tracing"
-        description="Debug your LLM applications with detailed traces. See every LLM call, chain execution, and agent step. OpenTelemetry-native tracing for AI applications."
+        description="Debug your AI applications with detailed traces. See every AI call, chain execution, and agent step. OpenTelemetry-native tracing for AI applications."
         url="https://brokle.com/tracing"
         features={[
           "Detailed trace visualization",
@@ -55,8 +55,8 @@ export default function TracingPage() {
       />
       <ProductHero
         title="See inside every"
-        highlight="LLM call"
-        description="Debug complex chains and agents with detailed traces. Understand exactly what your LLM applications are doing, one span at a time."
+        highlight="AI call"
+        description="Debug complex chains and agents with detailed traces. Understand exactly what your AI applications are doing, one span at a time."
         primaryCta={{
           text: "Start Tracing Free",
           href: getSignupUrl(),
@@ -69,18 +69,18 @@ export default function TracingPage() {
 
       <ProductScreenshot
         src="/images/product/tracing/hero.png"
-        alt="Brokle tracing dashboard showing LLM call hierarchy with timing and token usage"
+        alt="Brokle tracing dashboard showing AI call hierarchy with timing and token usage"
       />
 
       <ProductFeatureSection
         title="See every call in detail"
-        description="View every LLM call with inputs, outputs, model parameters, and metadata in a single view. No more guessing what went wrong—trace the exact path through your application."
+        description="View every AI call with inputs, outputs, model parameters, and metadata in a single view. No more guessing what went wrong—trace the exact path through your application."
         image={{
           src: "/images/product/tracing/spans.png",
           alt: "Nested span view showing full execution flow",
         }}
         features={[
-          { icon: FileInput, text: "Capture complete request and response data for every LLM call" },
+          { icon: FileInput, text: "Capture complete request and response data for every AI call" },
           { icon: Settings2, text: "View temperature, max tokens, and all model configuration" },
           { icon: Tags, text: "Add custom metadata to traces for filtering and analysis" },
         ]}
@@ -88,7 +88,7 @@ export default function TracingPage() {
 
       <ProductFeatureSection
         title="Identify bottlenecks instantly"
-        description="Understand where time is spent with detailed latency breakdowns. See p50, p95, and p99 latencies across your entire LLM pipeline to catch performance regressions early."
+        description="Understand where time is spent with detailed latency breakdowns. See p50, p95, and p99 latencies across your entire AI pipeline to catch performance regressions early."
         image={{
           src: "/images/product/tracing/timeline.png",
           alt: "Latency timeline showing performance breakdown",
@@ -133,7 +133,7 @@ export default function TracingPage() {
       <RelatedProducts currentProduct="tracing" />
 
       <ProductCTA
-        title="Ready to debug your LLM apps?"
+        title="Ready to debug your AI apps?"
         description="Add tracing to your application in under 5 minutes. No code changes required."
         cta={{
           text: "Get Started Free",

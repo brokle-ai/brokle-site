@@ -6,10 +6,11 @@ export function SoftwareApplicationSchema() {
     applicationCategory: "DeveloperApplication",
     operatingSystem: "Linux, macOS, Windows, Docker, Kubernetes",
     description:
-      "Open source LLM observability platform. Trace, evaluate, and optimize AI applications with complete visibility.",
+      "Brokle is the open source platform for AI teams — debug, evaluate, and optimize your LLM applications with full visibility. Open source. OpenTelemetry-native. Self-host anywhere.",
     url: "https://brokle.com",
     downloadUrl: "https://github.com/brokle-ai/brokle",
     softwareVersion: "1.0",
+    applicationSubCategory: "AI Engineering",
     author: {
       "@type": "Organization",
       name: "Brokle",
@@ -21,7 +22,7 @@ export function SoftwareApplicationSchema() {
       description: "Free and open source",
     },
     featureList: [
-      "LLM Tracing",
+      "AI Tracing",
       "Prompt Management",
       "Evaluation Framework",
       "Cost Analytics",

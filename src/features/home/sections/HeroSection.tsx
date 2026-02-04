@@ -18,7 +18,7 @@ export function HeroSection() {
               href="https://github.com/brokle-ai/brokle"
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="View Brokle on GitHub - Open Source LLM Observability"
+              aria-label="View Brokle on GitHub - The open source platform for AI teams"
               className="inline-flex items-center gap-2 px-3 py-1.5 mb-6 text-sm font-medium rounded-full border bg-background/80 backdrop-blur-sm hover:bg-muted transition-colors"
             >
               <Github className="h-4 w-4" aria-hidden="true" />
@@ -32,13 +32,13 @@ export function HeroSection() {
             </Link>
 
             <DisplayHeading as="h1" className="mb-6 leading-[1.1]">
-              Open source LLM observability{" "}
-              <span className="text-muted-foreground">for production AI</span>
+              The open source platform{" "}
+              <span className="text-muted-foreground">for AI teams</span>
             </DisplayHeading>
 
             <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-xl leading-relaxed">
               Debug, evaluate, and optimize your LLM applications with complete visibility.
-              Open source at heart. OpenTelemetry-native. Self-host anywhere.
+              Open source. OpenTelemetry-native. Self-host anywhere.
             </p>
 
             {/* CTAs */}

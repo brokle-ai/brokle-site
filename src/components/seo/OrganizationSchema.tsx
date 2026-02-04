@@ -6,7 +6,7 @@ export function OrganizationSchema() {
     url: "https://brokle.com",
     logo: "https://brokle.com/images/logo.png",
     description:
-      "Open source AI observability platform for LLM applications. Debug, evaluate, and optimize with traces, evals, and analytics.",
+      "Brokle is the open source platform for AI teams — debug, evaluate, and optimize your LLM applications with full visibility.",
     sameAs: [
       "https://github.com/brokle-ai/brokle",
       "https://twitter.com/brokle_ai",

@@ -14,23 +14,25 @@ import './global.css';
 export const metadata: Metadata = {
   metadataBase: new URL('https://brokle.com'),
   title: {
-    default: 'Brokle - Open Source AI Observability Platform',
+    default: 'Brokle - The Open Source Platform for AI Teams',
     template: '%s | Brokle',
   },
   description:
-    'Open source LLM observability platform. Debug, evaluate, and optimize AI applications with traces, evals, prompt management, and analytics. Self-host or cloud. OpenTelemetry-native.',
+    'Brokle is the open source platform for AI teams — debug, evaluate, and optimize your LLM applications with full visibility.',
   keywords: [
+    'AI engineering platform',
     'AI observability',
     'LLM observability',
-    'open source LLM',
-    'LLM tracing',
+    'AI teams',
+    'AI agents',
+    'open source AI',
+    'AI tracing',
     'prompt management',
-    'AI monitoring',
-    'LLM evaluation',
+    'AI evaluation',
     'OpenTelemetry',
     'langfuse alternative',
     'langsmith alternative',
-    'self-hosted LLM monitoring',
+    'self-hosted AI monitoring',
   ],
   authors: [{ name: 'Brokle' }],
   icons: {
@@ -43,9 +45,9 @@ export const metadata: Metadata = {
   },
   manifest: '/site.webmanifest',
   openGraph: {
-    title: 'Brokle - Open Source AI Observability Platform',
+    title: 'Brokle - The Open Source Platform for AI Teams',
     description:
-      'Open source LLM observability. Debug, evaluate, and optimize AI applications. Self-host or cloud.',
+      'Debug, evaluate, and optimize your LLM applications with complete visibility. Open source. OpenTelemetry-native. Self-host anywhere.',
     type: 'website',
     locale: 'en_US',
     siteName: 'Brokle',
@@ -54,7 +56,7 @@ export const metadata: Metadata = {
         url: '/images/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Brokle - Open Source AI Observability Platform',
+        alt: 'Brokle - The Open Source Platform for AI Teams',
       },
     ],
   },
@@ -62,9 +64,9 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     site: '@brokleai',
     creator: '@brokleai',
-    title: 'Brokle - Open Source AI Observability Platform',
+    title: 'Brokle - The Open Source Platform for AI Teams',
     description:
-      'Open source LLM observability. Debug, evaluate, and optimize AI applications. Self-host or cloud.',
+      'Debug, evaluate, and optimize your LLM applications with complete visibility. Open source. OpenTelemetry-native. Self-host anywhere.',
     images: ['/images/twitter-card.png'],
   },
   alternates: {

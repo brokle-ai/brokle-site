@@ -52,7 +52,7 @@ export default function Footer() {
               <BrokleLogo variant="full" size="sm" />
             </Link>
             <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
-              Open source LLM observability platform. Debug and improve your AI applications.
+              The open source platform for AI teams.
             </p>
             <div className="flex gap-3 mt-6">
               {socialLinks.map((social) => (
