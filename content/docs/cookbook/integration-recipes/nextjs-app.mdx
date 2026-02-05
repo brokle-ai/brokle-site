@@ -40,7 +40,7 @@ Next.js applications with AI features need:
 ### 1. Install Dependencies
 
 ```bash
-npm install brokle brokle-openai openai
+npm install brokle openai
 ```
 
 ### 2. Create Brokle Client
@@ -48,7 +48,7 @@ npm install brokle brokle-openai openai
 ```typescript
 // lib/brokle.ts
 import { Brokle } from 'brokle';
-import { wrapOpenAI } from 'brokle-openai';
+import { wrapOpenAI } from 'brokle/openai';
 import OpenAI from 'openai';
 
 // Singleton Brokle client

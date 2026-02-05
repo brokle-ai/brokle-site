@@ -38,7 +38,7 @@ The Brokle JavaScript SDK provides comprehensive AI observability for Node.js ap
 
 ```javascript
 import { Brokle } from 'brokle';
-import { wrapOpenAI } from 'brokle-openai';
+import { wrapOpenAI } from 'brokle/openai';
 import OpenAI from 'openai';
 
 // Initialize client
@@ -291,7 +291,7 @@ span.end({
 
 ```typescript
 import { Brokle } from 'brokle';
-import { wrapOpenAI } from 'brokle-openai';
+import { wrapOpenAI } from 'brokle/openai';
 import OpenAI from 'openai';
 
 const client = new Brokle({ apiKey: 'bk_...' });
@@ -325,7 +325,7 @@ const embeddings = await openai.embeddings.create({
 
 ```typescript
 import { Brokle } from 'brokle';
-import { wrapAnthropic } from 'brokle-anthropic';
+import { wrapAnthropic } from 'brokle/anthropic';
 import Anthropic from '@anthropic-ai/sdk';
 
 const client = new Brokle({ apiKey: 'bk_...' });

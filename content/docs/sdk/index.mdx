@@ -94,7 +94,7 @@ client.flush()
 
 ```javascript
 import { Brokle } from 'brokle';
-import { wrapOpenAI } from 'brokle-openai';
+import { wrapOpenAI } from 'brokle/openai';
 import OpenAI from 'openai';
 
 // Initialize client
@@ -255,9 +255,9 @@ process.on('SIGTERM', async () => {
 
 | Integration | Python | JavaScript |
 |-------------|--------|------------|
-| OpenAI | `brokle` (built-in) | `brokle-openai` |
-| Anthropic | `brokle` (built-in) | `brokle-anthropic` |
-| LangChain | `brokle-langchain` | `brokle-langchain` |
+| OpenAI | `brokle` (built-in) | `brokle/openai` |
+| Anthropic | `brokle` (built-in) | `brokle/anthropic` |
+| LangChain | `brokle-langchain` | `brokle/langchain` |
 | LlamaIndex | `brokle-llamaindex` | N/A |
 
 ## Error Handling

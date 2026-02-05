@@ -445,7 +445,7 @@ pip install brokle
   </Tab>
   <Tab title="JavaScript">
     ```javascript
-    import { Brokle } from '@brokle/sdk';
+    import { Brokle } from 'brokle';
 
     const client = new Brokle({ apiKey: 'your-api-key' });
     // Basic usage example
@@ -595,7 +595,7 @@ Brokle integrates with [Integration Name] to provide [value proposition].
   </Tab>
   <Tab title="npm">
     ```bash
-    npm install @brokle/sdk @brokle/[integration]
+    npm install brokle
     ```
   </Tab>
 </Tabs>

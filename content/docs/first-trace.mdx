@@ -149,7 +149,7 @@ Now let's create a simple script that traces an OpenAI call:
   <Tab value="javascript" label="JavaScript">
     ```javascript
     import { Brokle } from 'brokle';
-    import { wrapOpenAI } from 'brokle-openai';
+    import { wrapOpenAI } from 'brokle/openai';
     import OpenAI from 'openai';
 
     // Initialize Brokle client
@@ -265,7 +265,7 @@ Make your traces more useful by adding metadata:
   <Tab value="javascript" label="JavaScript">
     ```javascript
     import { Brokle } from 'brokle';
-    import { wrapOpenAI } from 'brokle-openai';
+    import { wrapOpenAI } from 'brokle/openai';
     import OpenAI from 'openai';
 
     const brokle = new Brokle({ apiKey: process.env.BROKLE_API_KEY });

@@ -37,7 +37,7 @@ Integrate Brokle with Anthropic's Claude models to capture traces, monitor perfo
       </Tab>
       <Tab value="javascript" label="JavaScript">
         ```bash
-        npm install brokle brokle-anthropic @anthropic-ai/sdk
+        npm install brokle @anthropic-ai/sdk
         ```
       </Tab>
     </Tabs>
@@ -62,7 +62,7 @@ Integrate Brokle with Anthropic's Claude models to capture traces, monitor perfo
       <Tab value="javascript" label="JavaScript">
         ```javascript
         import { Brokle } from 'brokle';
-        import { wrapAnthropic } from 'brokle-anthropic';
+        import { wrapAnthropic } from 'brokle/anthropic';
         import Anthropic from '@anthropic-ai/sdk';
 
         // Initialize Brokle

@@ -63,7 +63,7 @@ Automatic tracing captures LLM calls without modifying your existing code. Wrap 
   <Tab value="javascript" label="JavaScript">
     ```javascript
     import { Brokle } from 'brokle';
-    import { wrapOpenAI } from 'brokle-openai';
+    import { wrapOpenAI } from 'brokle/openai';
     import OpenAI from 'openai';
 
     // Initialize Brokle
@@ -129,7 +129,7 @@ For each OpenAI call, Brokle automatically captures:
   <Tab value="javascript" label="JavaScript">
     ```javascript
     import { Brokle } from 'brokle';
-    import { wrapAnthropic } from 'brokle-anthropic';
+    import { wrapAnthropic } from 'brokle/anthropic';
     import Anthropic from '@anthropic-ai/sdk';
 
     const brokle = new Brokle({ apiKey: 'bk_...' });
