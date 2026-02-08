@@ -45,16 +45,13 @@ Metadata enriches your traces with context that helps you filter, analyze, and u
 
     const client = new Brokle({ apiKey: 'bk_...' });
 
-    const span = client.startSpan({
-      name: 'chat_response',
-      attributes: {
-        userId: 'user_123',
-        sessionId: 'session_456'
-      }
-    });
+    await client.startActiveSpan('chat_response', async (span) => {
+      span.setAttribute('userId', 'user_123');
+      span.setAttribute('sessionId', 'session_456');
 
-    const response = await generateResponse(message);
-    span.end({ output: response });
+      const response = await generateResponse(message);
+      client.updateCurrentSpan({ output: response });
+    });
     ```
   </Tab>
 </Tabs>
@@ -99,16 +96,15 @@ session_id = f"conv_{conversation_id}"
   </Tab>
   <Tab value="javascript" label="JavaScript">
     ```javascript
-    const span = client.startSpan({
-      name: 'process_request',
-      attributes: {
-        environment: 'production',
-        version: '2.1.0',
-        region: 'us-west-2',
-        feature: 'chatbot',
-        experiment: 'new_prompt_v2',
-        customerTier: 'enterprise'
-      }
+    await client.startActiveSpan('process_request', async (span) => {
+      span.setAttribute('environment', 'production');
+      span.setAttribute('version', '2.1.0');
+      span.setAttribute('region', 'us-west-2');
+      span.setAttribute('feature', 'chatbot');
+      span.setAttribute('experiment', 'new_prompt_v2');
+      span.setAttribute('customerTier', 'enterprise');
+
+      // Your operations here...
     });
     ```
   </Tab>

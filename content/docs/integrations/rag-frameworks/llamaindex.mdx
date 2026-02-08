@@ -47,7 +47,7 @@ Integrate Brokle with LlamaIndex to trace query engines, indexes, retrievers, an
     brokle = Brokle(api_key="bk_...")
 
     # Create callback handler
-    handler = BrokleCallbackHandler(brokle=brokle)
+    handler = BrokleCallbackHandler()
 
     # Set as global callback
     Settings.callback_manager.add_handler(handler)
@@ -117,7 +117,7 @@ Use within a specific context:
 ```python
 from brokle.integrations.llamaindex import BrokleTracer
 
-with BrokleTracer(brokle=brokle, name="rag_query") as tracer:
+with BrokleTracer(name="rag_query") as tracer:
     response = query_engine.query("What is AI?")
 ```
 
@@ -378,7 +378,6 @@ for text in streaming_response.response_gen:
 
 ```python
 handler = BrokleCallbackHandler(
-    brokle=brokle,
     user_id="user_123",
     session_id="session_456"
 )
@@ -388,7 +387,6 @@ handler = BrokleCallbackHandler(
 
 ```python
 handler = BrokleCallbackHandler(
-    brokle=brokle,
     metadata={
         "application": "document_qa",
         "index_name": "company_docs",
@@ -490,8 +488,6 @@ except Exception as e:
 
 ```python
 handler = BrokleCallbackHandler(
-    brokle=brokle,
-
     # Trace configuration
     trace_name="llamaindex_app",
     capture_input=True,
@@ -532,7 +528,6 @@ Settings.callback_manager = CallbackManager([handler])
 ```python
 # Tag traces by index
 handler = BrokleCallbackHandler(
-    brokle=brokle,
     metadata={
         "index_name": "product_docs",
         "index_version": "2024-01"
@@ -553,7 +548,6 @@ Embedding generation can be expensive. Track with:
 
 ```python
 handler = BrokleCallbackHandler(
-    brokle=brokle,
     trace_embeddings=True,
     metadata={"track_embedding_cost": True}
 )
@@ -573,7 +567,6 @@ Ensure embeddings are traced:
 
 ```python
 handler = BrokleCallbackHandler(
-    brokle=brokle,
     trace_embeddings=True
 )
 ```
@@ -584,7 +577,6 @@ By default, only node metadata is captured. For full content:
 
 ```python
 handler = BrokleCallbackHandler(
-    brokle=brokle,
     capture_node_content=True
 )
 ```

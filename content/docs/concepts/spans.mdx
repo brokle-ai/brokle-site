@@ -80,13 +80,13 @@ Brokle supports specialized span types that capture domain-specific data:
 
     const client = new Brokle({ apiKey: 'bk_...' });
 
-    const span = client.startSpan({
-      name: 'process_data',
-      attributes: { dataSize: data.length }
-    });
+    await client.startActiveSpan('process_data', async (span) => {
+      span.setAttribute('dataSize', data.length);
 
-    const result = await process(data);
-    span.end({ output: result });
+      const result = await process(data);
+
+      client.updateCurrentSpan({ output: result });
+    });
     ```
   </Tab>
 </Tabs>
@@ -119,23 +119,19 @@ Use generation spans for LLM calls to capture model-specific data:
   </Tab>
   <Tab value="javascript" label="JavaScript">
     ```javascript
-    const gen = client.startGeneration({
-      name: 'chat_completion',
-      model: 'gpt-4',
-      input: { messages }
-    });
+    await client.startActiveGeneration('chat_completion', 'gpt-4', 'openai', async (span) => {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages
+      });
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4',
-      messages
-    });
-
-    gen.end({
-      output: response.choices[0].message.content,
-      usage: {
-        promptTokens: response.usage.prompt_tokens,
-        completionTokens: response.usage.completion_tokens
-      }
+      client.updateCurrentSpan({
+        output: response.choices[0].message.content,
+        usage: {
+          inputTokens: response.usage.prompt_tokens,
+          outputTokens: response.usage.completion_tokens
+        }
+      });
     });
     ```
   </Tab>
@@ -176,34 +172,30 @@ Spans can be nested to show parent-child relationships:
   </Tab>
   <Tab value="javascript" label="JavaScript">
     ```javascript
-    const parent = client.startSpan({ name: 'rag_pipeline' });
+    await client.startActiveSpan('rag_pipeline', async (parentSpan) => {
+      // Child span 1: Embed query
+      const embedding = await client.startActiveSpan('embed_query', async (embedSpan) => {
+        const result = await getEmbedding(query);
+        client.updateCurrentSpan({ output: { dimensions: result.length } });
+        return result;
+      });
 
-    // Child span 1: Embed query
-    const embedSpan = client.startSpan({
-      name: 'embed_query',
-      parentSpanId: parent.spanId
+      // Child span 2: Search
+      const docs = await client.startActiveSpan('vector_search', async (searchSpan) => {
+        const results = await searchVectors(embedding, 5);
+        client.updateCurrentSpan({ output: { docCount: results.length } });
+        return results;
+      });
+
+      // Child span 3: Generate
+      const response = await client.startActiveGeneration('generate_response', 'gpt-4', 'openai', async (genSpan) => {
+        const result = await generate(query, docs);
+        client.updateCurrentSpan({ output: result });
+        return result;
+      });
+
+      client.updateCurrentSpan({ output: response });
     });
-    const embedding = await getEmbedding(query);
-    embedSpan.end({ output: { dimensions: embedding.length } });
-
-    // Child span 2: Search
-    const searchSpan = client.startSpan({
-      name: 'vector_search',
-      parentSpanId: parent.spanId
-    });
-    const docs = await searchVectors(embedding, 5);
-    searchSpan.end({ output: { docCount: docs.length } });
-
-    // Child span 3: Generate
-    const genSpan = client.startGeneration({
-      name: 'generate_response',
-      model: 'gpt-4',
-      parentSpanId: parent.spanId
-    });
-    const response = await generate(query, docs);
-    genSpan.end({ output: response });
-
-    parent.end({ output: response });
     ```
   </Tab>
 </Tabs>
@@ -274,7 +266,7 @@ Integration wrappers automatically create spans:
 ```python
 from brokle import wrap_openai
 
-openai_client = wrap_openai(openai.OpenAI(), brokle=client)
+openai_client = wrap_openai(openai.OpenAI())
 
 # Automatically creates a generation span
 response = openai_client.chat.completions.create(
@@ -356,21 +348,14 @@ Capture errors in spans for debugging:
   </Tab>
   <Tab value="javascript" label="JavaScript">
     ```javascript
-    const span = client.startSpan({ name: 'api_call' });
-
-    try {
+    await client.startActiveSpan('api_call', async (span) => {
+      // Errors are automatically captured by the SDK
       const result = await externalApi.call();
-      span.end({ output: result });
-    } catch (error) {
-      span.end({
-        error: error.message,
-        attributes: {
-          errorCode: error.code,
-          retryable: error.retryable
-        }
-      });
-      throw error;
-    }
+      client.updateCurrentSpan({ output: result });
+
+      // For manual error metadata, use span attributes
+      // span.setAttribute('errorCode', error.code);
+    });
     ```
   </Tab>
 </Tabs>

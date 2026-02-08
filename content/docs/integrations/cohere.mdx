@@ -59,8 +59,7 @@ Integrate Brokle with Cohere to capture traces, monitor performance, and track c
 
         # Wrap Cohere client
         client = wrap_cohere(
-            cohere.ClientV2(api_key="your-cohere-api-key"),
-            brokle=brokle
+            cohere.ClientV2(api_key="your-cohere-api-key")
         )
         ```
       </Tab>
@@ -75,8 +74,7 @@ Integrate Brokle with Cohere to capture traces, monitor performance, and track c
 
         // Wrap Cohere client
         const client = wrapCohere(
-          new CohereClient({ token: 'your-cohere-api-key' }),
-          { brokle }
+          new CohereClient({ token: 'your-cohere-api-key' })
         );
         ```
       </Tab>
@@ -488,7 +486,6 @@ brokle = Brokle(
 
 client = wrap_cohere(
     cohere.ClientV2(api_key="..."),
-    brokle=brokle,
     # Integration-specific options
     capture_input=True,      # Capture message content
     capture_output=True,     # Capture response content

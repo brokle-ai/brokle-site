@@ -92,7 +92,7 @@ from brokle import Brokle, wrap_openai
 import openai
 
 client = Brokle(api_key="bk_...")
-openai_client = wrap_openai(openai.OpenAI(), brokle=client)
+openai_client = wrap_openai(openai.OpenAI())
 
 # All OpenAI calls are now automatically traced
 response = openai_client.chat.completions.create(
@@ -125,7 +125,7 @@ from brokle import Brokle, wrap_openai
 import openai
 
 client = Brokle(api_key="bk_...")
-openai_client = wrap_openai(openai.OpenAI(), brokle=client)
+openai_client = wrap_openai(openai.OpenAI())
 
 # Manual span for the overall flow
 with client.start_as_current_span(name="customer_support") as span:

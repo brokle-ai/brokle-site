@@ -44,7 +44,7 @@ import openai
 client = Brokle(api_key="bk_...")
 
 # Wrap OpenAI for automatic tracing
-openai_client = wrap_openai(openai.OpenAI(), brokle=client)
+openai_client = wrap_openai(openai.OpenAI())
 
 # All LLM calls are now traced
 response = openai_client.chat.completions.create(
@@ -303,7 +303,7 @@ from brokle import Brokle, wrap_openai
 import openai
 
 client = Brokle(api_key="bk_...")
-openai_client = wrap_openai(openai.OpenAI(), brokle=client)
+openai_client = wrap_openai(openai.OpenAI())
 
 # Sync
 response = openai_client.chat.completions.create(
@@ -321,7 +321,7 @@ for chunk in stream:
     print(chunk.choices[0].delta.content or "", end="")
 
 # Async
-async_client = wrap_openai(openai.AsyncOpenAI(), brokle=client)
+async_client = wrap_openai(openai.AsyncOpenAI())
 response = await async_client.chat.completions.create(...)
 ```
 
@@ -332,7 +332,7 @@ from brokle import Brokle, wrap_anthropic
 import anthropic
 
 client = Brokle(api_key="bk_...")
-claude = wrap_anthropic(anthropic.Anthropic(), brokle=client)
+claude = wrap_anthropic(anthropic.Anthropic())
 
 response = claude.messages.create(
     model="claude-3-sonnet-20240229",

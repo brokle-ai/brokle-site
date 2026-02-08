@@ -63,12 +63,13 @@ from brokle import Brokle
 
 client = Brokle(api_key="your-api-key")
 
-with client.trace("my-first-trace") as trace:
+with client.start_as_current_span("my-first-trace") as span:
     # Your AI code automatically gets traced
     response = openai.chat.completions.create(
         model="gpt-4",
         messages=[{"role": "user", "content": "Hello!"}]
     )
+    client.update_current_span(output=response.choices[0].message.content)
 ```
 
 ```javascript tab="JavaScript"
@@ -76,12 +77,14 @@ import { Brokle } from 'brokle';
 
 const client = new Brokle({ apiKey: 'your-api-key' });
 
-await client.trace('my-first-trace', async () => {
+await client.startActiveSpan('my-first-trace', async (span) => {
   // Your AI code automatically gets traced
   const response = await openai.chat.completions.create({
     model: 'gpt-4',
     messages: [{ role: 'user', content: 'Hello!' }]
   });
+  client.updateCurrentSpan({ output: response.choices[0].message.content });
+  return response;
 });
 ```
 

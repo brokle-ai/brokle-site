@@ -63,8 +63,7 @@ Integrate Brokle with Azure OpenAI Service to capture traces, monitor performanc
                 api_key="your-azure-api-key",
                 api_version="2024-02-15-preview",
                 azure_endpoint="https://your-resource.openai.azure.com"
-            ),
-            brokle=brokle
+            )
         )
         ```
       </Tab>
@@ -83,8 +82,7 @@ Integrate Brokle with Azure OpenAI Service to capture traces, monitor performanc
             apiKey: 'your-azure-api-key',
             apiVersion: '2024-02-15-preview',
             endpoint: 'https://your-resource.openai.azure.com'
-          }),
-          { brokle }
+          })
         );
         ```
       </Tab>
@@ -164,13 +162,13 @@ export AZURE_OPENAI_API_VERSION=2024-02-15-preview
     from openai import AzureOpenAI
 
     # Client reads from environment
-    client = wrap_azure_openai(AzureOpenAI(), brokle=brokle)
+    client = wrap_azure_openai(AzureOpenAI())
     ```
   </Tab>
   <Tab value="javascript" label="JavaScript">
     ```javascript
     // Client reads from environment
-    const client = wrapAzureOpenAI(new AzureOpenAI(), { brokle });
+    const client = wrapAzureOpenAI(new AzureOpenAI());
     ```
   </Tab>
 </Tabs>
@@ -196,8 +194,7 @@ Support for Azure Active Directory authentication:
             azure_ad_token_provider=token_provider,
             azure_endpoint="https://your-resource.openai.azure.com",
             api_version="2024-02-15-preview"
-        ),
-        brokle=brokle
+        )
     )
     ```
   </Tab>
@@ -214,8 +211,7 @@ Support for Azure Active Directory authentication:
         azureADTokenProvider,
         endpoint: 'https://your-resource.openai.azure.com',
         apiVersion: '2024-02-15-preview'
-      }),
-      { brokle }
+      })
     );
     ```
   </Tab>
@@ -424,14 +420,12 @@ Track requests across multiple Azure regions:
 ```python
 # US East deployment
 us_client = wrap_azure_openai(
-    AzureOpenAI(azure_endpoint="https://us-east.openai.azure.com"),
-    brokle=brokle
+    AzureOpenAI(azure_endpoint="https://us-east.openai.azure.com")
 )
 
 # Europe deployment
 eu_client = wrap_azure_openai(
-    AzureOpenAI(azure_endpoint="https://eu-west.openai.azure.com"),
-    brokle=brokle
+    AzureOpenAI(azure_endpoint="https://eu-west.openai.azure.com")
 )
 
 # Traces include region information for analysis
@@ -452,7 +446,6 @@ brokle = Brokle(
 
 client = wrap_azure_openai(
     AzureOpenAI(...),
-    brokle=brokle,
     # Integration-specific options
     capture_input=True,           # Capture message content
     capture_output=True,          # Capture response content

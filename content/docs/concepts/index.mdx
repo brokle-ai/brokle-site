@@ -101,7 +101,7 @@ from brokle import Brokle, wrap_openai
 import openai
 
 client = Brokle(api_key="bk_...")
-openai_client = wrap_openai(openai.OpenAI(), brokle=client)
+openai_client = wrap_openai(openai.OpenAI())
 
 # Your existing code works unchanged
 response = openai_client.chat.completions.create(...)

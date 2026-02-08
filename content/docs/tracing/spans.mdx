@@ -44,16 +44,12 @@ Spans are the building blocks of traces. This guide covers everything you need t
 
     const client = new Brokle({ apiKey: 'bk_...' });
 
-    // Start and end span explicitly
-    const span = client.startSpan({ name: 'process_document' });
-
-    try {
+    // Callback-based span (recommended)
+    await client.startActiveSpan('process_document', async (span) => {
       const result = await process(document);
-      span.end({ output: result });
-    } catch (error) {
-      span.end({ error });
-      throw error;
-    }
+      client.updateCurrentSpan({ output: result });
+      return result;
+    });
     ```
   </Tab>
 </Tabs>
@@ -106,30 +102,24 @@ For LLM calls, use generation spans to capture model-specific data:
   </Tab>
   <Tab value="javascript" label="JavaScript">
     ```javascript
-    const gen = client.startGeneration({
-      name: 'summarize',
-      model: 'gpt-4',
-      input: { text: documentText }
-    });
+    await client.startActiveGeneration('summarize', 'gpt-4', 'openai', async (span) => {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [
+          { role: 'system', content: 'Summarize the following text.' },
+          { role: 'user', content: documentText }
+        ]
+      });
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4',
-      messages: [
-        { role: 'system', content: 'Summarize the following text.' },
-        { role: 'user', content: documentText }
-      ]
-    });
+      client.updateCurrentSpan({
+        output: response.choices[0].message.content,
+        usage: {
+          inputTokens: response.usage.prompt_tokens,
+          outputTokens: response.usage.completion_tokens
+        }
+      });
 
-    gen.end({
-      output: response.choices[0].message.content,
-      usage: {
-        promptTokens: response.usage.prompt_tokens,
-        completionTokens: response.usage.completion_tokens
-      },
-      attributes: {
-        temperature: 0.7,
-        maxTokens: 500
-      }
+      return response;
     });
     ```
   </Tab>
@@ -179,44 +169,38 @@ Create hierarchical traces with nested spans:
   </Tab>
   <Tab value="javascript" label="JavaScript">
     ```javascript
-    const parent = client.startSpan({ name: 'rag_pipeline' });
+    await client.startActiveSpan('rag_pipeline', async (parentSpan) => {
+      // Child span 1: Query embedding
+      const embedding = await client.startActiveSpan('embed_query', async (span) => {
+        const result = await embed(query);
+        client.updateCurrentSpan({ output: { dimensions: result.length } });
+        return result;
+      });
 
-    // Child span 1: Query embedding
-    const embedSpan = client.startSpan({
-      name: 'embed_query',
-      parentSpanId: parent.spanId
-    });
-    const embedding = await embed(query);
-    embedSpan.end({
-      output: { dimensions: embedding.length },
-      attributes: { model: 'text-embedding-3-small' }
-    });
+      // Child span 2: Vector search
+      const results = await client.startActiveSpan('vector_search', async (span) => {
+        span.setAttribute('index', 'products');
+        span.setAttribute('topK', 5);
+        const searchResults = await vectorStore.search(embedding, 5);
+        client.updateCurrentSpan({
+          output: {
+            count: searchResults.length,
+            scores: searchResults.map(r => r.score)
+          }
+        });
+        return searchResults;
+      });
 
-    // Child span 2: Vector search
-    const searchSpan = client.startSpan({
-      name: 'vector_search',
-      type: 'retrieval',
-      parentSpanId: parent.spanId,
-      attributes: { index: 'products', topK: 5 }
-    });
-    const results = await vectorStore.search(embedding, 5);
-    searchSpan.end({
-      output: {
-        count: results.length,
-        scores: results.map(r => r.score)
-      }
-    });
+      // Child span 3: LLM generation
+      const answer = await client.startActiveGeneration('generate_answer', 'gpt-4', 'openai', async (span) => {
+        const result = await generate(query, results);
+        client.updateCurrentSpan({ output: result });
+        return result;
+      });
 
-    // Child span 3: LLM generation
-    const genSpan = client.startGeneration({
-      name: 'generate_answer',
-      model: 'gpt-4',
-      parentSpanId: parent.spanId
+      client.updateCurrentSpan({ output: answer });
+      return answer;
     });
-    const answer = await generate(query, results);
-    genSpan.end({ output: answer });
-
-    parent.end({ output: answer });
     ```
   </Tab>
 </Tabs>
@@ -270,25 +254,19 @@ Add custom key-value pairs to spans:
   </Tab>
   <Tab value="javascript" label="JavaScript">
     ```javascript
-    const span = client.startSpan({
-      name: 'process_order',
-      attributes: {
-        orderId: order.id,
-        customerId: customer.id,
-        itemCount: order.items.length,
-        totalValue: order.total,
-        priority: 'high'
-      }
-    });
+    await client.startActiveSpan('process_order', async (span) => {
+      span.setAttribute('orderId', order.id);
+      span.setAttribute('customerId', customer.id);
+      span.setAttribute('itemCount', order.items.length);
+      span.setAttribute('totalValue', order.total);
+      span.setAttribute('priority', 'high');
+      span.setAttribute('paymentMethod', order.paymentMethod);
+      span.setAttribute('shippingTier', order.shippingTier);
 
-    // Add more attributes later
-    span.setAttributes({
-      paymentMethod: order.paymentMethod,
-      shippingTier: order.shippingTier
+      const result = await processOrder(order);
+      client.updateCurrentSpan({ output: result });
+      return result;
     });
-
-    const result = await processOrder(order);
-    span.end({ output: result });
     ```
   </Tab>
 </Tabs>
@@ -333,24 +311,18 @@ Add custom key-value pairs to spans:
   </Tab>
   <Tab value="javascript" label="JavaScript">
     ```javascript
-    const span = client.startSpan({ name: 'multi_step_process' });
+    await client.startActiveSpan('multi_step_process', async (span) => {
+      span.setAttribute('step', 'preprocessing');
+      const preprocessed = await preprocess(data);
 
-    span.setAttributes({ step: 'preprocessing' });
-    const preprocessed = await preprocess(data);
+      span.setAttribute('step', 'analysis');
+      const analysis = await analyze(preprocessed);
 
-    span.setAttributes({ step: 'analysis' });
-    const analysis = await analyze(preprocessed);
+      span.setAttribute('step', 'postprocessing');
+      const result = await postprocess(analysis);
 
-    span.setAttributes({ step: 'postprocessing' });
-    const result = await postprocess(analysis);
-
-    span.end({
-      output: result,
-      attributes: {
-        preprocessingTimeMs: 100,
-        analysisTimeMs: 500,
-        postprocessingTimeMs: 50
-      }
+      client.updateCurrentSpan({ output: result });
+      return result;
     });
     ```
   </Tab>
@@ -380,18 +352,16 @@ Associate spans with traces, sessions, and users:
   </Tab>
   <Tab value="javascript" label="JavaScript">
     ```javascript
-    const span = client.startSpan({
-      name: 'user_interaction',
-      attributes: {
-        userId: 'user_123',
-        sessionId: 'session_456',
-        environment: 'production',
-        version: '2.1.0'
-      }
-    });
+    await client.startActiveSpan('user_interaction', async (span) => {
+      span.setAttribute('userId', 'user_123');
+      span.setAttribute('sessionId', 'session_456');
+      span.setAttribute('environment', 'production');
+      span.setAttribute('version', '2.1.0');
 
-    const response = await handleInteraction(request);
-    span.end({ output: response });
+      const response = await handleInteraction(request);
+      client.updateCurrentSpan({ output: response });
+      return response;
+    });
     ```
   </Tab>
 </Tabs>
@@ -430,31 +400,14 @@ Associate spans with traces, sessions, and users:
   </Tab>
   <Tab value="javascript" label="JavaScript">
     ```javascript
-    const span = client.startSpan({ name: 'risky_operation' });
-
-    try {
+    await client.startActiveSpan('risky_operation', async (span) => {
+      // Errors are automatically captured by the SDK
+      // If performOperation() throws, the SDK records the exception
+      // and sets ERROR status on the span
       const result = await performOperation();
-      span.end({ output: result });
-    } catch (error) {
-      if (error instanceof ValidationError) {
-        span.end({
-          error: error.message,
-          attributes: { errorType: 'validation', field: error.field }
-        });
-      } else if (error instanceof ExternalAPIError) {
-        span.end({
-          error: error.message,
-          attributes: {
-            errorType: 'external_api',
-            statusCode: error.statusCode,
-            retryable: error.retryable
-          }
-        });
-      } else {
-        span.end({ error: `Unexpected error: ${error.message}` });
-      }
-      throw error;
-    }
+      client.updateCurrentSpan({ output: result });
+      return result;
+    });
     ```
   </Tab>
 </Tabs>
@@ -525,39 +478,55 @@ Track streaming LLM responses:
   </Tab>
   <Tab value="javascript" label="JavaScript">
     ```javascript
-    const gen = client.startGeneration({
-      name: 'streaming_response',
-      model: 'gpt-4'
-    });
+    import { StreamingAccumulator } from 'brokle';
+    import { SpanStatusCode } from '@opentelemetry/api';
 
-    const stream = await openai.chat.completions.create({
-      model: 'gpt-4',
-      messages,
-      stream: true
-    });
-
-    const chunks = [];
-    let firstTokenTime = null;
-
-    for await (const chunk of stream) {
-      if (chunk.choices[0]?.delta?.content) {
-        if (firstTokenTime === null) {
-          firstTokenTime = Date.now();
+    async function* streamWithTracing(messages) {
+      const tracer = client.getTracer();
+      const startTime = Date.now();
+      const span = tracer.startSpan('streaming_response', {
+        attributes: {
+          'brokle.span.type': 'generation',
+          'gen_ai.request.model': 'gpt-4',
+          'gen_ai.provider.name': 'openai',
+          'gen_ai.operation.name': 'streaming_response',
         }
-        chunks.push(chunk.choices[0].delta.content);
-        yield chunk.choices[0].delta.content;
+      });
+
+      const accumulator = new StreamingAccumulator(startTime);
+
+      try {
+        const stream = await openai.chat.completions.create({
+          model: 'gpt-4',
+          messages,
+          stream: true
+        });
+
+        for await (const chunk of stream) {
+          const content = accumulator.onChunk(chunk);
+          if (content) {
+            yield content;
+          }
+        }
+
+        const result = accumulator.finalize();
+        for (const [key, value] of Object.entries(result.toAttributes())) {
+          if (value != null) span.setAttribute(key, value);
+        }
+        span.setStatus({ code: SpanStatusCode.OK });
+      } catch (error) {
+        span.setStatus({ code: SpanStatusCode.ERROR, message: String(error) });
+        span.recordException(error);
+        throw error;
+      } finally {
+        span.end();
       }
     }
 
-    const fullResponse = chunks.join('');
-
-    gen.end({
-      output: fullResponse,
-      attributes: {
-        streaming: true,
-        timeToFirstTokenMs: firstTokenTime
-      }
-    });
+    // Usage
+    for await (const token of streamWithTracing(messages)) {
+      process.stdout.write(token);
+    }
     ```
   </Tab>
 </Tabs>
@@ -596,10 +565,7 @@ async def process_requests(requests):
 const client = new Brokle({ apiKey: 'bk_...' });
 
 async function processRequests(requests) {
-  const span = client.startSpan({ name: 'parallel_processing' });
-
-  try {
-    // Process requests in parallel
+  return client.startActiveSpan('parallel_processing', async (span) => {
     const results = await Promise.allSettled(
       requests.map(req => processSingle(req))
     );
@@ -607,19 +573,15 @@ async function processRequests(requests) {
     const successes = results.filter(r => r.status === 'fulfilled');
     const failures = results.filter(r => r.status === 'rejected');
 
-    span.end({
+    client.updateCurrentSpan({
       output: {
         successCount: successes.length,
         failureCount: failures.length
-      },
-      attributes: { parallelTasks: requests.length }
+      }
     });
 
     return successes.map(r => r.value);
-  } catch (error) {
-    span.end({ error: error.message });
-    throw error;
-  }
+  });
 }
 ```
 

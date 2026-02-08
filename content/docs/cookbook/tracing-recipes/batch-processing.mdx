@@ -29,7 +29,7 @@ When processing large batches of items:
     from typing import Optional
 
     brokle = Brokle()
-    openai_client = wrap_openai(openai.OpenAI(), brokle=brokle)
+    openai_client = wrap_openai(openai.OpenAI())
 
     @dataclass
     class BatchResult:
@@ -161,86 +161,88 @@ When processing large batches of items:
     import OpenAI from 'openai';
 
     const brokle = new Brokle();
-    const openai = wrapOpenAI(new OpenAI(), { brokle });
+    const openai = wrapOpenAI(new OpenAI());
 
     async function processItem(item, index) {
-      return brokle.withGeneration(
-        {
-          name: 'batch_item',
-          model: 'gpt-4o-mini',
-          metadata: { index, itemPreview: item.slice(0, 50) },
-        },
-        async (gen) => {
-          try {
-            const response = await openai.chat.completions.create({
-              model: 'gpt-4o-mini',
-              messages: [{ role: 'user', content: `Classify: ${item}` }],
-              max_tokens: 100,
-            });
+      return brokle.startActiveGeneration('batch_item', 'gpt-4o-mini', 'openai', async (span) => {
+        brokle.updateCurrentSpan({ metadata: { index, itemPreview: item.slice(0, 50) } });
 
-            const output = response.choices[0].message.content;
-            const tokens = response.usage.total_tokens;
+        try {
+          const response = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [{ role: 'user', content: `Classify: ${item}` }],
+            max_tokens: 100,
+          });
 
-            gen.update({
-              output,
-              usage: {
-                inputTokens: response.usage.prompt_tokens,
-                outputTokens: response.usage.completion_tokens,
-              },
-            });
+          const output = response.choices[0].message.content;
+          const tokens = response.usage.total_tokens;
 
-            return { item, output, success: true, tokens };
-          } catch (error) {
-            gen.update({
-              output: error.message,
-              metadata: { error: true, errorType: error.name },
-            });
-            gen.score({ name: 'error', value: 1, comment: error.message });
-
-            return { item, output: null, success: false, error: error.message };
-          }
-        }
-      );
-    }
-
-    async function processBatch(items, batchName = 'batch_job') {
-      return brokle.withSpan(
-        { name: batchName, metadata: { batchSize: items.length } },
-        async (span) => {
-          const results = [];
-          let totalTokens = 0;
-          let successCount = 0;
-
-          for (let i = 0; i < items.length; i++) {
-            const result = await processItem(items[i], i);
-            results.push(result);
-
-            if (result.success) {
-              successCount++;
-              totalTokens += result.tokens;
-            }
-          }
-
-          const successRate = successCount / items.length;
-          span.update({
-            output: `Processed ${items.length} items`,
-            metadata: {
-              successCount,
-              failureCount: items.length - successCount,
-              successRate,
-              totalTokens,
+          brokle.updateCurrentSpan({
+            output,
+            usage: {
+              inputTokens: response.usage.prompt_tokens,
+              outputTokens: response.usage.completion_tokens,
             },
           });
 
-          span.score({
-            name: 'batch_success_rate',
-            value: successRate,
-            comment: `${successCount}/${items.length} successful`,
+          return { item, output, success: true, tokens };
+        } catch (error) {
+          brokle.updateCurrentSpan({
+            output: error.message,
+            metadata: { error: true, errorType: error.name },
+          });
+          await brokle.scores.submit({
+            traceId: span.spanContext().traceId,
+            spanId: span.spanContext().spanId,
+            name: 'error',
+            value: 1,
+            reason: error.message,
           });
 
-          return { results, metrics: { total: items.length, success: successCount } };
+          return { item, output: null, success: false, error: error.message };
         }
-      );
+      });
+    }
+
+    async function processBatch(items, batchName = 'batch_job') {
+      return brokle.startActiveSpan(batchName, async (span) => {
+        brokle.updateCurrentSpan({ metadata: { batchSize: items.length } });
+
+        const results = [];
+        let totalTokens = 0;
+        let successCount = 0;
+
+        for (let i = 0; i < items.length; i++) {
+          const result = await processItem(items[i], i);
+          results.push(result);
+
+          if (result.success) {
+            successCount++;
+            totalTokens += result.tokens;
+          }
+        }
+
+        const successRate = successCount / items.length;
+        brokle.updateCurrentSpan({
+          output: `Processed ${items.length} items`,
+          metadata: {
+            successCount,
+            failureCount: items.length - successCount,
+            successRate,
+            totalTokens,
+          },
+        });
+
+        await brokle.scores.submit({
+          traceId: span.spanContext().traceId,
+          spanId: span.spanContext().spanId,
+          name: 'batch_success_rate',
+          value: successRate,
+          reason: `${successCount}/${items.length} successful`,
+        });
+
+        return { results, metrics: { total: items.length, success: successCount } };
+      });
     }
     ```
   </Tab>

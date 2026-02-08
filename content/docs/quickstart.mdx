@@ -36,10 +36,10 @@ client = Brokle(api_key="your-api-key")
 Start tracing your AI application calls.
 
 ```python
-with client.trace("my-first-trace") as trace:
+with client.start_as_current_span("my-first-trace") as span:
     # Your AI code here
     response = openai.chat.completions.create(...)
-    trace.log(response)
+    client.update_current_span(output=response.choices[0].message.content)
 ```
 
 ## Next Steps

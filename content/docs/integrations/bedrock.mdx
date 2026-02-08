@@ -59,8 +59,7 @@ Integrate Brokle with Amazon Bedrock to capture traces, monitor performance, and
 
         # Wrap Bedrock client
         bedrock = wrap_bedrock(
-            boto3.client("bedrock-runtime", region_name="us-east-1"),
-            brokle=brokle
+            boto3.client("bedrock-runtime", region_name="us-east-1")
         )
         ```
       </Tab>
@@ -75,8 +74,7 @@ Integrate Brokle with Amazon Bedrock to capture traces, monitor performance, and
 
         // Wrap Bedrock client
         const bedrock = wrapBedrock(
-          new BedrockRuntimeClient({ region: 'us-east-1' }),
-          { brokle }
+          new BedrockRuntimeClient({ region: 'us-east-1' })
         );
         ```
       </Tab>
@@ -500,15 +498,13 @@ import boto3
 
 # Explicit region
 bedrock = wrap_bedrock(
-    boto3.client("bedrock-runtime", region_name="us-west-2"),
-    brokle=brokle
+    boto3.client("bedrock-runtime", region_name="us-west-2")
 )
 
 # From environment
 # AWS_DEFAULT_REGION=us-west-2
 bedrock = wrap_bedrock(
-    boto3.client("bedrock-runtime"),
-    brokle=brokle
+    boto3.client("bedrock-runtime")
 )
 ```
 
@@ -549,7 +545,6 @@ brokle = Brokle(
 
 bedrock = wrap_bedrock(
     boto3.client("bedrock-runtime"),
-    brokle=brokle,
     # Integration-specific options
     capture_input=True,      # Capture message content
     capture_output=True,     # Capture response content
@@ -581,14 +576,12 @@ with brokle.start_as_current_span(name="bedrock_chat") as span:
 ```python
 # Primary region
 us_bedrock = wrap_bedrock(
-    boto3.client("bedrock-runtime", region_name="us-east-1"),
-    brokle=brokle
+    boto3.client("bedrock-runtime", region_name="us-east-1")
 )
 
 # Fallback region
 eu_bedrock = wrap_bedrock(
-    boto3.client("bedrock-runtime", region_name="eu-west-1"),
-    brokle=brokle
+    boto3.client("bedrock-runtime", region_name="eu-west-1")
 )
 ```
 

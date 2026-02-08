@@ -109,16 +109,13 @@ Roll up metrics across related traces:
     // Generate or retrieve session ID
     const sessionId = uuidv4(); // Or from your session store
 
-    const span = client.startSpan({
-      name: 'chat_turn',
-      attributes: {
-        sessionId,
-        userId: 'user_123'
-      }
-    });
+    await client.startActiveSpan('chat_turn', async (span) => {
+      span.setAttribute('sessionId', sessionId);
+      span.setAttribute('userId', 'user_123');
 
-    const response = await processMessage(userMessage);
-    span.end({ output: response });
+      const response = await processMessage(userMessage);
+      client.updateCurrentSpan({ output: response });
+    });
     ```
   </Tab>
 </Tabs>
@@ -144,7 +141,7 @@ Roll up metrics across related traces:
 from brokle import Brokle, wrap_openai
 
 client = Brokle(api_key="bk_...")
-openai_client = wrap_openai(openai.OpenAI(), brokle=client)
+openai_client = wrap_openai(openai.OpenAI())
 
 class ChatSession:
     def __init__(self, user_id: str):

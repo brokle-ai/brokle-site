@@ -101,17 +101,14 @@ User Actions:
 
     const client = new Brokle({ apiKey: 'bk_...' });
 
-    const span = client.startSpan({ name: 'generate_response' });
+    await client.startActiveSpan('generate_response', async (span) => {
+      const response = await generate(prompt);
 
-    const response = await generate(prompt);
+      span.setAttribute('evalRelevance', 0.95);
+      span.setAttribute('evalHelpfulness', 0.88);
+      span.setAttribute('evalAccuracy', 0.92);
 
-    span.end({
-      output: response,
-      attributes: {
-        evalRelevance: 0.95,
-        evalHelpfulness: 0.88,
-        evalAccuracy: 0.92
-      }
+      client.updateCurrentSpan({ output: response });
     });
     ```
   </Tab>
@@ -239,14 +236,12 @@ User Actions:
     }
 
     // Usage in a trace
-    const span = client.startSpan({ name: 'qa_pipeline' });
+    await client.startActiveSpan('qa_pipeline', async (span) => {
+      const response = await generateAnswer(question);
+      const qualityScore = await evaluateResponse(question, response);
 
-    const response = await generateAnswer(question);
-    const qualityScore = await evaluateResponse(question, response);
-
-    span.end({
-      output: response,
-      attributes: { evalQuality: qualityScore }
+      span.setAttribute('evalQuality', qualityScore);
+      client.updateCurrentSpan({ output: response });
     });
     ```
   </Tab>

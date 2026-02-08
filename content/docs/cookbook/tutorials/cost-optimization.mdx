@@ -77,7 +77,7 @@ A comprehensive cost optimization system that:
     brokle = Brokle()
 
     # Wrap OpenAI for tracing
-    openai_client = wrap_openai(openai.OpenAI(), brokle=brokle)
+    openai_client = wrap_openai(openai.OpenAI())
     ```
   </Step>
 </Steps>
@@ -580,7 +580,7 @@ from datetime import datetime, timedelta
 
 # Initialize
 brokle = Brokle()
-openai_client = wrap_openai(openai.OpenAI(), brokle=brokle)
+openai_client = wrap_openai(openai.OpenAI())
 
 # Initialize router and cache
 router = SmartModelRouter()

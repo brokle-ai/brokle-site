@@ -249,13 +249,18 @@ Rate 0-1 where 1 is crystal clear.`,
     async function evaluateQuality(query, response, weights = null) {
       weights = weights || { accuracy: 0.4, helpfulness: 0.4, clarity: 0.2 };
 
-      return brokle.withSpan({ name: 'quality_evaluation' }, async (span) => {
+      return brokle.startActiveSpan('quality_evaluation', async (span) => {
         const scores = {};
 
         for (const [dimension, judge] of Object.entries(judges)) {
           const result = await judge.evaluate({ input: query, output: response });
           scores[dimension] = result.score;
-          span.score({ name: dimension, value: result.score });
+          await brokle.scores.submit({
+            traceId: span.spanContext().traceId,
+            spanId: span.spanContext().spanId,
+            name: dimension,
+            value: result.score,
+          });
         }
 
         const overall = Object.entries(weights).reduce(
@@ -263,7 +268,12 @@ Rate 0-1 where 1 is crystal clear.`,
           0
         );
 
-        span.score({ name: 'overall_quality', value: overall });
+        await brokle.scores.submit({
+          traceId: span.spanContext().traceId,
+          spanId: span.spanContext().spanId,
+          name: 'overall_quality',
+          value: overall,
+        });
 
         return { ...scores, overall };
       });

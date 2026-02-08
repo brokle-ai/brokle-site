@@ -28,7 +28,7 @@ When using streaming responses:
     import openai
 
     brokle = Brokle()
-    openai_client = wrap_openai(openai.OpenAI(), brokle=brokle)
+    openai_client = wrap_openai(openai.OpenAI())
 
     def stream_with_tracing(prompt: str) -> str:
         """Stream a response with full tracing."""
@@ -104,62 +104,59 @@ When using streaming responses:
     import OpenAI from 'openai';
 
     const brokle = new Brokle();
-    const openai = wrapOpenAI(new OpenAI(), { brokle });
+    const openai = wrapOpenAI(new OpenAI());
 
     async function streamWithTracing(prompt) {
-      return brokle.withGeneration(
-        { name: 'streaming_generation', model: 'gpt-4o', input: prompt },
-        async (gen) => {
-          const startTime = Date.now();
-          let firstTokenTime = null;
-          let fullResponse = '';
-          let chunkCount = 0;
+      return brokle.startActiveGeneration('streaming_generation', 'gpt-4o', 'openai', async (span) => {
+        const startTime = Date.now();
+        let firstTokenTime = null;
+        let fullResponse = '';
+        let chunkCount = 0;
 
-          const stream = await openai.chat.completions.create({
-            model: 'gpt-4o',
-            messages: [{ role: 'user', content: prompt }],
-            stream: true,
-            stream_options: { include_usage: true },
-          });
+        const stream = await openai.chat.completions.create({
+          model: 'gpt-4o',
+          messages: [{ role: 'user', content: prompt }],
+          stream: true,
+          stream_options: { include_usage: true },
+        });
 
-          for await (const chunk of stream) {
-            // Track time to first token
-            if (firstTokenTime === null && chunk.choices?.length) {
-              firstTokenTime = Date.now();
-              const ttft = firstTokenTime - startTime;
-              gen.setAttribute('time_to_first_token_ms', ttft);
-            }
-
-            // Accumulate response
-            if (chunk.choices?.[0]?.delta?.content) {
-              fullResponse += chunk.choices[0].delta.content;
-              chunkCount++;
-            }
-
-            // Capture usage from final chunk
-            if (chunk.usage) {
-              gen.update({
-                usage: {
-                  inputTokens: chunk.usage.prompt_tokens,
-                  outputTokens: chunk.usage.completion_tokens,
-                },
-              });
-            }
+        for await (const chunk of stream) {
+          // Track time to first token
+          if (firstTokenTime === null && chunk.choices?.length) {
+            firstTokenTime = Date.now();
+            const ttft = firstTokenTime - startTime;
+            span.setAttribute('time_to_first_token_ms', ttft);
           }
 
-          const totalTime = Date.now() - startTime;
-          gen.update({
-            output: fullResponse,
-            metadata: {
-              streaming: true,
-              chunkCount,
-              totalTimeMs: totalTime,
-            },
-          });
+          // Accumulate response
+          if (chunk.choices?.[0]?.delta?.content) {
+            fullResponse += chunk.choices[0].delta.content;
+            chunkCount++;
+          }
 
-          return fullResponse;
+          // Capture usage from final chunk
+          if (chunk.usage) {
+            brokle.updateCurrentSpan({
+              usage: {
+                inputTokens: chunk.usage.prompt_tokens,
+                outputTokens: chunk.usage.completion_tokens,
+              },
+            });
+          }
         }
-      );
+
+        const totalTime = Date.now() - startTime;
+        brokle.updateCurrentSpan({
+          output: fullResponse,
+          metadata: {
+            streaming: true,
+            chunkCount,
+            totalTimeMs: totalTime,
+          },
+        });
+
+        return fullResponse;
+      });
     }
 
     // Usage

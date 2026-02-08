@@ -44,15 +44,11 @@ Manual tracing gives you complete control over what gets traced. Use it for cust
 
     const client = new Brokle({ apiKey: 'bk_...' });
 
-    const span = client.startSpan({ name: 'process_document' });
-
-    try {
+    await client.startActiveSpan('process_document', async (span) => {
       const result = await analyzeDocument(document);
-      span.end({ output: result });
-    } catch (error) {
-      span.end({ error: error.message });
-      throw error;
-    }
+      client.updateCurrentSpan({ output: result });
+      return result;
+    });
 
     await client.shutdown();
     ```
@@ -108,14 +104,12 @@ const result = await analyzeSentiment('Great product!');
   </Tab>
   <Tab value="javascript" label="JavaScript">
     ```javascript
-    const span = client.startSpan({
-      name: 'transform_data',
-      input: { rawData: data, config }
+    await client.startActiveSpan('transform_data', async (span) => {
+      client.updateCurrentSpan({ input: { rawData: data, config } });
+      const result = await transform(data, config);
+      client.updateCurrentSpan({ output: result });
+      return result;
     });
-
-    const result = await transform(data, config);
-
-    span.end({ output: result });
     ```
   </Tab>
 </Tabs>
@@ -147,25 +141,19 @@ Add custom key-value pairs for filtering and analysis:
   </Tab>
   <Tab value="javascript" label="JavaScript">
     ```javascript
-    const span = client.startSpan({
-      name: 'process_order',
-      attributes: {
-        orderId: order.id,
-        customerTier: customer.tier,
-        itemCount: order.items.length,
-        totalValue: order.total
-      }
-    });
+    await client.startActiveSpan('process_order', async (span) => {
+      span.setAttribute('orderId', order.id);
+      span.setAttribute('customerTier', customer.tier);
+      span.setAttribute('itemCount', order.items.length);
+      span.setAttribute('totalValue', order.total);
+      span.setAttribute('paymentMethod', order.paymentMethod);
+      span.setAttribute('shippingSpeed', order.shippingSpeed);
+      span.setAttribute('hasDiscount', order.discount !== null);
 
-    // Add more attributes later
-    span.setAttributes({
-      paymentMethod: order.paymentMethod,
-      shippingSpeed: order.shippingSpeed,
-      hasDiscount: order.discount !== null
+      const result = await processOrder(order);
+      client.updateCurrentSpan({ output: result });
+      return result;
     });
-
-    const result = await processOrder(order);
-    span.end({ output: result });
     ```
   </Tab>
 </Tabs>
@@ -205,42 +193,32 @@ Create hierarchical traces with parent-child relationships:
   </Tab>
   <Tab value="javascript" label="JavaScript">
     ```javascript
-    const parent = client.startSpan({
-      name: 'checkout_flow',
-      attributes: { cartId: cart.id }
+    await client.startActiveSpan('checkout_flow', async (parentSpan) => {
+      parentSpan.setAttribute('cartId', cart.id);
+
+      // Child span 1: Validate cart
+      const validationResult = await client.startActiveSpan('validate_cart', async (span) => {
+        return await validateCart(cart);
+      });
+
+      if (!validationResult.valid) {
+        client.updateCurrentSpan({ output: { error: 'Cart validation failed' } });
+        return;
+      }
+
+      // Child span 2: Process payment
+      const paymentResult = await client.startActiveSpan('process_payment', async (span) => {
+        span.setAttribute('paymentMethod', cart.paymentMethod);
+        return await chargeCustomer(cart.total);
+      });
+
+      // Child span 3: Create order
+      const order = await client.startActiveSpan('create_order', async (span) => {
+        return await createOrder(cart, paymentResult);
+      });
+
+      client.updateCurrentSpan({ output: { orderId: order.id, status: 'completed' } });
     });
-
-    // Child span 1: Validate cart
-    const validateSpan = client.startSpan({
-      name: 'validate_cart',
-      parentSpanId: parent.spanId
-    });
-    const validationResult = await validateCart(cart);
-    validateSpan.end({ output: validationResult });
-
-    if (!validationResult.valid) {
-      parent.end({ error: 'Cart validation failed' });
-      return;
-    }
-
-    // Child span 2: Process payment
-    const paymentSpan = client.startSpan({
-      name: 'process_payment',
-      parentSpanId: parent.spanId,
-      attributes: { paymentMethod: cart.paymentMethod }
-    });
-    const paymentResult = await chargeCustomer(cart.total);
-    paymentSpan.end({ output: { transactionId: paymentResult.id } });
-
-    // Child span 3: Create order
-    const orderSpan = client.startSpan({
-      name: 'create_order',
-      parentSpanId: parent.spanId
-    });
-    const order = await createOrder(cart, paymentResult);
-    orderSpan.end({ output: { orderId: order.id } });
-
-    parent.end({ output: { orderId: order.id, status: 'completed' } });
     ```
   </Tab>
 </Tabs>
@@ -294,26 +272,24 @@ For LLM calls without using wrappers:
   </Tab>
   <Tab value="javascript" label="JavaScript">
     ```javascript
-    const gen = client.startGeneration({
-      name: 'summarize_document',
-      model: 'gpt-4',
-      input: { text: documentText }
-    });
+    await client.startActiveGeneration('summarize_document', 'gpt-4', 'openai', async (span) => {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [
+          { role: 'system', content: 'Summarize the following document.' },
+          { role: 'user', content: documentText }
+        ]
+      });
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4',
-      messages: [
-        { role: 'system', content: 'Summarize the following document.' },
-        { role: 'user', content: documentText }
-      ]
-    });
+      client.updateCurrentSpan({
+        output: response.choices[0].message.content,
+        usage: {
+          inputTokens: response.usage.prompt_tokens,
+          outputTokens: response.usage.completion_tokens
+        }
+      });
 
-    gen.end({
-      output: response.choices[0].message.content,
-      usage: {
-        promptTokens: response.usage.prompt_tokens,
-        completionTokens: response.usage.completion_tokens
-      }
+      return response;
     });
     ```
   </Tab>
@@ -392,27 +368,14 @@ with client.start_as_current_span(
   </Tab>
   <Tab value="javascript" label="JavaScript">
     ```javascript
-    const span = client.startSpan({ name: 'api_call' });
-
-    try {
+    await client.startActiveSpan('api_call', async (span) => {
+      // Errors are automatically captured by the SDK
       const result = await externalApi.call(params);
-      span.end({ output: result });
-    } catch (error) {
-      if (error instanceof TimeoutError) {
-        span.end({
-          error: `Timeout after ${timeout}s`,
-          attributes: { errorType: 'timeout', retryable: true }
-        });
-      } else if (error instanceof AuthenticationError) {
-        span.end({
-          error: 'Authentication failed',
-          attributes: { errorType: 'auth', retryable: false }
-        });
-      } else {
-        span.end({ error: error.message });
-      }
-      throw error;
-    }
+      client.updateCurrentSpan({ output: result });
+      return result;
+    });
+    // If externalApi.call() throws, the SDK automatically records
+    // the exception and sets ERROR status on the span
     ```
   </Tab>
 </Tabs>
@@ -452,12 +415,9 @@ asyncio.run(process_items(items))
 
 ```javascript
 async function processItems(items) {
-  const span = client.startSpan({
-    name: 'batch_process',
-    attributes: { batchSize: items.length }
-  });
+  return client.startActiveSpan('batch_process', async (span) => {
+    span.setAttribute('batchSize', items.length);
 
-  try {
     const results = await Promise.allSettled(
       items.map(item => processSingle(item))
     );
@@ -465,7 +425,7 @@ async function processItems(items) {
     const successes = results.filter(r => r.status === 'fulfilled');
     const failures = results.filter(r => r.status === 'rejected');
 
-    span.end({
+    client.updateCurrentSpan({
       output: {
         processed: successes.length,
         failed: failures.length
@@ -473,10 +433,7 @@ async function processItems(items) {
     });
 
     return successes.map(r => r.value);
-  } catch (error) {
-    span.end({ error: error.message });
-    throw error;
-  }
+  });
 }
 ```
 
@@ -489,7 +446,7 @@ from brokle import Brokle, wrap_openai
 import openai
 
 client = Brokle(api_key="bk_...")
-openai_client = wrap_openai(openai.OpenAI(), brokle=client)
+openai_client = wrap_openai(openai.OpenAI())
 
 with client.start_as_current_span(name="rag_pipeline") as parent:
     parent.update_trace(user_id="user_123", session_id="session_456")

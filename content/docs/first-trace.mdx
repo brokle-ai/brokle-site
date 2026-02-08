@@ -126,10 +126,7 @@ Now let's create a simple script that traces an OpenAI call:
     )
 
     # Wrap your OpenAI client for automatic tracing
-    client = wrap_openai(
-        openai.OpenAI(),
-        brokle=brokle
-    )
+    client = wrap_openai(openai.OpenAI())
 
     # Make a traced LLM call
     response = client.chat.completions.create(
@@ -158,7 +155,7 @@ Now let's create a simple script that traces an OpenAI call:
     });
 
     // Wrap your OpenAI client for automatic tracing
-    const client = wrapOpenAI(new OpenAI(), { brokle });
+    const client = wrapOpenAI(new OpenAI());
 
     // Make a traced LLM call
     const response = await client.chat.completions.create({
@@ -232,7 +229,7 @@ Make your traces more useful by adding metadata:
     import openai
 
     brokle = Brokle(api_key=os.getenv("BROKLE_API_KEY"))
-    client = wrap_openai(openai.OpenAI(), brokle=brokle)
+    client = wrap_openai(openai.OpenAI())
 
     # Create a trace with context
     with brokle.start_as_current_span(name="customer_support_chat") as span:
@@ -269,29 +266,26 @@ Make your traces more useful by adding metadata:
     import OpenAI from 'openai';
 
     const brokle = new Brokle({ apiKey: process.env.BROKLE_API_KEY });
-    const client = wrapOpenAI(new OpenAI(), { brokle });
+    const client = wrapOpenAI(new OpenAI());
 
     // Create a trace with context
-    const span = brokle.startSpan({
-      name: 'customer_support_chat',
-      attributes: {
-        userId: 'user_123',
-        feature: 'support_bot',
-        priority: 'high',
-        sessionId: 'session_456'
-      }
+    await brokle.startActiveSpan('customer_support_chat', async (span) => {
+      span.setAttribute('userId', 'user_123');
+      span.setAttribute('feature', 'support_bot');
+      span.setAttribute('priority', 'high');
+      span.setAttribute('sessionId', 'session_456');
+
+      const response = await client.chat.completions.create({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          { role: 'user', content: 'How do I reset my password?' }
+        ]
+      });
+
+      brokle.updateCurrentSpan({ output: response.choices[0].message.content });
+
+      console.log(response.choices[0].message.content);
     });
-
-    const response = await client.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        { role: 'user', content: 'How do I reset my password?' }
-      ]
-    });
-
-    span.end({ output: response.choices[0].message.content });
-
-    console.log(response.choices[0].message.content);
 
     await brokle.shutdown();
     ```
@@ -363,22 +357,19 @@ If you prefer not to wrap your client, use manual spans:
     const brokle = new Brokle({ apiKey: process.env.BROKLE_API_KEY });
     const client = new OpenAI();
 
-    const gen = brokle.startGeneration({
-      name: 'chat_completion',
-      model: 'gpt-3.5-turbo'
-    });
+    await brokle.startActiveGeneration('chat_completion', 'gpt-3.5-turbo', 'openai', async (span) => {
+      const response = await client.chat.completions.create({
+        model: 'gpt-3.5-turbo',
+        messages: [{ role: 'user', content: 'Hello!' }]
+      });
 
-    const response = await client.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages: [{ role: 'user', content: 'Hello!' }]
-    });
-
-    gen.end({
-      output: response.choices[0].message.content,
-      usage: {
-        promptTokens: response.usage.prompt_tokens,
-        completionTokens: response.usage.completion_tokens
-      }
+      brokle.updateCurrentSpan({
+        output: response.choices[0].message.content,
+        usage: {
+          inputTokens: response.usage.prompt_tokens,
+          outputTokens: response.usage.completion_tokens
+        }
+      });
     });
 
     await brokle.shutdown();

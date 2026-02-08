@@ -28,7 +28,7 @@ When running multiple LLM calls concurrently, you need to:
 
     # Use AsyncBrokle for async operations
     brokle = AsyncBrokle()
-    openai_client = wrap_openai(openai.AsyncOpenAI(), brokle=brokle)
+    openai_client = wrap_openai(openai.AsyncOpenAI())
 
     async def process_single_item(item: str) -> str:
         """Process a single item with its own span."""
@@ -81,38 +81,36 @@ When running multiple LLM calls concurrently, you need to:
     import OpenAI from 'openai';
 
     const brokle = new Brokle();
-    const openai = wrapOpenAI(new OpenAI(), { brokle });
+    const openai = wrapOpenAI(new OpenAI());
 
     async function processSingleItem(item) {
-      return brokle.withGeneration(
-        { name: 'process_item', model: 'gpt-4o-mini', metadata: { item } },
-        async (gen) => {
-          const response = await openai.chat.completions.create({
-            model: 'gpt-4o-mini',
-            messages: [{ role: 'user', content: `Summarize: ${item}` }],
-          });
-          const result = response.choices[0].message.content;
-          gen.update({ output: result });
-          return result;
-        }
-      );
+      return brokle.startActiveGeneration('process_item', 'gpt-4o-mini', 'openai', async (span) => {
+        brokle.updateCurrentSpan({ metadata: { item } });
+
+        const response = await openai.chat.completions.create({
+          model: 'gpt-4o-mini',
+          messages: [{ role: 'user', content: `Summarize: ${item}` }],
+        });
+        const result = response.choices[0].message.content;
+        brokle.updateCurrentSpan({ output: result });
+        return result;
+      });
     }
 
     async function processBatch(items) {
-      return brokle.withSpan(
-        { name: 'batch_process', metadata: { batchSize: items.length } },
-        async (span) => {
-          // Run all items concurrently
-          const results = await Promise.all(items.map(processSingleItem));
+      return brokle.startActiveSpan('batch_process', async (span) => {
+        brokle.updateCurrentSpan({ metadata: { batchSize: items.length } });
 
-          span.update({
-            output: `Processed ${results.length} items`,
-            metadata: { successCount: results.length },
-          });
+        // Run all items concurrently
+        const results = await Promise.all(items.map(processSingleItem));
 
-          return results;
-        }
-      );
+        brokle.updateCurrentSpan({
+          output: `Processed ${results.length} items`,
+          metadata: { successCount: results.length },
+        });
+
+        return results;
+      });
     }
 
     // Usage

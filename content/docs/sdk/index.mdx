@@ -78,7 +78,7 @@ import openai
 client = Brokle(api_key="bk_...")
 
 # Wrap OpenAI for automatic tracing
-openai_client = wrap_openai(openai.OpenAI(), brokle=client)
+openai_client = wrap_openai(openai.OpenAI())
 
 # All calls are now traced
 response = openai_client.chat.completions.create(
@@ -101,7 +101,7 @@ import OpenAI from 'openai';
 const client = new Brokle({ apiKey: 'bk_...' });
 
 // Wrap OpenAI for automatic tracing
-const openai = wrapOpenAI(new OpenAI(), { brokle: client });
+const openai = wrapOpenAI(new OpenAI());
 
 // All calls are now traced
 const response = await openai.chat.completions.create({
@@ -151,9 +151,9 @@ Both SDKs support multiple tracing patterns:
 
 | Pattern | Python | JavaScript |
 |---------|--------|------------|
-| Context Manager | `with client.start_as_current_span()` | `client.startSpan()` |
+| Callback / Context Manager | `with client.start_as_current_span()` | `client.startActiveSpan(name, fn)` |
 | Decorator | `@observe(name="...")` | `observe({ name: "..." }, fn)` |
-| Manual | `span.update()`, `span.end()` | `span.end()` |
+| Manual | `span.update()`, `span.end()` | `client.updateCurrentSpan()`, `span.end()` |
 | Integration | `wrap_openai()`, `wrap_anthropic()` | `wrapOpenAI()`, `wrapAnthropic()` |
 
 ### Span Types
@@ -162,8 +162,8 @@ Both SDKs support the same span types:
 
 | Type | Description | Python | JavaScript |
 |------|-------------|--------|------------|
-| `span` | General operation | `start_as_current_span()` | `startSpan()` |
-| `generation` | LLM calls | `start_as_current_generation()` | `startGeneration()` |
+| `span` | General operation | `start_as_current_span()` | `startActiveSpan()` |
+| `generation` | LLM calls | `start_as_current_generation()` | `startActiveGeneration()` |
 | `retrieval` | Vector/doc search | `as_type="retrieval"` | `type: 'retrieval'` |
 | `tool` | Tool execution | `as_type="tool"` | `type: 'tool'` |
 | `agent` | Agent operations | `as_type="agent"` | `type: 'agent'` |

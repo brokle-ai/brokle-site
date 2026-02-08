@@ -45,7 +45,7 @@ import OpenAI from 'openai';
 const client = new Brokle({ apiKey: 'bk_...' });
 
 // Wrap OpenAI for automatic tracing
-const openai = wrapOpenAI(new OpenAI(), { brokle: client });
+const openai = wrapOpenAI(new OpenAI());
 
 // All LLM calls are now traced
 const response = await openai.chat.completions.create({
@@ -100,50 +100,45 @@ const client = new Brokle({});
 ### Starting Spans
 
 ```typescript
-const span = client.startSpan({
-  name: 'operation',
-  input: { query: userQuery },
-  attributes: {
-    userId: user.id,
-    feature: 'search'
-  }
-});
+await client.startActiveSpan('operation', async (span) => {
+  span.setAttribute('userId', user.id);
+  span.setAttribute('feature', 'search');
 
-try {
   const result = await performOperation(userQuery);
-  span.end({ output: result });
-} catch (error) {
-  span.end({ error: error.message });
-  throw error;
-}
+
+  client.updateCurrentSpan({ output: result });
+  return result;
+});
 ```
 
-### Using observe Wrapper
+### Using traceFunction Wrapper
 
 ```typescript
-import { observe } from 'brokle';
+import { traceFunction } from 'brokle';
 
-const processQuery = observe(
-  { name: 'process_query' },
+const processQuery = traceFunction(
+  'process_query',
   async (query: string) => {
     const result = await search(query);
     return { query, results: result };
-  }
+  },
+  { captureInput: true, captureOutput: true }
 );
 
-// Each call creates a trace
+// Each call creates a traced span
 const result = await processQuery('find documents');
 ```
 
 ### Callback Pattern
 
 ```typescript
-await client.trace('operation', async (span) => {
-  span.setAttributes({ userId: user.id });
+await client.startActiveSpan('operation', async (span) => {
+  span.setAttribute('userId', user.id);
 
   const result = await doWork();
 
-  return result; // Automatically set as output
+  client.updateCurrentSpan({ output: result });
+  return result;
 });
 ```
 
@@ -152,138 +147,133 @@ await client.trace('operation', async (span) => {
 ### General Spans
 
 ```typescript
-const span = client.startSpan({
-  name: 'operation',
-  type: 'span', // default
-  attributes: { key: 'value' }
-});
+await client.startActiveSpan('operation', async (span) => {
+  span.setAttribute('key', 'value');
 
-const result = await doWork();
-span.end({ output: result });
+  const result = await doWork();
+
+  client.updateCurrentSpan({ output: result });
+  return result;
+});
 ```
 
 ### Generation Spans (LLM Calls)
 
 ```typescript
-const gen = client.startGeneration({
-  name: 'chat_completion',
-  model: 'gpt-4',
-  input: { messages }
-});
+await client.startActiveGeneration('chat', 'gpt-4', 'openai', async (span) => {
+  const response = await callLLM(messages);
 
-const response = await callLLM(messages);
+  span.setAttribute('gen_ai.request.temperature', 0.7);
+  span.setAttribute('gen_ai.request.max_tokens', 500);
+  span.setAttribute('gen_ai.usage.input_tokens', response.usage.prompt_tokens);
+  span.setAttribute('gen_ai.usage.output_tokens', response.usage.completion_tokens);
 
-gen.end({
-  output: response.content,
-  usage: {
-    promptTokens: response.usage.prompt_tokens,
-    completionTokens: response.usage.completion_tokens
-  },
-  attributes: {
-    temperature: 0.7,
-    maxTokens: 500
-  }
+  client.updateCurrentSpan({ output: response.content });
+  return response;
 });
 ```
 
 ### Retrieval Spans
 
 ```typescript
-const span = client.startSpan({
-  name: 'vector_search',
-  type: 'retrieval',
-  attributes: {
-    index: 'documents',
-    topK: 5
-  }
-});
+await client.startActiveSpan('vector_search', async (span) => {
+  const results = await vectorStore.search(query, 5);
 
-const results = await vectorStore.search(query, 5);
-
-span.end({
-  output: {
-    count: results.length,
-    scores: results.map(r => r.score)
-  }
+  client.updateCurrentSpan({
+    output: {
+      count: results.length,
+      scores: results.map(r => r.score)
+    }
+  });
+  return results;
+}, {
+  'brokle.span.type': 'retrieval',
+  'gen_ai.retrieval.source': 'documents',
+  'gen_ai.retrieval.top_k': 5,
 });
 ```
 
 ### Tool Spans
 
 ```typescript
-const span = client.startSpan({
-  name: 'calculator',
-  type: 'tool',
+await client.startActiveSpan('calculator', async (span) => {
+  const result = evaluate('2 + 2');
+
+  client.updateCurrentSpan({ output: { result } });
+  return result;
+}, {
+  'brokle.span.type': 'tool',
+  'gen_ai.tool.name': 'calculator',
+}, {
   input: { expression: '2 + 2' },
-  attributes: { toolName: 'calculator' }
 });
-
-const result = evaluate('2 + 2');
-
-span.end({ output: { result } });
 ```
 
 ## Nested Spans
 
-Create hierarchical traces:
+Create hierarchical traces using nested callbacks. Parent-child relationships are automatically established via OpenTelemetry context propagation:
 
 ```typescript
-const parent = client.startSpan({
-  name: 'pipeline',
-  attributes: {
-    userId: 'user_123',
-    sessionId: 'session_456'
-  }
-});
+await client.startActiveSpan('pipeline', async (parentSpan) => {
+  parentSpan.setAttribute('userId', 'user_123');
+  parentSpan.setAttribute('sessionId', 'session_456');
 
-// Child span 1
-const step1 = client.startSpan({
-  name: 'step_1',
-  parentSpanId: parent.spanId
-});
-const result1 = await stepOne();
-step1.end({ output: result1 });
+  // Child span 1 - automatically a child of 'pipeline'
+  const result1 = await client.startActiveSpan('step_1', async (span) => {
+    return await stepOne();
+  });
 
-// Child span 2
-const step2 = client.startSpan({
-  name: 'step_2',
-  parentSpanId: parent.spanId
-});
-const result2 = await stepTwo(result1);
-step2.end({ output: result2 });
+  // Child span 2 - automatically a child of 'pipeline'
+  const result2 = await client.startActiveSpan('step_2', async (span) => {
+    return await stepTwo(result1);
+  });
 
-parent.end({ output: result2 });
+  client.updateCurrentSpan({ output: result2 });
+  return result2;
+});
 ```
 
 ## Span Methods
 
-### setAttributes
+### setAttribute
 
-Add key-value pairs:
+Add key-value pairs to the current span:
 
 ```typescript
-span.setAttributes({
-  key: 'value',
-  count: 42,
-  isPremium: true
+await client.startActiveSpan('operation', async (span) => {
+  span.setAttribute('key', 'value');
+  span.setAttribute('count', 42);
+  span.setAttribute('isPremium', true);
+
+  // ...
+});
+```
+
+### updateCurrentSpan
+
+Update the active span with output, metadata, or prompt linking:
+
+```typescript
+await client.startActiveSpan('operation', async (span) => {
+  const result = await doWork();
+
+  // Set output
+  client.updateCurrentSpan({ output: result });
+
+  // Set metadata
+  client.updateCurrentSpan({ metadata: { status: 'done' } });
+
+  // Link a prompt
+  const prompt = await client.prompts.get('my_prompt');
+  client.updateCurrentSpan({ prompt });
+
+  return result;
 });
 ```
 
 ### end
 
-End the span with optional data:
-
-```typescript
-span.end({
-  output: { result: '...' },       // Output data
-  error: 'Error message',          // Error description
-  attributes: { key: 'value' },    // Additional attributes
-  usage: {                         // Token usage (for generations)
-    promptTokens: 100,
-    completionTokens: 50
-  }
-});
-```
+OTEL spans are automatically ended when the callback completes. You do not need to call `span.end()` manually inside `startActiveSpan` callbacks -- the SDK handles this for you, including on errors.
 
 ## LLM Integrations
 
@@ -295,7 +285,7 @@ import { wrapOpenAI } from 'brokle/openai';
 import OpenAI from 'openai';
 
 const client = new Brokle({ apiKey: 'bk_...' });
-const openai = wrapOpenAI(new OpenAI(), { brokle: client });
+const openai = wrapOpenAI(new OpenAI());
 
 // Chat completions
 const response = await openai.chat.completions.create({
@@ -329,7 +319,7 @@ import { wrapAnthropic } from 'brokle/anthropic';
 import Anthropic from '@anthropic-ai/sdk';
 
 const client = new Brokle({ apiKey: 'bk_...' });
-const claude = wrapAnthropic(new Anthropic(), { brokle: client });
+const claude = wrapAnthropic(new Anthropic());
 
 const response = await claude.messages.create({
   model: 'claude-3-sonnet-20240229',
@@ -344,14 +334,14 @@ const response = await claude.messages.create({
 
 ```typescript
 // Get a prompt by name
-const prompt = await client.promptManager.get('customer_support');
+const prompt = await client.prompts.get('customer_support');
 
 // Get a specific version
-const prompt = await client.promptManager.get('customer_support', {
+const prompt = await client.prompts.get('customer_support', {
   label: 'production'
 });
 
-const prompt = await client.promptManager.get('customer_support', {
+const prompt = await client.prompts.get('customer_support', {
   version: 3
 });
 ```
@@ -380,9 +370,6 @@ Force send pending traces:
 ```typescript
 // Async flush
 await client.flush();
-
-// With timeout
-await client.flush({ timeout: 10000 });
 ```
 
 ### Shutdown
@@ -420,23 +407,26 @@ const client = new Brokle({ apiKey: 'bk_...' });
 const app = express();
 
 // Middleware for tracing
-app.use(async (req, res, next) => {
-  const span = client.startSpan({
-    name: `${req.method} ${req.path}`,
-    attributes: {
-      method: req.method,
-      path: req.path,
-      userAgent: req.headers['user-agent']
-    }
-  });
+app.use((req, res, next) => {
+  client.startActiveSpan(`${req.method} ${req.path}`, async (span) => {
+    span.setAttribute('method', req.method);
+    span.setAttribute('path', req.path);
+    span.setAttribute('userAgent', req.headers['user-agent'] || '');
 
-  res.on('finish', () => {
-    span.end({
-      attributes: { statusCode: res.statusCode }
+    return new Promise<void>((resolve) => {
+      let ended = false;
+      const endSpan = () => {
+        if (ended) return;
+        ended = true;
+        span.setAttribute('statusCode', res.statusCode);
+        resolve();
+      };
+
+      res.on('finish', endSpan);
+      res.on('close', endSpan);
+      next();
     });
   });
-
-  next();
 });
 
 // Graceful shutdown
@@ -458,16 +448,11 @@ export const brokle = new Brokle({ apiKey: process.env.BROKLE_API_KEY });
 import { brokle } from '@/lib/brokle';
 
 export async function POST(req: Request) {
-  const span = brokle.startSpan({ name: 'api/chat' });
-
-  try {
+  return await brokle.startActiveSpan('api/chat', async (span) => {
     const result = await handleChat(req);
-    span.end({ output: result });
+    brokle.updateCurrentSpan({ output: result });
     return Response.json(result);
-  } catch (error) {
-    span.end({ error: error.message });
-    throw error;
-  }
+  });
 }
 ```
 
@@ -481,16 +466,24 @@ const client = new Brokle({ apiKey: 'bk_...' });
 const app = Fastify();
 
 app.addHook('onRequest', (req, reply, done) => {
-  req.span = client.startSpan({
-    name: `${req.method} ${req.url}`,
-    attributes: { method: req.method, url: req.url }
-  });
-  done();
-});
+  client.startActiveSpan(`${req.method} ${req.url}`, async (span) => {
+    span.setAttribute('method', req.method);
+    span.setAttribute('url', req.url);
 
-app.addHook('onResponse', (req, reply, done) => {
-  req.span?.end({ attributes: { statusCode: reply.statusCode } });
-  done();
+    return new Promise<void>((resolve) => {
+      let ended = false;
+      const endSpan = () => {
+        if (ended) return;
+        ended = true;
+        span.setAttribute('statusCode', reply.statusCode);
+        resolve();
+      };
+
+      reply.raw.on('finish', endSpan);
+      reply.raw.on('close', endSpan);
+      done();
+    });
+  });
 });
 
 app.addHook('onClose', async () => {
@@ -503,52 +496,70 @@ app.addHook('onClose', async () => {
 The SDK is written in TypeScript with full type definitions:
 
 ```typescript
-import { Brokle, Span, SpanOptions, GenerationOptions } from 'brokle';
+import { Brokle } from 'brokle';
+import type { Span } from '@opentelemetry/api';
 
-interface MyTraceInput {
-  query: string;
-  userId: string;
-}
+const client = new Brokle({ apiKey: 'bk_...' });
 
-interface MyTraceOutput {
+interface SearchResult {
   results: string[];
   count: number;
 }
 
-const span = client.startSpan<MyTraceInput, MyTraceOutput>({
-  name: 'search',
-  input: { query: 'test', userId: 'user_123' }
-});
+// startActiveSpan is fully typed - the return type matches your callback
+const result: SearchResult = await client.startActiveSpan(
+  'search',
+  async (span: Span) => {
+    span.setAttribute('query', 'test');
+    span.setAttribute('userId', 'user_123');
 
-// Type-safe output
-span.end({
-  output: {
-    results: ['result1', 'result2'],
-    count: 2
+    const data: SearchResult = {
+      results: ['result1', 'result2'],
+      count: 2,
+    };
+
+    client.updateCurrentSpan({ output: data });
+    return data;
   }
-});
+);
 ```
 
 ## Error Handling
 
 ### Capturing Errors
 
-```typescript
-const span = client.startSpan({ name: 'operation' });
+Errors thrown inside `startActiveSpan` callbacks are automatically captured on the span (via `span.recordException` and `span.setStatus`), then re-thrown:
 
-try {
+```typescript
+await client.startActiveSpan('operation', async (span) => {
+  // If riskyOperation() throws, the error is automatically:
+  // 1. Recorded as an exception on the span
+  // 2. Sets span status to ERROR
+  // 3. Ends the span
+  // 4. Re-throws the error
   const result = await riskyOperation();
-  span.end({ output: result });
+
+  client.updateCurrentSpan({ output: result });
+  return result;
+});
+```
+
+If you need to handle specific error types without re-throwing:
+
+```typescript
+try {
+  await client.startActiveSpan('operation', async (span) => {
+    const result = await riskyOperation();
+    client.updateCurrentSpan({ output: result });
+    return result;
+  });
 } catch (error) {
   if (error instanceof ValidationError) {
-    span.end({
-      error: error.message,
-      attributes: { errorType: 'validation' }
-    });
+    // Handle validation error - span already has error recorded
+    console.warn('Validation failed:', error.message);
   } else {
-    span.end({ error: `Unexpected: ${error.message}` });
+    throw error;
   }
-  throw error;
 }
 ```
 
@@ -561,9 +572,11 @@ The SDK is designed to never break your application:
 const client = new Brokle({ apiKey: 'invalid_key' });
 
 // This still works - SDK failures are silent
-const span = client.startSpan({ name: 'operation' });
-const result = await doWork(); // Your code runs normally
-span.end({ output: result });
+await client.startActiveSpan('operation', async (span) => {
+  const result = await doWork(); // Your code runs normally
+  client.updateCurrentSpan({ output: result });
+  return result;
+});
 ```
 
 ## Configuration Reference
@@ -588,8 +601,9 @@ span.end({ output: result });
 const client = new Brokle({ apiKey: process.env.BROKLE_API_KEY });
 
 export async function process() {
-  const span = client.startSpan({ name: 'op' });
-  // ...
+  await client.startActiveSpan('op', async (span) => {
+    // ...
+  });
 }
 
 // Bad - creates new client each call
@@ -598,35 +612,33 @@ export async function process() {
 }
 ```
 
-### 2. Always Handle Cleanup
+### 2. Use Callbacks for Automatic Cleanup
 
 ```typescript
-// Good - proper cleanup
-const span = client.startSpan({ name: 'op' });
-try {
+// Good - span is automatically ended and errors are captured
+await client.startActiveSpan('op', async (span) => {
   const result = await doWork();
-  span.end({ output: result });
-} catch (error) {
-  span.end({ error: error.message });
-  throw error;
-}
+  client.updateCurrentSpan({ output: result });
+  return result;
+});
 
-// Bad - span might not end on error
-const span = client.startSpan({ name: 'op' });
-const result = await doWork();
-span.end({ output: result });
+// The callback pattern guarantees:
+// - span.end() is always called (even on error)
+// - Errors are recorded on the span
+// - Span status is set correctly
 ```
 
 ### 3. Add Meaningful Context
 
 ```typescript
-const span = client.startSpan({
-  name: 'process_order',
-  attributes: {
-    orderId: order.id,
-    customerTier: customer.tier,
-    userId: user.id
-  }
+await client.startActiveSpan('process_order', async (span) => {
+  span.setAttribute('orderId', order.id);
+  span.setAttribute('customerTier', customer.tier);
+  span.setAttribute('userId', user.id);
+
+  const result = await processOrder(order);
+  client.updateCurrentSpan({ output: result });
+  return result;
 });
 ```
 

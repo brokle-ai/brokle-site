@@ -58,8 +58,7 @@ Integrate Brokle with Mistral AI to capture traces, monitor performance, and tra
 
         # Wrap Mistral client
         client = wrap_mistral(
-            Mistral(api_key="your-mistral-api-key"),
-            brokle=brokle
+            Mistral(api_key="your-mistral-api-key")
         )
         ```
       </Tab>
@@ -74,8 +73,7 @@ Integrate Brokle with Mistral AI to capture traces, monitor performance, and tra
 
         // Wrap Mistral client
         const client = wrapMistral(
-          new Mistral({ apiKey: 'your-mistral-api-key' }),
-          { brokle }
+          new Mistral({ apiKey: 'your-mistral-api-key' })
         );
         ```
       </Tab>
@@ -428,7 +426,7 @@ Full async support:
     from mistralai import Mistral
 
     brokle = AsyncBrokle(api_key="bk_...")
-    client = wrap_mistral(Mistral(api_key="..."), brokle=brokle)
+    client = wrap_mistral(Mistral(api_key="..."))
 
     async def chat():
         response = await client.chat.complete_async(
@@ -464,7 +462,6 @@ brokle = Brokle(
 
 client = wrap_mistral(
     Mistral(api_key="..."),
-    brokle=brokle,
     # Integration-specific options
     capture_input=True,      # Capture message content
     capture_output=True,     # Capture response content

@@ -45,7 +45,7 @@ Automatic tracing captures LLM calls without modifying your existing code. Wrap 
     client = Brokle(api_key="bk_...")
 
     # Wrap OpenAI client
-    openai_client = wrap_openai(openai.OpenAI(), brokle=client)
+    openai_client = wrap_openai(openai.OpenAI())
 
     # Use as normal - tracing is automatic
     response = openai_client.chat.completions.create(
@@ -70,7 +70,7 @@ Automatic tracing captures LLM calls without modifying your existing code. Wrap 
     const brokle = new Brokle({ apiKey: 'bk_...' });
 
     // Wrap OpenAI client
-    const openai = wrapOpenAI(new OpenAI(), { brokle });
+    const openai = wrapOpenAI(new OpenAI());
 
     // Use as normal - tracing is automatic
     const response = await openai.chat.completions.create({
@@ -112,7 +112,7 @@ For each OpenAI call, Brokle automatically captures:
     import anthropic
 
     client = Brokle(api_key="bk_...")
-    claude = wrap_anthropic(anthropic.Anthropic(), brokle=client)
+    claude = wrap_anthropic(anthropic.Anthropic())
 
     response = claude.messages.create(
         model="claude-3-sonnet-20240229",
@@ -133,7 +133,7 @@ For each OpenAI call, Brokle automatically captures:
     import Anthropic from '@anthropic-ai/sdk';
 
     const brokle = new Brokle({ apiKey: 'bk_...' });
-    const claude = wrapAnthropic(new Anthropic(), { brokle });
+    const claude = wrapAnthropic(new Anthropic());
 
     const response = await claude.messages.create({
       model: 'claude-3-sonnet-20240229',
@@ -160,7 +160,7 @@ Automatic tracing works seamlessly with streaming responses:
     import openai
 
     client = Brokle(api_key="bk_...")
-    openai_client = wrap_openai(openai.OpenAI(), brokle=client)
+    openai_client = wrap_openai(openai.OpenAI())
 
     # Streaming is automatically traced
     stream = openai_client.chat.completions.create(
@@ -213,7 +213,7 @@ Both sync and async clients are supported:
     import asyncio
 
     client = Brokle(api_key="bk_...")
-    openai_client = wrap_openai(openai.AsyncOpenAI(), brokle=client)
+    openai_client = wrap_openai(openai.AsyncOpenAI())
 
     async def main():
         response = await openai_client.chat.completions.create(
@@ -248,7 +248,7 @@ Use automatic tracing within manual spans for additional context:
     import openai
 
     client = Brokle(api_key="bk_...")
-    openai_client = wrap_openai(openai.OpenAI(), brokle=client)
+    openai_client = wrap_openai(openai.OpenAI())
 
     # Manual span for the overall operation
     with client.start_as_current_span(name="customer_inquiry") as span:
@@ -273,23 +273,21 @@ Use automatic tracing within manual spans for additional context:
   </Tab>
   <Tab value="javascript" label="JavaScript">
     ```javascript
-    const span = brokle.startSpan({
-      name: 'customer_inquiry',
-      attributes: {
-        customerTier: 'enterprise',
-        inquiryType: 'billing',
-        userId: 'user_123',
-        sessionId: 'session_456'
-      }
+    await brokle.startActiveSpan('customer_inquiry', async (span) => {
+      span.setAttribute('customerTier', 'enterprise');
+      span.setAttribute('inquiryType', 'billing');
+      span.setAttribute('userId', 'user_123');
+      span.setAttribute('sessionId', 'session_456');
+
+      // LLM call is automatically traced as a child span
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: userQuestion }]
+      });
+
+      brokle.updateCurrentSpan({ output: response.choices[0].message.content });
     });
 
-    // LLM call is automatically traced as a child span
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4',
-      messages: [{ role: 'user', content: userQuestion }]
-    });
-
-    span.end({ output: response.choices[0].message.content });
     await brokle.shutdown();
     ```
   </Tab>
@@ -381,25 +379,12 @@ Customize what gets captured:
         mask_pii=False,           # Mask PII in logs (default: False)
     )
 
-    openai_client = wrap_openai(
-        openai.OpenAI(),
-        brokle=client,
-        config=config
-    )
+    openai_client = wrap_openai(openai.OpenAI())
     ```
   </Tab>
   <Tab value="javascript" label="JavaScript">
     ```javascript
-    const openai = wrapOpenAI(new OpenAI(), {
-      brokle,
-      config: {
-        captureInput: true,
-        captureOutput: true,
-        captureTokens: true,
-        captureCost: true,
-        maskPii: false
-      }
-    });
+    const openai = wrapOpenAI(new OpenAI());
     ```
   </Tab>
 </Tabs>
@@ -470,7 +455,7 @@ azure_client = AzureOpenAI(
     azure_endpoint="https://your-resource.openai.azure.com"
 )
 
-wrapped_client = wrap_openai(azure_client, brokle=client)
+wrapped_client = wrap_openai(azure_client)
 ```
 
 ## Next Steps

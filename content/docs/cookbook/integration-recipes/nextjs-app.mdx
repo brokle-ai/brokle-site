@@ -58,7 +58,7 @@ const brokle = new Brokle({
 });
 
 // Wrapped OpenAI client
-const openai = wrapOpenAI(new OpenAI(), { brokle });
+const openai = wrapOpenAI(new OpenAI());
 
 export { brokle, openai };
 ```
@@ -78,18 +78,17 @@ export async function sendMessage(message: string) {
   const sessionId = cookieStore.get('session_id')?.value;
   const userId = cookieStore.get('user_id')?.value;
 
-  return brokle.withSpan(
-    {
-      name: 'chat_action',
-      metadata: {
-        action: 'sendMessage',
-        messageLength: message.length,
-      },
-    },
-    async (span) => {
+  return brokle.startActiveSpan('chat_action', async (span) => {
+      brokle.updateCurrentSpan({
+        metadata: {
+          action: 'sendMessage',
+          messageLength: message.length,
+        },
+      });
+
       // Set user context
       if (userId) {
-        span.updateTrace({ userId, sessionId });
+        brokle.updateCurrentSpan({ metadata: { userId, sessionId } });
       }
 
       try {
@@ -103,7 +102,7 @@ export async function sendMessage(message: string) {
 
         const reply = response.choices[0].message.content;
 
-        span.update({
+        brokle.updateCurrentSpan({
           output: reply,
           metadata: {
             success: true,
@@ -113,18 +112,22 @@ export async function sendMessage(message: string) {
 
         return { success: true, reply };
       } catch (error) {
-        span.update({
+        brokle.updateCurrentSpan({
           metadata: {
             success: false,
             error: error instanceof Error ? error.message : 'Unknown error',
           },
         });
-        span.score({ name: 'error', value: 1 });
+        await brokle.scores.submit({
+          traceId: span.spanContext().traceId,
+          spanId: span.spanContext().spanId,
+          name: 'error',
+          value: 1,
+        });
 
         return { success: false, error: 'Failed to generate response' };
       }
-    }
-  );
+    });
 }
 ```
 
@@ -138,17 +141,9 @@ import { NextRequest } from 'next/server';
 export async function POST(request: NextRequest) {
   const { message, userId } = await request.json();
 
-  // Create trace for the request
-  const span = brokle.startSpan({
-    name: 'chat_api',
-    metadata: { endpoint: '/api/chat' },
-  });
-
-  if (userId) {
-    span.updateTrace({ userId });
-  }
-
   try {
+    // wrapOpenAI automatically creates a generation span that
+    // tracks the full streaming lifecycle, including token usage
     const stream = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [{ role: 'user', content: message }],
@@ -156,41 +151,16 @@ export async function POST(request: NextRequest) {
       stream_options: { include_usage: true },
     });
 
-    // Create readable stream for response
     const encoder = new TextEncoder();
-    let fullResponse = '';
-
     const readable = new ReadableStream({
       async start(controller) {
         try {
           for await (const chunk of stream) {
             const content = chunk.choices[0]?.delta?.content || '';
-            fullResponse += content;
-            controller.enqueue(encoder.encode(content));
-
-            // Capture usage from final chunk
-            if (chunk.usage) {
-              span.update({
-                usage: {
-                  inputTokens: chunk.usage.prompt_tokens,
-                  outputTokens: chunk.usage.completion_tokens,
-                },
-              });
-            }
+            if (content) controller.enqueue(encoder.encode(content));
           }
-
-          span.update({
-            output: fullResponse,
-            metadata: { success: true, streaming: true },
-          });
-          span.end();
           controller.close();
         } catch (error) {
-          span.update({
-            metadata: { success: false, error: String(error) },
-          });
-          span.score({ name: 'error', value: 1 });
-          span.end();
           controller.error(error);
         }
       },
@@ -203,12 +173,6 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    span.update({
-      metadata: { success: false, error: String(error) },
-    });
-    span.score({ name: 'error', value: 1 });
-    span.end();
-
     return Response.json({ error: 'Failed to process request' }, { status: 500 });
   }
 }

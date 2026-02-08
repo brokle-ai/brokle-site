@@ -199,7 +199,7 @@ Your application generates traces through normal operation:
 ```python
 from brokle import wrap_openai
 
-client = wrap_openai(openai.OpenAI(), brokle=brokle)
+client = wrap_openai(openai.OpenAI())
 response = client.chat.completions.create(...)
 # Trace automatically created
 ```

@@ -78,7 +78,7 @@ A comprehensive agent evaluation system that measures:
     brokle = Brokle()
 
     # Wrap OpenAI for automatic tracing
-    openai_client = wrap_openai(openai.OpenAI(), brokle=brokle)
+    openai_client = wrap_openai(openai.OpenAI())
     ```
   </Step>
 </Steps>
@@ -564,7 +564,7 @@ import openai
 
 # Initialize
 brokle = Brokle()
-openai_client = wrap_openai(openai.OpenAI(), brokle=brokle)
+openai_client = wrap_openai(openai.OpenAI())
 
 # Create agent with tools (see Step 1)
 # ... agent setup code ...

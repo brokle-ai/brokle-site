@@ -58,7 +58,7 @@ Integrate Brokle with LangChain to trace chains, agents, retrievers, and all LLM
         brokle = Brokle(api_key="bk_...")
 
         # Create callback handler
-        handler = BrokleCallbackHandler(brokle=brokle)
+        handler = BrokleCallbackHandler()
 
         # Use with any LangChain component
         llm = ChatOpenAI(model="gpt-4", callbacks=[handler])
@@ -74,7 +74,7 @@ Integrate Brokle with LangChain to trace chains, agents, retrievers, and all LLM
         const brokle = new Brokle({ apiKey: 'bk_...' });
 
         // Create callback handler
-        const handler = new BrokleCallbackHandler({ brokle });
+        const handler = new BrokleCallbackHandler();
 
         // Use with any LangChain component
         const llm = new ChatOpenAI({
@@ -150,7 +150,6 @@ Use the callback handler for fine-grained control:
 from brokle.integrations.langchain import BrokleCallbackHandler
 
 handler = BrokleCallbackHandler(
-    brokle=brokle,
     # Configuration options
     trace_name="my_langchain_app",
     capture_input=True,
@@ -184,7 +183,7 @@ Use within a specific context:
 ```python
 from brokle.integrations.langchain import BrokleTracer
 
-with BrokleTracer(brokle=brokle, name="rag_pipeline") as tracer:
+with BrokleTracer(name="rag_pipeline") as tracer:
     # All LangChain operations in this block are traced
     result = chain.invoke(input, config={"callbacks": [tracer.handler]})
 ```
@@ -369,7 +368,6 @@ Streaming traces include:
 
 ```python
 handler = BrokleCallbackHandler(
-    brokle=brokle,
     user_id="user_123",
     session_id="session_456",
     metadata={
@@ -481,8 +479,6 @@ result = comparison_chain.invoke(input, config={"callbacks": [handler]})
 
 ```python
 handler = BrokleCallbackHandler(
-    brokle=brokle,
-
     # Trace configuration
     trace_name="my_app",          # Root trace name
     capture_input=True,           # Capture inputs
@@ -522,7 +518,6 @@ result = chain.invoke(
 
 ```python
 handler = BrokleCallbackHandler(
-    brokle=brokle,
     metadata={
         "product": "customer_support",
         "feature": "ticket_classification"

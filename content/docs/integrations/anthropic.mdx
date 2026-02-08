@@ -56,7 +56,7 @@ Integrate Brokle with Anthropic's Claude models to capture traces, monitor perfo
         brokle = Brokle(api_key="bk_...")
 
         # Wrap Anthropic client
-        client = wrap_anthropic(anthropic.Anthropic(), brokle=brokle)
+        client = wrap_anthropic(anthropic.Anthropic())
         ```
       </Tab>
       <Tab value="javascript" label="JavaScript">
@@ -69,7 +69,7 @@ Integrate Brokle with Anthropic's Claude models to capture traces, monitor perfo
         const brokle = new Brokle({ apiKey: 'bk_...' });
 
         // Wrap Anthropic client
-        const client = wrapAnthropic(new Anthropic(), { brokle });
+        const client = wrapAnthropic(new Anthropic());
         ```
       </Tab>
     </Tabs>
@@ -404,33 +404,27 @@ Track conversation context:
     ```javascript
     const messages = [];
 
-    // First turn
-    messages.push({ role: 'user', content: "Hi, I'm learning Python" });
+    await brokle.startActiveSpan('conversation', async (span) => {
+      span.setAttribute('userId', 'user_123');
+      span.setAttribute('sessionId', 'session_456');
 
-    const span = brokle.startSpan({
-      name: 'conversation',
-      attributes: {
-        userId: 'user_123',
-        sessionId: 'session_456'
-      }
+      // First turn
+      messages.push({ role: 'user', content: "Hi, I'm learning Python" });
+      let response = await client.messages.create({
+        model: 'claude-3-sonnet-20240229',
+        max_tokens: 1024,
+        messages
+      });
+      messages.push({ role: 'assistant', content: response.content[0].text });
+
+      // Second turn
+      messages.push({ role: 'user', content: 'How do I handle exceptions?' });
+      response = await client.messages.create({
+        model: 'claude-3-sonnet-20240229',
+        max_tokens: 1024,
+        messages
+      });
     });
-
-    let response = await client.messages.create({
-      model: 'claude-3-sonnet-20240229',
-      max_tokens: 1024,
-      messages
-    });
-    messages.push({ role: 'assistant', content: response.content[0].text });
-
-    // Second turn
-    messages.push({ role: 'user', content: 'How do I handle exceptions?' });
-    response = await client.messages.create({
-      model: 'claude-3-sonnet-20240229',
-      max_tokens: 1024,
-      messages
-    });
-
-    span.end();
     ```
   </Tab>
 </Tabs>
@@ -478,7 +472,7 @@ from brokle import AsyncBrokle, wrap_anthropic
 import anthropic
 
 brokle = AsyncBrokle(api_key="bk_...")
-client = wrap_anthropic(anthropic.AsyncAnthropic(), brokle=brokle)
+client = wrap_anthropic(anthropic.AsyncAnthropic())
 
 async def chat():
     message = await client.messages.create(
@@ -511,14 +505,7 @@ brokle = Brokle(
     debug=False
 )
 
-client = wrap_anthropic(
-    anthropic.Anthropic(),
-    brokle=brokle,
-    # Integration-specific options
-    capture_input=True,      # Capture message content
-    capture_output=True,     # Capture response content
-    capture_system=True,     # Capture system prompts
-)
+client = wrap_anthropic(anthropic.Anthropic())
 ```
 
 ## Best Practices

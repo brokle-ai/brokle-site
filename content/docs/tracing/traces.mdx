@@ -65,12 +65,12 @@ from brokle import Brokle
 client = Brokle(api_key="your-api-key")
 
 # Using a context manager (recommended)
-with client.trace("my-operation") as trace:
+with client.start_as_current_span("my-operation") as span:
     # All operations inside are automatically captured
     response = openai.chat.completions.create(...)
 
     # Add custom metadata
-    trace.set_metadata({
+    client.update_current_span(metadata={
         "user_id": "user_123",
         "session_id": "session_456"
     })
@@ -83,27 +83,31 @@ import { Brokle } from 'brokle';
 
 const client = new Brokle({ apiKey: 'your-api-key' });
 
-// Using an async callback
-await client.trace('my-operation', async (trace) => {
+// Using a callback (recommended)
+await client.startActiveSpan('my-operation', async (span) => {
   // All operations inside are automatically captured
   const response = await openai.chat.completions.create(...);
 
   // Add custom metadata
-  trace.setMetadata({
-    userId: 'user_123',
-    sessionId: 'session_456'
+  client.updateCurrentSpan({
+    metadata: {
+      userId: 'user_123',
+      sessionId: 'session_456'
+    }
   });
+
+  return response;
 });
 ```
 
 ### Using Decorators (Python)
 
 ```python
-from brokle import Brokle, trace
+from brokle import Brokle, observe
 
 client = Brokle(api_key="your-api-key")
 
-@trace(name="process_query")
+@observe(name="process_query")
 def process_query(query: str) -> str:
     # This function is automatically traced
     response = openai.chat.completions.create(
@@ -163,19 +167,19 @@ Click on a trace to see:
 
 ```python
 # Good - descriptive name
-with client.trace("answer_customer_question") as trace:
+with client.start_as_current_span("answer_customer_question") as span:
     ...
 
 # Bad - generic name
-with client.trace("operation") as trace:
+with client.start_as_current_span("operation") as span:
     ...
 ```
 
 ### 2. Add Relevant Metadata
 
 ```python
-with client.trace("chat") as trace:
-    trace.set_metadata({
+with client.start_as_current_span("chat") as span:
+    client.update_current_span(metadata={
         "user_id": user.id,
         "session_id": session.id,
         "feature": "customer_support"
@@ -185,11 +189,12 @@ with client.trace("chat") as trace:
 ### 3. Handle Errors Properly
 
 ```python
-with client.trace("risky_operation") as trace:
+with client.start_as_current_span("risky_operation") as span:
     try:
         result = process()
+        span.update(output=result)
     except Exception as e:
-        trace.set_error(str(e))
+        span.update(error=str(e))
         raise
 ```
 

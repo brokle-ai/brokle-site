@@ -25,7 +25,7 @@ Brokle integrations use wrapper functions that intercept LLM calls and automatic
 response = openai.chat.completions.create(...)
 
 # After: Full observability with one line
-openai = wrap_openai(openai, brokle=client)
+openai = wrap_openai(openai)
 response = openai.chat.completions.create(...)  # Automatically traced
 ```
 
@@ -131,7 +131,7 @@ from brokle import Brokle, wrap_openai
 import openai
 
 client = Brokle(api_key="bk_...")
-openai = wrap_openai(openai.OpenAI(), brokle=client)
+openai = wrap_openai(openai.OpenAI())
 
 # All calls are now traced
 response = openai.chat.completions.create(...)
@@ -144,7 +144,7 @@ For frameworks like LangChain that support callbacks:
 ```python
 from brokle.integrations.langchain import BrokleCallbackHandler
 
-handler = BrokleCallbackHandler(brokle=client)
+handler = BrokleCallbackHandler()
 chain.invoke(input, callbacks=[handler])
 ```
 
@@ -266,7 +266,7 @@ except openai.RateLimitError as e:
 ```python
 # Good: Single client instance
 client = Brokle(api_key="bk_...")
-openai = wrap_openai(openai.OpenAI(), brokle=client)
+openai = wrap_openai(openai.OpenAI())
 
 # Bad: Multiple instances
 def process():

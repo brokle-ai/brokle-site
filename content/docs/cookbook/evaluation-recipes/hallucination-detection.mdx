@@ -173,36 +173,40 @@ Rate from 0-1 with explanation.`,
     });
 
     async function detectHallucinations(context, response) {
-      return brokle.withSpan(
-        { name: 'hallucination_detection' },
-        async (span) => {
-          const groundedness = await groundednessJudge.evaluate({
-            context,
-            output: response,
-          });
+      return brokle.startActiveSpan('hallucination_detection', async (span) => {
+        const groundedness = await groundednessJudge.evaluate({
+          context,
+          output: response,
+        });
 
-          span.score({
-            name: 'groundedness',
-            value: groundedness.score,
-            comment: groundedness.comment,
-          });
+        await brokle.scores.submit({
+          traceId: span.spanContext().traceId,
+          spanId: span.spanContext().spanId,
+          name: 'groundedness',
+          value: groundedness.score,
+          reason: groundedness.comment,
+        });
 
-          const severity = 1.0 - groundedness.score;
-          span.score({ name: 'hallucination_severity', value: severity });
+        const severity = 1.0 - groundedness.score;
+        await brokle.scores.submit({
+          traceId: span.spanContext().traceId,
+          spanId: span.spanContext().spanId,
+          name: 'hallucination_severity',
+          value: severity,
+        });
 
-          return {
-            groundednessScore: groundedness.score,
-            hallucinationSeverity: severity,
-            isReliable: groundedness.score >= 0.8,
-            recommendation:
-              groundedness.score >= 0.9
-                ? 'safe to use'
-                : groundedness.score >= 0.7
-                ? 'review recommended'
-                : 'significant hallucinations detected',
-          };
-        }
-      );
+        return {
+          groundednessScore: groundedness.score,
+          hallucinationSeverity: severity,
+          isReliable: groundedness.score >= 0.8,
+          recommendation:
+            groundedness.score >= 0.9
+              ? 'safe to use'
+              : groundedness.score >= 0.7
+              ? 'review recommended'
+              : 'significant hallucinations detected',
+        };
+      });
     }
     ```
   </Tab>

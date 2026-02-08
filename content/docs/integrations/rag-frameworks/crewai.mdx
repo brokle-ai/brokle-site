@@ -46,7 +46,7 @@ Integrate Brokle with CrewAI to capture traces across your multi-agent workflows
     brokle = Brokle(api_key="bk_...")
 
     # Create callback handler
-    callback = BrokleCrewAICallback(brokle=brokle)
+    callback = BrokleCrewAICallback()
     ```
   </Step>
 
@@ -365,7 +365,7 @@ class CustomCallback(BrokleCrewAICallback):
         if action.tool == "dangerous_tool":
             self.alert_security_team(agent, action)
 
-callback = CustomCallback(brokle=brokle)
+callback = CustomCallback()
 ```
 
 ## Adding Context
@@ -386,7 +386,7 @@ with brokle.start_as_current_span(name="customer_support_workflow") as span:
         workflow_type="support"
     )
 
-    callback = BrokleCrewAICallback(brokle=brokle)
+    callback = BrokleCrewAICallback()
     crew = Crew(
         agents=[...],
         tasks=[...],
@@ -428,7 +428,6 @@ brokle = Brokle(
 )
 
 callback = BrokleCrewAICallback(
-    brokle=brokle,
     # Callback-specific options
     capture_agent_thoughts=True,   # Capture agent reasoning
     capture_task_output=True,      # Capture full task outputs
@@ -518,7 +517,7 @@ from crewai_tools import SerperDevTool
 
 # Initialize Brokle
 brokle = Brokle(api_key="bk_...")
-callback = BrokleCrewAICallback(brokle=brokle)
+callback = BrokleCrewAICallback()
 
 # Tools
 search_tool = SerperDevTool()

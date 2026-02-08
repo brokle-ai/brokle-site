@@ -62,8 +62,7 @@ Integrate Brokle with Google's Generative AI (Gemini) models to capture traces, 
 
         # Wrap the GenerativeModel
         model = wrap_google(
-            genai.GenerativeModel("gemini-1.5-pro"),
-            brokle=brokle
+            genai.GenerativeModel("gemini-1.5-pro")
         )
         ```
       </Tab>
@@ -80,7 +79,7 @@ Integrate Brokle with Google's Generative AI (Gemini) models to capture traces, 
         const brokle = new Brokle({ apiKey: 'bk_...' });
 
         // Wrap the client
-        const client = wrapGoogle(genAI, { brokle });
+        const client = wrapGoogle(genAI);
         const model = client.getGenerativeModel({ model: 'gemini-1.5-pro' });
         ```
       </Tab>
@@ -244,8 +243,7 @@ Gemini's function calling is automatically traced:
     ]
 
     model = wrap_google(
-        genai.GenerativeModel("gemini-1.5-pro", tools=tools),
-        brokle=brokle
+        genai.GenerativeModel("gemini-1.5-pro", tools=tools)
     )
 
     response = model.generate_content("What's the weather in Paris?")
@@ -366,8 +364,7 @@ Generate and trace embeddings:
   <Tab value="python" label="Python">
     ```python
     embed_model = wrap_google(
-        genai.GenerativeModel("models/embedding-001"),
-        brokle=brokle
+        genai.GenerativeModel("models/embedding-001")
     )
 
     result = genai.embed_content(
@@ -419,8 +416,7 @@ model = wrap_google(
             HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
             HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
         }
-    ),
-    brokle=brokle
+    )
 )
 
 # Safety settings are captured in traces
@@ -458,7 +454,6 @@ brokle = Brokle(
 
 model = wrap_google(
     genai.GenerativeModel("gemini-1.5-pro"),
-    brokle=brokle,
     # Integration-specific options
     capture_input=True,      # Capture prompt content
     capture_output=True,     # Capture response content

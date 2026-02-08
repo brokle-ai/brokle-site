@@ -88,20 +88,14 @@ The context manager automatically handles trace lifecycle:
 
     const client = new Brokle({ apiKey: 'bk_...' });
 
-    const span = client.startSpan({
-      name: 'answer_question',
-      attributes: {
-        sessionId: 'session_123',
-        userId: 'user_456'
-      }
-    });
+    await client.startActiveSpan('answer_question', async (span) => {
+      span.setAttribute('sessionId', 'session_123');
+      span.setAttribute('userId', 'user_456');
 
-    try {
       const result = await processQuestion(userInput);
-      span.end({ output: result });
-    } catch (error) {
-      span.end({ error });
-    }
+      client.updateCurrentSpan({ output: result });
+      return result;
+    });
     ```
   </Tab>
 </Tabs>
@@ -154,16 +148,12 @@ For more control over trace boundaries:
 
     const client = new Brokle({ apiKey: 'bk_...' });
 
-    const span = client.startSpan({ name: 'complex_workflow' });
-
-    try {
+    await client.startActiveSpan('complex_workflow', async (span) => {
       const result = await doWork();
-      span.setAttributes({ status: 'complete' });
-      span.end({ output: result });
-    } catch (error) {
-      span.end({ error });
-      throw error;
-    }
+      span.setAttribute('status', 'complete');
+      client.updateCurrentSpan({ output: result });
+      return result;
+    });
     ```
   </Tab>
 </Tabs>
@@ -190,15 +180,14 @@ Add context to traces for filtering and analysis:
   </Tab>
   <Tab value="javascript" label="JavaScript">
     ```javascript
-    const span = client.startSpan({
-      name: 'customer_support',
-      attributes: {
-        customerTier: 'enterprise',
-        feature: 'billing_inquiry',
-        priority: 'high',
-        userId: 'cust_789',
-        sessionId: 'support_session_456'
-      }
+    await client.startActiveSpan('customer_support', async (span) => {
+      span.setAttribute('customerTier', 'enterprise');
+      span.setAttribute('feature', 'billing_inquiry');
+      span.setAttribute('priority', 'high');
+      span.setAttribute('userId', 'cust_789');
+      span.setAttribute('sessionId', 'support_session_456');
+
+      // Process request...
     });
     ```
   </Tab>

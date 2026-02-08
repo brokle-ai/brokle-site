@@ -112,14 +112,13 @@ Track spending per user for billing or rate limiting:
   </Tab>
   <Tab value="javascript" label="JavaScript">
     ```javascript
-    const span = client.startSpan({
-      name: 'chat_response',
-      attributes: { userId: user.id }
-    });
+    await client.startActiveSpan('chat_response', async (span) => {
+      span.setAttribute('userId', user.id);
 
-    // Cost automatically attributed to user
-    const response = await generateResponse(message);
-    span.end({ output: response });
+      // Cost automatically attributed to user
+      const response = await generateResponse(message);
+      client.updateCurrentSpan({ output: response });
+    });
     ```
   </Tab>
 </Tabs>

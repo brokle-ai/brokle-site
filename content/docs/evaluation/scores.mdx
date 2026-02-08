@@ -186,15 +186,15 @@ Add scores during trace creation:
   </Tab>
   <Tab value="javascript" label="JavaScript">
     ```javascript
-    const span = client.startSpan({ name: 'chat' });
+    await client.startActiveSpan('chat', async (span) => {
+      const response = await llm.generate(prompt);
 
-    const response = await llm.generate(prompt);
+      // Score inline
+      span.setAttribute('score_response_length', response.length / 1000);
+      span.setAttribute('score_tone', 'professional');
 
-    // Score inline
-    span.score({ name: 'response_length', value: response.length / 1000 });
-    span.score({ name: 'tone', value: 'professional' });
-
-    span.end();
+      client.updateCurrentSpan({ output: response });
+    });
     ```
   </Tab>
 </Tabs>

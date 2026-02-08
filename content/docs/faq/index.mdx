@@ -62,7 +62,7 @@ from brokle import Brokle, wrap_openai
 import openai
 
 brokle = Brokle()
-client = wrap_openai(openai.OpenAI(), brokle=brokle)
+client = wrap_openai(openai.OpenAI())
 
 # All calls are now traced automatically
 response = client.chat.completions.create(...)

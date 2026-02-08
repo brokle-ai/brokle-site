@@ -91,7 +91,7 @@ A complete production monitoring system including:
             flush_at=50,               # Or every 50 events
         )
 
-        openai_client = wrap_openai(openai.OpenAI(), brokle=brokle)
+        openai_client = wrap_openai(openai.OpenAI())
         ```
       </Tab>
       <Tab value="javascript" label="JavaScript">
@@ -107,7 +107,7 @@ A complete production monitoring system including:
           flushAt: 50,
         });
 
-        const openai = wrapOpenAI(new OpenAI(), { brokle });
+        const openai = wrapOpenAI(new OpenAI());
         ```
       </Tab>
     </Tabs>
@@ -216,48 +216,57 @@ Create a monitoring wrapper for all AI operations:
         descriptor.value = async function (...args) {
           const startTime = Date.now();
 
-          return brokle.withSpan(
-            { name, metadata: { feature, environment: 'production', sloLatencyMs } },
-            async (span) => {
-              try {
-                const result = await originalMethod.apply(this, args);
+          return brokle.startActiveSpan(name, async (span) => {
+            brokle.updateCurrentSpan({
+              metadata: { feature, environment: 'production', sloLatencyMs },
+            });
 
-                const latencyMs = Date.now() - startTime;
+            try {
+              const result = await originalMethod.apply(this, args);
 
-                span.update({
-                  output: typeof result === 'string' ? result : JSON.stringify(result).slice(0, 500),
-                  metadata: {
-                    latencyMs,
-                    sloMet: latencyMs <= sloLatencyMs,
-                    success: true,
-                  },
-                });
+              const latencyMs = Date.now() - startTime;
 
-                span.score({
-                  name: 'slo_latency',
-                  value: latencyMs <= sloLatencyMs ? 1 : 0,
-                  comment: `Latency: ${latencyMs}ms (SLO: ${sloLatencyMs}ms)`,
-                });
+              brokle.updateCurrentSpan({
+                output: typeof result === 'string' ? result : JSON.stringify(result).slice(0, 500),
+                metadata: {
+                  latencyMs,
+                  sloMet: latencyMs <= sloLatencyMs,
+                  success: true,
+                },
+              });
 
-                return result;
-              } catch (error) {
-                const latencyMs = Date.now() - startTime;
+              await brokle.scores.submit({
+                traceId: span.spanContext().traceId,
+                spanId: span.spanContext().spanId,
+                name: 'slo_latency',
+                value: latencyMs <= sloLatencyMs ? 1 : 0,
+                reason: `Latency: ${latencyMs}ms (SLO: ${sloLatencyMs}ms)`,
+              });
 
-                span.update({
-                  metadata: {
-                    latencyMs,
-                    success: false,
-                    errorType: error.name,
-                    errorMessage: error.message,
-                  },
-                });
+              return result;
+            } catch (error) {
+              const latencyMs = Date.now() - startTime;
 
-                span.score({ name: 'error', value: 1, comment: error.message });
+              brokle.updateCurrentSpan({
+                metadata: {
+                  latencyMs,
+                  success: false,
+                  errorType: error.name,
+                  errorMessage: error.message,
+                },
+              });
 
-                throw error;
-              }
+              await brokle.scores.submit({
+                traceId: span.spanContext().traceId,
+                spanId: span.spanContext().spanId,
+                name: 'error',
+                value: 1,
+                reason: error.message,
+              });
+
+              throw error;
             }
-          );
+          });
         };
 
         return descriptor;
@@ -763,7 +772,7 @@ from datetime import datetime
 
 # Initialize
 brokle = Brokle(environment="production")
-openai_client = wrap_openai(openai.OpenAI(), brokle=brokle)
+openai_client = wrap_openai(openai.OpenAI())
 
 # Set up monitoring
 setup_production_alerts()
