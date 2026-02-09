@@ -463,7 +463,7 @@ async def generate_and_evaluate(prompt):
 
     # Wait for evaluation in background
     result = await eval_task
-    client.score(trace_id=current_trace_id, name="quality", value=result.score)
+    client.scores.submit(trace_id=current_trace_id, name="quality", value=result.score)
 ```
 
 ## Cost Optimization
@@ -501,7 +501,7 @@ SAMPLE_RATE = 0.1  # Evaluate 10% of responses
 def maybe_evaluate(trace_id, input, output):
     if random.random() < SAMPLE_RATE:
         result = judge.evaluate(input=input, output=output)
-        client.score(trace_id=trace_id, name="quality", value=result.score)
+        client.scores.submit(trace_id=trace_id, name="quality", value=result.score)
 ```
 
 ## Best Practices

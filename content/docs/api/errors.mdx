@@ -16,6 +16,7 @@ All API errors follow a consistent format:
 
 ```json
 {
+  "success": false,
   "error": {
     "code": "ERROR_CODE",
     "message": "Human-readable error message",
@@ -248,7 +249,7 @@ Field has wrong data type.
     "message": "Field has invalid type",
     "details": [
       {
-        "field": "pageSize",
+        "field": "limit",
         "expected": "integer",
         "received": "string"
       }

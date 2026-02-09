@@ -1,0 +1,411 @@
+---
+title: Datasets
+description: Create, manage, and populate evaluation datasets programmatically with the Brokle SDK
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+
+# Datasets
+
+Datasets are collections of input/expected pairs used for systematic evaluation of AI applications. Use `client.datasets` to create, populate, and manage datasets programmatically.
+
+## Quick Start
+
+Create a dataset, insert items, and iterate over them in under a minute:
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+from brokle import Brokle
+
+client = Brokle(api_key="bk_...")
+
+# Create a dataset
+dataset = client.datasets.create(
+    name="qa-pairs",
+    description="Question-answer test cases"
+)
+
+# Insert items
+dataset.insert([
+    {"input": {"question": "What is 2+2?"}, "expected": {"answer": "4"}},
+    {"input": {"question": "Capital of France?"}, "expected": {"answer": "Paris"}},
+])
+
+# Iterate over items
+for item in dataset:
+    print(item.input, item.expected)
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+import { Brokle } from 'brokle';
+
+const client = new Brokle({ apiKey: 'bk_...' });
+
+// Create a dataset
+const dataset = await client.datasets.create({
+  name: "qa-pairs",
+  description: "Question-answer test cases",
+});
+
+// Insert items
+await dataset.insert([
+  { input: { question: "What is 2+2?" }, expected: { answer: "4" } },
+  { input: { question: "Capital of France?" }, expected: { answer: "Paris" } },
+]);
+
+// Iterate over items (auto-paginated)
+for await (const item of dataset) {
+  console.log(item.input, item.expected);
+}
+```
+
+</Tab>
+</Tabs>
+
+## Creating Datasets
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+dataset = client.datasets.create(
+    name="my-dataset",
+    description="Optional description",
+    metadata={"team": "ml", "version": "1.0"},
+)
+print(dataset.id, dataset.name)
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+const dataset = await client.datasets.create({
+  name: "my-dataset",
+  description: "Optional description",
+  metadata: { team: "ml", version: "1.0" },
+});
+console.log(dataset.id, dataset.name);
+```
+
+</Tab>
+</Tabs>
+
+## Retrieving Datasets
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+# Get by ID
+dataset = client.datasets.get("01HXYZ...")
+
+# List all datasets (paginated)
+datasets = client.datasets.list(limit=10, page=1)
+for ds in datasets:
+    print(ds.name)
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+// Get by ID
+const dataset = await client.datasets.get("01HXYZ...");
+
+// List all datasets (paginated)
+const datasets = await client.datasets.list({ limit: 10, page: 1 });
+for (const ds of datasets) {
+  console.log(ds.name);
+}
+```
+
+</Tab>
+</Tabs>
+
+## Updating & Deleting
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+# Update metadata
+updated = client.datasets.update(
+    "01HXYZ...",
+    name="renamed-dataset",
+    description="Updated description",
+)
+
+# Delete
+client.datasets.delete("01HXYZ...")
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+// Update metadata
+const updated = await client.datasets.update("01HXYZ...", {
+  name: "renamed-dataset",
+  description: "Updated description",
+});
+
+// Delete
+await client.datasets.delete("01HXYZ...");
+```
+
+</Tab>
+</Tabs>
+
+## Working with Items
+
+### Insert Items
+
+Each item must have an `input` field. `expected` and `metadata` are optional.
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+count = dataset.insert([
+    {"input": {"prompt": "Summarize this article"}, "expected": {"summary": "..."}},
+    {"input": {"prompt": "Translate to French"}, "metadata": {"language": "fr"}},
+])
+print(f"Inserted {count} items")
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+const count = await dataset.insert([
+  { input: { prompt: "Summarize this article" }, expected: { summary: "..." } },
+  { input: { prompt: "Translate to French" }, metadata: { language: "fr" } },
+]);
+console.log(`Inserted ${count} items`);
+```
+
+</Tab>
+</Tabs>
+
+### Iterate Items
+
+Both SDKs support auto-paginated iteration that transparently fetches pages as needed.
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+# Auto-paginated iteration
+for item in dataset:
+    print(item.input, item.expected)
+
+# Manual pagination
+items = dataset.get_items(limit=10, page=1)
+
+# Get total count
+total = dataset.count()
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+// Auto-paginated async iteration
+for await (const item of dataset) {
+  console.log(item.input, item.expected);
+}
+
+// Manual pagination
+const items = await dataset.getItems({ limit: 10, page: 1 });
+
+// Get total count
+const total = await dataset.count();
+```
+
+</Tab>
+</Tabs>
+
+## Import from Files
+
+Import items from JSON, JSONL, or CSV files.
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+# Import from JSON or JSONL file
+result = dataset.insert_from_json("./data.json")
+print(f"Created: {result['created']}, Skipped: {result['skipped']}")
+
+# Import from CSV
+result = dataset.insert_from_csv(
+    "./qa_pairs.csv",
+    column_mapping={
+        "input_column": "question",
+        "expected_column": "answer",
+        "metadata_columns": ["category", "difficulty"],
+    },
+)
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+// Import from JSON or JSONL file
+const result = await dataset.insertFromJson("./data.json");
+console.log(`Created: ${result.created}, Skipped: ${result.skipped}`);
+
+// Import from CSV
+const csvResult = await dataset.insertFromCsv("./qa_pairs.csv", {
+  inputColumn: "question",
+  expectedColumn: "answer",
+  metadataColumns: ["category", "difficulty"],
+});
+```
+
+</Tab>
+</Tabs>
+
+## Import from Production Data
+
+Create dataset items directly from production traces or spans — no manual data collection needed.
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+# Create items from production traces
+result = dataset.from_traces(["trace_id_1", "trace_id_2"])
+print(f"Created {result['created']} items from traces")
+
+# Create items from spans
+result = dataset.from_spans(["span_id_1", "span_id_2"])
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+// Create items from production traces
+const result = await dataset.fromTraces(["trace_id_1", "trace_id_2"]);
+console.log(`Created ${result.created} items from traces`);
+
+// Create items from spans
+const spanResult = await dataset.fromSpans(["span_id_1", "span_id_2"]);
+```
+
+</Tab>
+</Tabs>
+
+## Dataset Versioning
+
+Versions create point-in-time snapshots of your dataset for reproducible evaluations.
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+# Create a version snapshot
+version = dataset.create_version(
+    description="Pre-training dataset v1",
+    metadata={"experiment_id": "exp_123"},
+)
+print(f"Version {version['version']} with {version['item_count']} items")
+
+# List all versions
+versions = dataset.list_versions()
+
+# Get items from a specific version
+result = dataset.get_version_items("version_id", limit=50, offset=0)
+
+# Pin dataset to a version (ensures reproducibility)
+dataset.pin_version(version_id="version_id")
+
+# Unpin to return to live items
+dataset.pin_version(version_id=None)
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+// Create a version snapshot
+const version = await dataset.createVersion({
+  description: "Pre-training dataset v1",
+  metadata: { experiment_id: "exp_123" },
+});
+console.log(`Version ${version.version} with ${version.item_count} items`);
+
+// List all versions
+const versions = await dataset.listVersions();
+
+// Get items from a specific version
+const { items, total } = await dataset.getVersionItems("version_id", {
+  limit: 50,
+  offset: 0,
+});
+
+// Pin dataset to a version (ensures reproducibility)
+await dataset.pinVersion({ versionId: "version_id" });
+
+// Unpin to return to live items
+await dataset.pinVersion({ versionId: null });
+```
+
+</Tab>
+</Tabs>
+
+## DatasetsManager Reference
+
+| Method | Parameters | Returns | Description |
+|--------|-----------|---------|-------------|
+| `create` | `name`, `description?`, `metadata?` | `Dataset` | Create a new dataset |
+| `get` | `datasetId` | `Dataset` | Fetch dataset by ID |
+| `list` | `limit?` (default: 50), `page?` (default: 1) | `Dataset[]` | Paginated list of datasets |
+| `update` | `datasetId`, `name?`, `description?`, `metadata?` | `Dataset` | Update dataset metadata |
+| `delete` | `datasetId` | `void` | Delete a dataset |
+
+## Dataset Object Reference
+
+| Method | Parameters | Returns | Description |
+|--------|-----------|---------|-------------|
+| `insert` | `items[]` — `{input, expected?, metadata?}` | `number` | Insert items, returns count created |
+| `getItems` | `limit?`, `page?` | `DatasetItem[]` | Fetch items with pagination |
+| `count` | — | `number` | Get total item count |
+| `insertFromJson` | `filePath`, `options?` | `BulkImportResult` | Import from JSON/JSONL file |
+| `insertFromCsv` | `filePath`, `columnMapping`, `options?` | `BulkImportResult` | Import from CSV file |
+| `fromTraces` | `traceIds[]`, `options?` | `BulkImportResult` | Create items from production traces |
+| `fromSpans` | `spanIds[]`, `options?` | `BulkImportResult` | Create items from production spans |
+| `createVersion` | `description?`, `metadata?` | `DatasetVersion` | Create a version snapshot |
+| `listVersions` | — | `DatasetVersion[]` | List all versions |
+| `getVersion` | `versionId` | `DatasetVersion` | Get version by ID |
+| `getVersionItems` | `versionId`, `limit?`, `offset?` | `{items, total}` | Get items for a version |
+| `pinVersion` | `versionId` (or `null` to unpin) | `DatasetWithVersionInfo` | Pin dataset to a version |
+| `getInfo` | — | `DatasetWithVersionInfo` | Get dataset with version details |
+| `toJson` | `filePath` | `void` | Export items to JSON file |
+| `export` | — | `DatasetItem[]` | Export all items as array |
+
+### Dataset Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Dataset ID (ULID) |
+| `name` | `string` | Dataset name |
+| `description` | `string?` | Optional description |
+| `metadata` | `object?` | Optional metadata |
+| `createdAt` | `string` | ISO timestamp |
+| `updatedAt` | `string` | ISO timestamp |
+
+## Related
+
+- [Evaluation & Experiments](/docs/sdk/evaluation) — Run experiments against datasets
+- [Span Query](/docs/sdk/query) — Query production spans to populate datasets
+- [Evaluation Concepts](/docs/evaluation) — Conceptual overview of evaluation workflows

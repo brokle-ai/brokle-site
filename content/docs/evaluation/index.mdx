@@ -33,7 +33,7 @@ from brokle import Brokle
 client = Brokle()
 
 # Score a generation
-client.score(
+client.scores.submit(
     trace_id="trace_abc123",
     name="relevance",
     value=0.85,
@@ -49,9 +49,10 @@ Capture real user reactions to AI outputs:
 
 ```python
 # Capture thumbs up/down
-client.feedback(
+client.scores.submit(
     trace_id="trace_abc123",
-    score=1,  # 1 = positive, -1 = negative
+    name="user_feedback",
+    value=1,  # 1 = positive, -1 = negative
     comment="User found the answer helpful"
 )
 ```
@@ -117,13 +118,13 @@ Numeric quality measurements attached to traces or generations:
 
 ```python
 # Numeric score (0-1)
-client.score(trace_id="...", name="accuracy", value=0.92)
+client.scores.submit(trace_id="...", name="accuracy", value=0.92)
 
 # Categorical score
-client.score(trace_id="...", name="tone", value="professional")
+client.scores.submit(trace_id="...", name="tone", value="professional")
 
 # Boolean score
-client.score(trace_id="...", name="contains_pii", value=False)
+client.scores.submit(trace_id="...", name="contains_pii", value=False)
 ```
 
 Scores can be:
@@ -256,8 +257,8 @@ Begin with user feedback and one or two automated scores:
 
 ```python
 # Start with these
-client.score(trace_id, "response_length", len(response))
-client.feedback(trace_id, user_rating)
+client.scores.submit(trace_id=trace_id, name="response_length", value=len(response))
+client.scores.submit(trace_id=trace_id, name="user_feedback", value=user_rating)
 ```
 
 ### Iterate on Evaluators

@@ -51,9 +51,10 @@ User feedback captures real-world reactions to your AI outputs. Unlike automated
       <Tab value="python" label="Python">
         ```python
         # Record thumbs up
-        client.feedback(
+        client.scores.submit(
             trace_id="trace_abc123",
-            score=1,  # 1 = positive, -1 = negative
+            name="user_feedback",
+            value=1,  # 1 = positive, -1 = negative
             comment="User clicked thumbs up"
         )
         ```
@@ -61,9 +62,10 @@ User feedback captures real-world reactions to your AI outputs. Unlike automated
       <Tab value="javascript" label="JavaScript">
         ```javascript
         // Record thumbs up
-        await client.feedback({
+        await client.scores.submit({
           traceId: 'trace_abc123',
-          score: 1,  // 1 = positive, -1 = negative
+          name: 'user_feedback',
+          value: 1,  // 1 = positive, -1 = negative
           comment: 'User clicked thumbs up'
         });
         ```
@@ -86,17 +88,19 @@ User feedback captures real-world reactions to your AI outputs. Unlike automated
   <Tab value="python" label="Python">
     ```python
     # Positive feedback
-    client.feedback(
+    client.scores.submit(
         trace_id="trace_123",
-        score=1,
-        user_id="user_456"
+        name="user_feedback",
+        value=1,
+        source="user:user_456"
     )
 
     # Negative feedback
-    client.feedback(
+    client.scores.submit(
         trace_id="trace_123",
-        score=-1,
-        user_id="user_456",
+        name="user_feedback",
+        value=-1,
+        source="user:user_456",
         comment="The answer was incorrect"
     )
     ```
@@ -104,17 +108,19 @@ User feedback captures real-world reactions to your AI outputs. Unlike automated
   <Tab value="javascript" label="JavaScript">
     ```javascript
     // Positive feedback
-    await client.feedback({
+    await client.scores.submit({
       traceId: 'trace_123',
-      score: 1,
-      userId: 'user_456'
+      name: 'user_feedback',
+      value: 1,
+      source: 'user:user_456'
     });
 
     // Negative feedback
-    await client.feedback({
+    await client.scores.submit({
       traceId: 'trace_123',
-      score: -1,
-      userId: 'user_456',
+      name: 'user_feedback',
+      value: -1,
+      source: 'user:user_456',
       comment: 'The answer was incorrect'
     });
     ```
@@ -130,11 +136,12 @@ User feedback captures real-world reactions to your AI outputs. Unlike automated
     def stars_to_score(stars: int) -> float:
         return (stars - 3) / 2  # 1→-1, 3→0, 5→1
 
-    client.feedback(
+    client.scores.submit(
         trace_id="trace_123",
-        score=stars_to_score(4),  # 4 stars = 0.5
-        user_id="user_456",
-        metadata={"rating_type": "stars", "raw_value": 4}
+        name="user_feedback",
+        value=stars_to_score(4),  # 4 stars = 0.5
+        source="user:user_456",
+        comment="Rating: 4 stars"
     )
     ```
   </Tab>
@@ -145,11 +152,12 @@ User feedback captures real-world reactions to your AI outputs. Unlike automated
       return (stars - 3) / 2;  // 1→-1, 3→0, 5→1
     }
 
-    await client.feedback({
+    await client.scores.submit({
       traceId: 'trace_123',
-      score: starsToScore(4),  // 4 stars = 0.5
-      userId: 'user_456',
-      metadata: { ratingType: 'stars', rawValue: 4 }
+      name: 'user_feedback',
+      value: starsToScore(4),  // 4 stars = 0.5
+      source: 'user:user_456',
+      comment: 'Rating: 4 stars'
     });
     ```
   </Tab>
@@ -161,12 +169,12 @@ User feedback captures real-world reactions to your AI outputs. Unlike automated
   <Tab value="python" label="Python">
     ```python
     # Capture issue category
-    client.feedback(
+    client.scores.submit(
         trace_id="trace_123",
-        score=-1,
-        user_id="user_456",
-        category="inaccurate",
-        comment="The dates mentioned are wrong"
+        name="user_feedback",
+        value=-1,
+        source="user:user_456",
+        comment="[inaccurate] The dates mentioned are wrong"
     )
 
     # Common categories
@@ -185,12 +193,12 @@ User feedback captures real-world reactions to your AI outputs. Unlike automated
   <Tab value="javascript" label="JavaScript">
     ```javascript
     // Capture issue category
-    await client.feedback({
+    await client.scores.submit({
       traceId: 'trace_123',
-      score: -1,
-      userId: 'user_456',
-      category: 'inaccurate',
-      comment: 'The dates mentioned are wrong'
+      name: 'user_feedback',
+      value: -1,
+      source: 'user:user_456',
+      comment: '[inaccurate] The dates mentioned are wrong'
     });
 
     // Common categories
@@ -233,10 +241,11 @@ function FeedbackButtons({ traceId, userId }) {
   const [submitted, setSubmitted] = useState(false);
 
   const submitFeedback = async (score: 1 | -1) => {
-    await client.feedback({
+    await client.scores.submit({
       traceId,
-      score,
-      userId
+      name: 'user_feedback',
+      value: score,
+      source: `user:${userId}`
     });
     setSubmitted(true);
   };
@@ -263,12 +272,12 @@ function FeedbackWithComment({ traceId, userId }) {
   const [category, setCategory] = useState('');
 
   const submitNegativeFeedback = async () => {
-    await client.feedback({
+    await client.scores.submit({
       traceId,
-      score: -1,
-      userId,
-      comment,
-      category
+      name: 'user_feedback',
+      value: -1,
+      source: `user:${userId}`,
+      comment: category ? `[${category}] ${comment}` : comment
     });
     setShowModal(false);
   };
@@ -323,12 +332,12 @@ class FeedbackRequest(BaseModel):
 @app.post("/api/feedback")
 async def submit_feedback(req: FeedbackRequest, user_id: str = Depends(get_user)):
     try:
-        client.feedback(
+        client.scores.submit(
             trace_id=req.trace_id,
-            score=req.score,
-            user_id=user_id,
-            comment=req.comment,
-            category=req.category
+            name="user_feedback",
+            value=req.score,
+            source=f"user:{user_id}",
+            comment=f"[{req.category}] {req.comment}" if req.category else req.comment
         )
         return {"success": True}
     except Exception as e:
@@ -505,16 +514,11 @@ Position feedback buttons prominently:
 ```python
 if score < 0:
     # Prompt for more information
-    client.feedback(
+    client.scores.submit(
         trace_id=trace_id,
-        score=score,
-        category=selected_category,
-        comment=user_comment,
-        metadata={
-            "input_length": len(input),
-            "output_length": len(output),
-            "model": model_name
-        }
+        name="user_feedback",
+        value=score,
+        comment=f"[{selected_category}] {user_comment}" if selected_category else user_comment
     )
 ```
 

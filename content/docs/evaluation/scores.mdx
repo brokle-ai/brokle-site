@@ -52,7 +52,7 @@ Brokle supports three score value types:
       <Tab value="python" label="Python">
         ```python
         # Add a quality score
-        client.score(
+        client.scores.submit(
             trace_id="trace_abc123",
             name="relevance",
             value=0.85,
@@ -63,7 +63,7 @@ Brokle supports three score value types:
       <Tab value="javascript" label="JavaScript">
         ```javascript
         // Add a quality score
-        await client.score({
+        await client.scores.submit({
           traceId: 'trace_abc123',
           name: 'relevance',
           value: 0.85,
@@ -91,21 +91,21 @@ Score an entire trace (conversation, request, or workflow):
   <Tab value="python" label="Python">
     ```python
     # Numeric score
-    client.score(
+    client.scores.submit(
         trace_id="trace_123",
         name="overall_quality",
         value=0.92
     )
 
     # Categorical score
-    client.score(
+    client.scores.submit(
         trace_id="trace_123",
         name="sentiment",
         value="positive"
     )
 
     # Boolean score
-    client.score(
+    client.scores.submit(
         trace_id="trace_123",
         name="contains_pii",
         value=False
@@ -115,21 +115,21 @@ Score an entire trace (conversation, request, or workflow):
   <Tab value="javascript" label="JavaScript">
     ```javascript
     // Numeric score
-    await client.score({
+    await client.scores.submit({
       traceId: 'trace_123',
       name: 'overall_quality',
       value: 0.92
     });
 
     // Categorical score
-    await client.score({
+    await client.scores.submit({
       traceId: 'trace_123',
       name: 'sentiment',
       value: 'positive'
     });
 
     // Boolean score
-    await client.score({
+    await client.scores.submit({
       traceId: 'trace_123',
       name: 'contains_pii',
       value: false
@@ -146,7 +146,7 @@ Score a specific LLM generation within a trace:
   <Tab value="python" label="Python">
     ```python
     # Score a specific generation
-    client.score(
+    client.scores.submit(
         trace_id="trace_123",
         span_id="gen_456",  # Generation span ID
         name="factual_accuracy",
@@ -158,7 +158,7 @@ Score a specific LLM generation within a trace:
   <Tab value="javascript" label="JavaScript">
     ```javascript
     // Score a specific generation
-    await client.score({
+    await client.scores.submit({
       traceId: 'trace_123',
       spanId: 'gen_456',  // Generation span ID
       name: 'factual_accuracy',
@@ -217,61 +217,61 @@ Add scores during trace creation:
 
 ```python
 # Relevance: How well does the response address the query?
-client.score(trace_id, "relevance", value=0.85)
+client.scores.submit(trace_id, "relevance", value=0.85)
 
 # Accuracy: Are the facts correct?
-client.score(trace_id, "accuracy", value=0.92)
+client.scores.submit(trace_id, "accuracy", value=0.92)
 
 # Helpfulness: Did it solve the user's problem?
-client.score(trace_id, "helpfulness", value=0.88)
+client.scores.submit(trace_id, "helpfulness", value=0.88)
 
 # Coherence: Is the response well-structured?
-client.score(trace_id, "coherence", value=0.90)
+client.scores.submit(trace_id, "coherence", value=0.90)
 ```
 
 ### Safety Checks
 
 ```python
 # Toxicity detection
-client.score(trace_id, "toxicity", value=0.02)
+client.scores.submit(trace_id, "toxicity", value=0.02)
 
 # PII detection
-client.score(trace_id, "contains_pii", value=False)
+client.scores.submit(trace_id, "contains_pii", value=False)
 
 # Prompt injection detection
-client.score(trace_id, "injection_attempt", value=False)
+client.scores.submit(trace_id, "injection_attempt", value=False)
 
 # Content policy
-client.score(trace_id, "policy_compliant", value=True)
+client.scores.submit(trace_id, "policy_compliant", value=True)
 ```
 
 ### Performance Metrics
 
 ```python
 # Response length (normalized)
-client.score(trace_id, "response_length", value=len(response) / 2000)
+client.scores.submit(trace_id, "response_length", value=len(response) / 2000)
 
 # Token efficiency
-client.score(trace_id, "token_efficiency", value=output_tokens / max_tokens)
+client.scores.submit(trace_id, "token_efficiency", value=output_tokens / max_tokens)
 
 # First token latency (normalized to target)
-client.score(trace_id, "ttft_score", value=1.0 - (ttft / target_ttft))
+client.scores.submit(trace_id, "ttft_score", value=1.0 - (ttft / target_ttft))
 ```
 
 ### RAG-Specific Scores
 
 ```python
 # Retrieval relevance
-client.score(trace_id, "retrieval_relevance", value=0.85)
+client.scores.submit(trace_id, "retrieval_relevance", value=0.85)
 
 # Groundedness: Is the answer supported by retrieved docs?
-client.score(trace_id, "groundedness", value=0.92)
+client.scores.submit(trace_id, "groundedness", value=0.92)
 
 # Citation accuracy
-client.score(trace_id, "citation_accuracy", value=0.88)
+client.scores.submit(trace_id, "citation_accuracy", value=0.88)
 
 # Context utilization
-client.score(trace_id, "context_utilization", value=0.75)
+client.scores.submit(trace_id, "context_utilization", value=0.75)
 ```
 
 ## Batch Scoring
@@ -288,7 +288,7 @@ Score multiple traces efficiently:
         {"trace_id": "trace_3", "name": "quality", "value": 0.78},
     ]
 
-    client.score_batch(scores)
+    client.scores.batch(scores)
     ```
   </Tab>
   <Tab value="javascript" label="JavaScript">
@@ -300,7 +300,7 @@ Score multiple traces efficiently:
       { traceId: 'trace_3', name: 'quality', value: 0.78 },
     ];
 
-    await client.scoreBatch(scores);
+    await client.scores.batch(scores);
     ```
   </Tab>
 </Tabs>
@@ -311,7 +311,7 @@ Track where scores come from:
 
 ```python
 # From an automated evaluator
-client.score(
+client.scores.submit(
     trace_id="trace_123",
     name="toxicity",
     value=0.02,
@@ -319,7 +319,7 @@ client.score(
 )
 
 # From human review
-client.score(
+client.scores.submit(
     trace_id="trace_123",
     name="quality",
     value=0.95,
@@ -327,7 +327,7 @@ client.score(
 )
 
 # From the application
-client.score(
+client.scores.submit(
     trace_id="trace_123",
     name="response_time",
     value=0.85,
@@ -335,7 +335,7 @@ client.score(
 )
 
 # From LLM-as-judge
-client.score(
+client.scores.submit(
     trace_id="trace_123",
     name="helpfulness",
     value=0.88,
@@ -405,7 +405,7 @@ latency_score = 1.0 - normalize_score(
     max_ms
 )
 
-client.score(trace_id, "latency_score", value=latency_score)
+client.scores.submit(trace_id, "latency_score", value=latency_score)
 ```
 
 ## Score Thresholds and Alerts
@@ -421,7 +421,7 @@ QUALITY_THRESHOLDS = {
 
 def evaluate_and_alert(trace_id: str, scores: dict):
     for name, value in scores.items():
-        client.score(trace_id=trace_id, name=name, value=value)
+        client.scores.submit(trace_id=trace_id, name=name, value=value)
 
         threshold = QUALITY_THRESHOLDS.get(name)
         if threshold:
@@ -443,19 +443,19 @@ def evaluate_and_alert(trace_id: str, scores: dict):
 
 ```python
 # Good: Clear, consistent naming
-client.score(trace_id, "response_relevance", value=0.85)
-client.score(trace_id, "response_accuracy", value=0.92)
+client.scores.submit(trace_id, "response_relevance", value=0.85)
+client.scores.submit(trace_id, "response_accuracy", value=0.92)
 
 # Bad: Inconsistent naming
-client.score(trace_id, "rel", value=0.85)
-client.score(trace_id, "isAccurate", value=0.92)
+client.scores.submit(trace_id, "rel", value=0.85)
+client.scores.submit(trace_id, "isAccurate", value=0.92)
 ```
 
 ### 2. Include Comments for Low Scores
 
 ```python
 if relevance_score < 0.7:
-    client.score(
+    client.scores.submit(
         trace_id=trace_id,
         name="relevance",
         value=relevance_score,
@@ -468,7 +468,7 @@ if relevance_score < 0.7:
 Always indicate where scores come from for debugging:
 
 ```python
-client.score(
+client.scores.submit(
     trace_id=trace_id,
     name="quality",
     value=0.85,
@@ -480,13 +480,13 @@ client.score(
 
 ```python
 # Continuous metric → Numeric
-client.score(trace_id, "similarity", value=0.87)
+client.scores.submit(trace_id, "similarity", value=0.87)
 
 # Classification → Categorical
-client.score(trace_id, "intent", value="question")
+client.scores.submit(trace_id, "intent", value="question")
 
 # Binary check → Boolean
-client.score(trace_id, "contains_code", value=True)
+client.scores.submit(trace_id, "contains_code", value=True)
 ```
 
 ## Troubleshooting
@@ -503,10 +503,10 @@ Numeric scores must be between 0.0 and 1.0:
 
 ```python
 # Bad: Out of range
-client.score(trace_id, "quality", value=85)  # Error!
+client.scores.submit(trace_id, "quality", value=85)  # Error!
 
 # Good: Normalized
-client.score(trace_id, "quality", value=0.85)
+client.scores.submit(trace_id, "quality", value=0.85)
 ```
 
 ### Duplicate Scores
@@ -515,8 +515,8 @@ Multiple scores with the same name on one trace are allowed. Use `config_id` or 
 
 ```python
 # Multiple quality assessments from different sources
-client.score(trace_id, "quality", value=0.85, source="evaluator:v1")
-client.score(trace_id, "quality", value=0.82, source="evaluator:v2")
+client.scores.submit(trace_id, "quality", value=0.85, source="evaluator:v1")
+client.scores.submit(trace_id, "quality", value=0.82, source="evaluator:v2")
 ```
 
 ## Next Steps

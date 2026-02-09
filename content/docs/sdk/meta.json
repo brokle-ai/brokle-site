@@ -1,4 +1,4 @@
 {
   "title": "SDK & API",
-  "pages": ["index", "python", "javascript"]
+  "pages": ["index", "python", "javascript", "grpc-transport", "datasets", "evaluation", "query", "annotations"]
 }

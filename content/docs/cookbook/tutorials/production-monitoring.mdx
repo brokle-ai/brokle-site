@@ -41,7 +41,7 @@ A complete production monitoring system including:
 
 - Brokle account with API key
 - Production AI application with tracing enabled
-- Python 3.9+ or Node.js 18+
+- Python 3.9+ or Node.js 20+
 - Slack/Email for alerts (optional)
 
 ## Setup
@@ -103,7 +103,7 @@ A complete production monitoring system including:
         const brokle = new Brokle({
           environment: 'production',
           sampleRate: 1.0,
-          flushInterval: 5000,
+          flushInterval: 5,             // Flush every 5 seconds
           flushAt: 50,
         });
 

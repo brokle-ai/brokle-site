@@ -15,12 +15,12 @@ Brokle provides official SDKs for Python and JavaScript, enabling you to add AI 
 <Cards>
   <Card
     title="Python SDK"
-    description="Full-featured SDK for Python 3.8+ with async support, decorators, and LLM integrations"
+    description="Full-featured SDK for Python 3.9+ with async support, decorators, and LLM integrations"
     href="/docs/sdk/python"
   />
   <Card
     title="JavaScript SDK"
-    description="TypeScript-first SDK for Node.js 18+ with ESM and CommonJS support"
+    description="TypeScript-first SDK for Node.js 20+ with ESM and CommonJS support"
     href="/docs/sdk/javascript"
   />
 </Cards>
@@ -140,7 +140,7 @@ const client = new Brokle({
   environment: 'production',   // Optional: Environment name
   sampleRate: 1.0,             // Optional: Sampling rate (0.0-1.0)
   flushAt: 100,                // Optional: Batch size
-  flushInterval: 5000,         // Optional: Flush interval (ms)
+  flushInterval: 10,           // Optional: Flush interval (seconds)
   debug: false,                // Optional: Enable debug logging
 });
 ```
@@ -180,7 +180,7 @@ All options work the same across both SDKs:
 | `environment` | string | `"default"` | Environment identifier |
 | `sample_rate` / `sampleRate` | float | `1.0` | Trace sampling rate |
 | `flush_at` / `flushAt` | int | `100` | Traces before auto-flush |
-| `flush_interval` / `flushInterval` | float/int | `5.0` / `5000` | Auto-flush interval |
+| `flush_interval` / `flushInterval` | float/number | `5.0` / `10` | Auto-flush interval (seconds) |
 | `debug` | bool | `false` | Enable debug logging |
 | `compression` | string | `"gzip"` | Payload compression |
 
