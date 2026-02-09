@@ -1,0 +1,117 @@
+---
+title: "A Practical Guide to Evaluating LLM Output Quality"
+description: "How to build automated evaluation pipelines that catch quality issues before your users do. We cover LLM-as-judge, custom evaluators, and human feedback loops."
+author:
+  - hashir
+  - sarah
+date: "2025-12-10"
+tags: [evaluation, quality, guides]
+image: /images/blog/introducing-brokle/cover.svg
+---
+
+## Why Evaluation Matters
+
+You've deployed your LLM application, traces are flowing in, and everything looks healthy — until a user screenshots a completely wrong answer and posts it on Twitter. Sound familiar?
+
+The gap between "model returns a response" and "model returns a _good_ response" is where evaluation comes in. Without systematic evaluation, you're flying blind.
+
+## The Three Pillars of LLM Evaluation
+
+### 1. LLM-as-Judge
+
+The fastest way to get started. Use a separate LLM to score your application's outputs against defined criteria.
+
+```python
+from brokle import Brokle
+
+brokle = Brokle()
+
+with brokle.trace("customer-support") as trace:
+    response = generate_response(user_query)
+
+    # Score with LLM-as-judge
+    trace.evaluate(
+        name="relevance",
+        evaluator="llm",
+        criteria="Is the response relevant to the user's question?",
+        output=response,
+    )
+```
+
+**When to use it**: Early-stage quality monitoring, broad coverage across many interactions, catching obvious failures.
+
+**Watch out for**: Judge model biases, cost at scale, and the meta-problem of evaluating the evaluator.
+
+### 2. Custom Evaluators
+
+Rule-based checks that encode your domain knowledge. These are deterministic, fast, and free.
+
+```python
+# Check response length constraints
+trace.evaluate(
+    name="length-check",
+    evaluator="custom",
+    score=1.0 if 50 < len(response.split()) < 500 else 0.0,
+)
+
+# Verify no PII leakage
+trace.evaluate(
+    name="pii-check",
+    evaluator="custom",
+    score=0.0 if contains_pii(response) else 1.0,
+)
+```
+
+**When to use it**: Hard constraints (length, format, safety), compliance requirements, known failure modes.
+
+### 3. Human Feedback
+
+The gold standard. Collect explicit ratings or implicit signals from real users.
+
+```python
+# Thumbs up/down from user
+trace.evaluate(
+    name="user-feedback",
+    evaluator="human",
+    score=1.0,  # User clicked thumbs up
+    comment="Helpful and accurate",
+)
+```
+
+**When to use it**: Calibrating automated evaluators, edge cases where automated scoring fails, building labeled datasets for fine-tuning.
+
+## Building Your Evaluation Pipeline
+
+A good evaluation pipeline layers all three approaches:
+
+1. **Custom evaluators** run on every trace — they're cheap and catch known issues
+2. **LLM-as-judge** samples a percentage of traces for deeper quality analysis
+3. **Human feedback** provides ground truth for the hardest cases
+
+```
+Every trace  →  Custom evaluators (deterministic checks)
+    ↓
+10% sample   →  LLM-as-judge (quality scoring)
+    ↓
+Edge cases   →  Human review (ground truth)
+```
+
+## Setting Quality Thresholds
+
+Don't just collect scores — act on them. Set up alerts in Brokle when quality drops below your thresholds:
+
+- **Relevance score < 0.7**: Investigate prompt drift or retrieval issues
+- **Safety score < 1.0**: Immediate review — potential harmful output
+- **User feedback < 0.8**: Review recent prompt or model changes
+
+## What We Learned
+
+After running evaluation pipelines across hundreds of thousands of traces, here's what surprised us:
+
+- **Most quality issues are retrieval problems**, not generation problems. The model is usually fine — it's getting bad context.
+- **LLM-as-judge agrees with humans ~85% of the time**. Good enough for monitoring, not good enough for final decisions.
+- **Custom evaluators catch 60% of issues** despite being the simplest approach. Don't skip them.
+
+## Get Started
+
+Brokle's evaluation system is available in both our [Python SDK](/docs/sdk/python) and [JavaScript SDK](/docs/sdk/javascript). Check out the [evaluation docs](/docs/evaluation) for the full API reference and more examples.

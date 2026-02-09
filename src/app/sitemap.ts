@@ -1,5 +1,5 @@
 import { MetadataRoute } from 'next';
-import { source } from '@/lib/source';
+import { source, getBlogPosts } from '@/lib/source';
 
 const baseUrl = 'https://brokle.com';
 
@@ -119,5 +119,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  return [...staticPages, ...docsIndex, ...docPages];
+  // Blog posts
+  const blogPages = getBlogPosts().map((post) => ({
+    url: `${baseUrl}${post.url}`,
+    lastModified: new Date(post.data.date),
+    changeFrequency: 'monthly' as const,
+    priority: 0.7,
+  }));
+
+  return [...staticPages, ...docsIndex, ...docPages, ...blogPages];
 }

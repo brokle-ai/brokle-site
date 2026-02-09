@@ -1,0 +1,69 @@
+---
+title: "Introducing Brokle: Open-Source LLM Observability"
+description: "Today we're excited to announce Brokle, the open-source platform for LLM observability. Learn why we built it and how it can help your team ship better AI applications."
+author:
+  - hashir
+date: "2025-11-15"
+tags: [announcement, observability, open-source]
+image: /images/blog/introducing-brokle/cover.svg
+---
+
+## Why We Built Brokle
+
+As AI applications become increasingly complex, teams need better tools to understand what's happening inside their LLM pipelines. Traditional monitoring falls short — you can't debug a hallucinating model with HTTP status codes alone.
+
+Brokle was born from our own frustration building production AI systems. We needed a way to trace every interaction, evaluate output quality, manage prompt iterations, and understand costs — all in one place.
+
+## What Brokle Offers
+
+### End-to-End Tracing
+
+Built on OpenTelemetry, Brokle captures every step of your LLM pipeline. From the initial user query through retrieval, augmentation, and generation — every operation is traced with full context.
+
+```python
+from brokle import Brokle
+
+brokle = Brokle()
+
+# Automatic instrumentation
+with brokle.trace("chat-completion"):
+    response = openai.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": "Hello!"}]
+    )
+```
+
+### Quality Evaluation
+
+Automated evaluation pipelines help you catch quality issues before your users do. Use LLM-as-judge, custom evaluators, or human feedback to score every response.
+
+### Prompt Management
+
+Version, test, and deploy prompts with confidence. Brokle tracks which prompt versions are in production and how they perform over time.
+
+### Cost Analytics
+
+Understand exactly where your AI budget goes. Brokle breaks down costs by model, provider, feature, and user — helping you optimize spend without sacrificing quality.
+
+## Open Source First
+
+Brokle is fully open source under the MIT license. You can self-host it on your own infrastructure, contributing to and benefiting from a growing community of AI engineers.
+
+We believe observability tooling should be transparent, extensible, and owned by the teams that use it.
+
+## Getting Started
+
+Getting started with Brokle takes just a few minutes:
+
+1. **Self-host** with Docker Compose or deploy to your Kubernetes cluster
+2. **Install the SDK** for Python or JavaScript
+3. **Instrument your app** with a few lines of code
+4. **Explore your traces** in the Brokle dashboard
+
+Check out our [quickstart guide](/docs) to get up and running.
+
+## What's Next
+
+This is just the beginning. We're working on expanded SDK support, deeper integrations with popular frameworks, and advanced analytics features. Follow our progress on [GitHub](https://github.com/brokle-ai/brokle) and join the community.
+
+We can't wait to see what you build with Brokle.

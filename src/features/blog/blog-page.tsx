@@ -1,216 +1,161 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { ArrowRight, Calendar, Clock, User } from "lucide-react"
-import Link from "next/link"
-import { HeroBackground, DisplayHeading } from "@/components/shared"
+'use client';
 
-const featuredPost = {
-  title: "Introducing Brokle: Open-Source LLM Observability",
-  description: "Today we're excited to announce Brokle, the open-source platform for LLM observability. Learn why we built it and how it can help your team.",
-  author: "Brokle Team",
-  date: "November 15, 2025",
-  readTime: "8 min read",
-  category: "Announcement",
-  slug: "#",
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Calendar } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { HeroBackground, DisplayHeading } from '@/components/shared';
+import { useSearchParams, useRouter } from 'next/navigation';
+
+export interface BlogPostData {
+  title: string;
+  description?: string;
+  authors: string[];
+  date: string;
+  tags: string[];
+  url: string;
+  image?: string;
 }
 
-const blogPosts = [
-  {
-    title: "A Complete Guide to LLM Tracing",
-    description: "Learn how to implement comprehensive tracing for your LLM applications, from simple chains to complex agents.",
-    author: "Engineering Team",
-    date: "November 10, 2025",
-    readTime: "12 min read",
-    category: "Engineering",
-    slug: "#",
-  },
-  {
-    title: "Best Practices for Prompt Management",
-    description: "How to version, test, and deploy prompts effectively. Lessons learned from production deployments.",
-    author: "Engineering Team",
-    date: "November 5, 2025",
-    readTime: "10 min read",
-    category: "Best Practices",
-    slug: "#",
-  },
-  {
-    title: "Evaluating LLM Output Quality at Scale",
-    description: "Building automated evaluation pipelines with LLM-as-judge and custom evaluators.",
-    author: "Engineering Team",
-    date: "October 28, 2025",
-    readTime: "15 min read",
-    category: "Engineering",
-    slug: "#",
-  },
-  {
-    title: "Reducing LLM Costs by 50%: A Case Study",
-    description: "How one team used Brokle analytics to identify cost optimization opportunities and cut their AI spend in half.",
-    author: "Customer Success",
-    date: "October 20, 2025",
-    readTime: "7 min read",
-    category: "Case Study",
-    slug: "#",
-  },
-  {
-    title: "OpenTelemetry for LLM Applications",
-    description: "Why we chose OpenTelemetry as our tracing foundation and how you can leverage it.",
-    author: "Engineering Team",
-    date: "October 15, 2025",
-    readTime: "9 min read",
-    category: "Engineering",
-    slug: "#",
-  },
-  {
-    title: "Self-Hosting Brokle: Complete Setup Guide",
-    description: "Step-by-step guide to deploying Brokle on your own infrastructure with Docker and Kubernetes.",
-    author: "DevOps Team",
-    date: "October 8, 2025",
-    readTime: "14 min read",
-    category: "Guides",
-    slug: "#",
-  },
-]
+interface BlogPageProps {
+  posts: BlogPostData[];
+  tags: string[];
+}
 
-const categories = ["All", "Engineering", "Announcement", "Case Study", "Guides", "Best Practices"]
+export default function BlogPage({ posts, tags }: BlogPageProps) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const activeTag = searchParams.get('tag');
 
-export default function BlogPage() {
+  const filteredPosts = activeTag
+    ? posts.filter((post) => post.tags.includes(activeTag))
+    : posts;
+
+  const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+  const allTags = ['All', ...tags];
+
+  function handleTagClick(tag: string) {
+    if (tag === 'All') {
+      router.push('/blog', { scroll: false });
+    } else {
+      router.push(`/blog?tag=${encodeURIComponent(tag)}`, { scroll: false });
+    }
+  }
+
   return (
     <>
       {/* Hero Section */}
       <section className="relative py-16 md:py-24 lg:py-32 overflow-hidden">
         <HeroBackground />
-        <div className="container px-4 mx-auto relative">
+        <div className="container px-4 md:px-8 mx-auto relative">
           <div className="max-w-3xl mx-auto text-center">
-            <DisplayHeading as="h1">Insights & Updates</DisplayHeading>
+            <DisplayHeading as="h1">Blog</DisplayHeading>
             <p className="text-lg md:text-xl text-muted-foreground mt-6 max-w-2xl mx-auto">
-              Engineering insights, product updates, and best practices for building
-              production LLM applications.
+              Technical guides and updates from the Brokle team.
+              {' '}See <Link href="/changelog" className="underline hover:text-foreground transition-colors">Changelog</Link> for more product updates.
             </p>
           </div>
         </div>
       </section>
 
-      {/* Featured Post */}
-      <section className="py-12 bg-muted/30">
-        <div className="container px-4 mx-auto">
-          <div className="max-w-4xl mx-auto">
-            <Card className="border-0 shadow-lg overflow-hidden">
-              <div className="md:flex">
-                <div className="md:w-2/5 bg-gradient-to-br from-primary/20 to-primary/5 p-8 flex items-center justify-center">
-                  <div className="text-center">
-                    <Badge className="mb-4 bg-primary text-primary-foreground">
-                      {featuredPost.category}
-                    </Badge>
-                    <p className="text-sm text-muted-foreground">Featured Post</p>
-                  </div>
-                </div>
-                <div className="md:w-3/5 p-8">
-                  <h2 className="text-2xl font-bold mb-4">
-                    <Link href={featuredPost.slug} className="hover:text-primary transition-colors">
-                      {featuredPost.title}
-                    </Link>
-                  </h2>
-                  <p className="text-muted-foreground mb-6">
-                    {featuredPost.description}
-                  </p>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-6">
-                    <span className="flex items-center gap-1">
-                      <User className="h-4 w-4" />
-                      {featuredPost.author}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      {featuredPost.date}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
-                      {featuredPost.readTime}
-                    </span>
-                  </div>
-                  <Button className="gap-2" asChild>
-                    <Link href={featuredPost.slug}>
-                      Read More <ArrowRight className="h-4 w-4" />
-                    </Link>
+      {/* Tags */}
+      {tags.length > 0 && (
+        <section className="py-8">
+          <div className="container px-4 md:px-8 mx-auto">
+            <div className="max-w-4xl mx-auto">
+              <div className="flex flex-wrap gap-2 justify-center">
+                {allTags.map((tag) => (
+                  <Button
+                    key={tag}
+                    variant={
+                      (tag === 'All' && !activeTag) || tag === activeTag
+                        ? 'default'
+                        : 'outline'
+                    }
+                    size="sm"
+                    onClick={() => handleTagClick(tag)}
+                  >
+                    {capitalize(tag)}
                   </Button>
-                </div>
+                ))}
               </div>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Categories */}
-      <section className="py-8">
-        <div className="container px-4 mx-auto">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex flex-wrap gap-2 justify-center">
-              {categories.map((category) => (
-                <Button
-                  key={category}
-                  variant={category === "All" ? "default" : "outline"}
-                  size="sm"
-                >
-                  {category}
-                </Button>
-              ))}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Blog Posts Grid */}
-      <section className="py-12">
-        <div className="container px-4 mx-auto">
-          <div className="max-w-5xl mx-auto">
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {blogPosts.map((post) => (
-                <Card key={post.title} className="border-0 shadow-none bg-muted/30 hover:bg-muted/50 transition-colors">
-                  <CardHeader className="pb-2">
-                    <Badge variant="outline" className="w-fit mb-2">
-                      {post.category}
-                    </Badge>
-                    <CardTitle className="text-lg">
-                      <Link href={post.slug} className="hover:text-primary transition-colors">
-                        {post.title}
-                      </Link>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <CardDescription className="text-sm mb-4 line-clamp-2">
-                      {post.description}
-                    </CardDescription>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {post.date}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {post.readTime}
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            <div className="mt-12 text-center">
-              <Button variant="outline">
-                Load More Posts
-              </Button>
+      {filteredPosts.length > 0 && (
+        <section className="py-12">
+          <div className="container px-4 md:px-8 mx-auto">
+            <div className="max-w-5xl mx-auto">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredPosts.map((post) => (
+                  <Link
+                    key={post.url}
+                    href={post.url}
+                    className="group block"
+                  >
+                    <article className="rounded-lg overflow-hidden bg-muted/30 transition-colors hover:bg-muted/50">
+                      {post.image && (
+                        <div className="relative aspect-video overflow-hidden">
+                          <Image
+                            src={post.image}
+                            alt={post.title}
+                            fill
+                            className="object-cover transition-transform group-hover:scale-105"
+                            sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+                          />
+                        </div>
+                      )}
+                      <div className="p-4">
+                        {post.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mb-2">
+                            {post.tags.map((tag) => (
+                              <Badge key={tag} variant="outline">
+                                {capitalize(tag)}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                        <h3 className="text-lg font-semibold group-hover:text-primary transition-colors">
+                          {post.title}
+                        </h3>
+                        <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                          {post.description}
+                        </p>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground mt-3">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {new Date(post.date).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                            })}
+                          </span>
+                          <span>
+                            by {post.authors.join(', ')}
+                          </span>
+                        </div>
+                      </div>
+                    </article>
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Newsletter */}
       <section className="py-16 bg-muted/30">
-        <div className="container px-4 mx-auto">
+        <div className="container px-4 md:px-8 mx-auto">
           <div className="max-w-2xl mx-auto text-center">
             <h2 className="text-2xl font-bold mb-4">Stay Updated</h2>
             <p className="text-muted-foreground mb-8">
-              Get the latest posts delivered straight to your inbox. No spam, unsubscribe anytime.
+              Get the latest posts delivered straight to your inbox. No spam,
+              unsubscribe anytime.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
               <input
@@ -223,7 +168,6 @@ export default function BlogPage() {
           </div>
         </div>
       </section>
-
     </>
-  )
+  );
 }
