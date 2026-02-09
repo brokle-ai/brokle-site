@@ -102,7 +102,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   // Documentation pages from Fumadocs
-  const docPages = source.getPages().map((page) => ({
+  const docPages = source.getPages().filter((page) => page.slugs.length > 0).map((page) => ({
     url: `${baseUrl}/docs/${page.slugs.join('/')}`,
     lastModified: new Date(),
     changeFrequency: 'weekly' as const,
