@@ -1,0 +1,207 @@
+---
+title: gRPC Transport
+description: Configure gRPC transport for high-performance OTLP telemetry export in Brokle SDKs
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+
+# gRPC Transport
+
+Brokle SDKs support gRPC as an alternative to HTTP for OTLP telemetry export (traces, metrics, logs). HTTP is the default transport and works for most use cases. gRPC is better suited for high-throughput, low-latency scenarios with persistent connections.
+
+<Callout type="info">
+**HTTP is recommended for most users.** Use gRPC when you need persistent connections, are already running gRPC infrastructure, or need to optimize for high-throughput workloads.
+</Callout>
+
+## HTTP vs gRPC
+
+| Aspect | HTTP (Default) | gRPC |
+|--------|----------------|------|
+| Activation | Default, no extra config | Set `transport: 'grpc'` |
+| Endpoint format | `{baseUrl}/v1/{traces\|metrics\|logs}` | `{hostname}:4317` |
+| Dependencies | Built-in | Must install separately |
+| Compression | Gzip (automatic) | gRPC native |
+| Auth | `X-API-Key` header | gRPC metadata (`x-api-key`) |
+| Browser support | Yes | No (Node.js / Python only) |
+| Best for | Most use cases, serverless, browser | High-throughput, persistent connections |
+
+## Installation
+
+gRPC exporters are not bundled by default. Install the required packages for your SDK:
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```bash
+pip install opentelemetry-exporter-otlp-proto-grpc
+```
+
+The core Brokle SDK includes HTTP exporters. The gRPC package adds `OTLPSpanExporter`, `OTLPMetricExporter`, and `OTLPLogExporter` for gRPC transport.
+
+</Tab>
+<Tab value="JavaScript">
+
+```bash
+npm install @grpc/grpc-js
+```
+
+The Brokle SDK includes gRPC exporter packages (`@opentelemetry/exporter-trace-otlp-grpc`, etc.) as optional dependencies. Only `@grpc/grpc-js` needs to be explicitly installed as the underlying gRPC runtime.
+
+</Tab>
+</Tabs>
+
+## Configuration
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+from brokle import Brokle
+
+client = Brokle(
+    api_key="bk_your_api_key",
+    transport="grpc",                     # Enable gRPC transport
+    grpc_endpoint="api.brokle.com:4317",  # Optional: explicit endpoint
+)
+```
+
+### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `transport` | str | `"http"` | Transport protocol: `"http"` or `"grpc"` |
+| `grpc_endpoint` | str | `None` (derived) | Explicit gRPC endpoint (`host:port`) |
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BROKLE_TRANSPORT` | `"http"` | Transport protocol |
+| `BROKLE_GRPC_ENDPOINT` | Derived from `base_url` | Explicit gRPC endpoint |
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+import { Brokle } from 'brokle';
+
+const client = new Brokle({
+  apiKey: 'bk_your_api_key',
+  transport: 'grpc',                     // Enable gRPC transport
+  grpcEndpoint: 'api.brokle.com:4317',   // Optional: explicit endpoint
+});
+```
+
+### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `transport` | string | `"http"` | Transport protocol: `"http"` or `"grpc"` |
+| `grpcEndpoint` | string | `undefined` (derived) | Explicit gRPC endpoint (`host:port`) |
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BROKLE_TRANSPORT` | `"http"` | Transport protocol |
+| `BROKLE_GRPC_ENDPOINT` | Derived from `baseUrl` | Explicit gRPC endpoint |
+
+</Tab>
+</Tabs>
+
+## Endpoint Resolution
+
+When no explicit gRPC endpoint is set, both SDKs derive it from the base URL:
+
+1. Extract the hostname from `baseUrl` / `base_url`
+2. Append the standard OTLP gRPC port `:4317`
+3. Fall back to `localhost:4317` if parsing fails
+
+| Base URL | Derived gRPC Endpoint |
+|----------|-----------------------|
+| `https://api.brokle.com` | `api.brokle.com:4317` |
+| `http://localhost:8080` | `localhost:4317` |
+| `https://custom.host.io` | `custom.host.io:4317` |
+
+To use a non-standard port, set the gRPC endpoint explicitly:
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+client = Brokle(
+    api_key="bk_your_api_key",
+    transport="grpc",
+    grpc_endpoint="custom.host.io:9317",
+)
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+const client = new Brokle({
+  apiKey: 'bk_your_api_key',
+  transport: 'grpc',
+  grpcEndpoint: 'custom.host.io:9317',
+});
+```
+
+</Tab>
+</Tabs>
+
+## TLS / Security
+
+TLS is determined automatically based on the base URL scheme:
+
+| Base URL Scheme | gRPC Connection | When |
+|-----------------|-----------------|------|
+| `https://` | Secure (TLS enabled) | Production |
+| `http://` | Insecure (plaintext) | Development |
+| `localhost` / `127.0.0.1` | Insecure (plaintext) | Local development |
+
+Authentication uses the same API key as HTTP, passed as gRPC metadata:
+
+- **Metadata key**: `x-api-key`
+- **Value**: Your Brokle API key (`bk_...`)
+
+The SDK handles this automatically — no additional auth configuration is needed for gRPC.
+
+## Self-Hosted Backend
+
+The Brokle backend runs a gRPC OTLP server alongside the HTTP API server.
+
+| Setting | Value |
+|---------|-------|
+| Default port | `4317` (standard OTLP gRPC) |
+| Environment variable | `GRPC_PORT` |
+| Authentication | API keys via gRPC metadata (`x-api-key`) |
+| Signals | Traces, Metrics, Logs |
+| Max message size | 10 MB |
+
+The gRPC server supports all three OTLP signal types with the same processing pipeline as HTTP: OTLP data is validated, transformed, published to Redis streams, and stored in ClickHouse by the worker.
+
+<Callout type="warn">
+Ensure port 4317 is accessible from your application. If running behind a reverse proxy, configure it to support HTTP/2 for gRPC traffic.
+</Callout>
+
+## Troubleshooting
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| `gRPC transport requires opentelemetry-exporter-otlp-proto-grpc` | Missing Python package | `pip install opentelemetry-exporter-otlp-proto-grpc` |
+| `gRPC transport requires @grpc/grpc-js` | Missing JS package | `npm install @grpc/grpc-js` |
+| `gRPC transport for traces requires @opentelemetry/exporter-trace-otlp-grpc` | Missing JS exporter package | `npm install @opentelemetry/exporter-trace-otlp-grpc` |
+| `gRPC transport for traces requires async initialization` (JS) | Sync API called with gRPC | SDK handles this internally; ensure you are on the latest SDK version |
+| Connection refused on `:4317` | gRPC server not running or port blocked | Verify backend is running and port 4317 is accessible |
+| TLS handshake failure | Scheme/TLS mismatch | Use `https://` base URL for TLS, `http://` for plaintext |
+| `Invalid transport: xyz` | Typo in transport value | Must be exactly `"http"` or `"grpc"` |
+
+## Related
+
+- [Python SDK Configuration](/docs/sdk/python#configuration-reference)
+- [JavaScript SDK Configuration](/docs/sdk/javascript#configuration-reference)
+- [Traces API](/docs/api/endpoints/traces)
+- [Metrics API](/docs/api/endpoints/metrics)
+- [Logs API](/docs/api/endpoints/logs)

@@ -583,14 +583,31 @@ await client.startActiveSpan('operation', async (span) => {
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `apiKey` | string | Required | Brokle API key |
-| `baseUrl` | string | `https://api.brokle.com` | API endpoint |
-| `environment` | string | `"default"` | Environment name |
+| **Required** | | | |
+| `apiKey` | string | Required | Brokle API key (must start with `bk_`) |
+| **Connection** | | | |
+| `baseUrl` | string | `"https://api.brokle.com"` | API endpoint |
+| `timeout` | number | `30000` | Request timeout in milliseconds |
+| **Control** | | | |
+| `enabled` | boolean | `true` | Master switch to disable SDK completely |
+| `tracingEnabled` | boolean | `true` | Enable/disable tracing |
+| `metricsEnabled` | boolean | `true` | Enable/disable metrics collection |
+| `logsEnabled` | boolean | `false` | Enable/disable OTLP log export |
+| **Project** | | | |
+| `environment` | string | `"default"` | Environment name (e.g., `production`, `staging`) |
+| `release` | string | `""` | Release identifier for deployment tracking |
 | `sampleRate` | number | `1.0` | Sampling rate (0.0-1.0) |
-| `flushAt` | number | `100` | Batch size before flush |
-| `flushInterval` | number | `10` | Auto-flush interval (seconds) |
 | `debug` | boolean | `false` | Enable debug logging |
-| `compression` | string | `"gzip"` | Payload compression |
+| **Batching** | | | |
+| `flushAt` | number | `100` | Maximum batch size before flush |
+| `flushInterval` | number | `10` | Auto-flush interval in seconds |
+| `flushSync` | boolean | `false` | Use SimpleSpanProcessor (for serverless) |
+| `maxQueueSize` | number | `10000` | Maximum spans in queue |
+| **Transport** | | | |
+| `compression` | string | `"gzip"` | Compression algorithm |
+| `transport` | string | `"http"` | Transport protocol: `"http"` or `"grpc"` ([guide](/docs/sdk/grpc-transport)) |
+| `grpcEndpoint` | string | `undefined` | Explicit gRPC endpoint ([guide](/docs/sdk/grpc-transport)) |
+| `metricsInterval` | number | `60000` | Metrics export interval in milliseconds |
 
 ## Best Practices
 
@@ -685,6 +702,10 @@ const client = new Brokle({ sampleRate: 0.1 }); // 10% sampling
 ## Next Steps
 
 - [Python SDK →](/docs/sdk/python)
+- [Datasets →](/docs/sdk/datasets)
+- [Evaluation & Experiments →](/docs/sdk/evaluation)
+- [Span Query →](/docs/sdk/query)
+- [Annotation Queues →](/docs/sdk/annotations)
 - [OpenAI Integration →](/docs/integrations/openai)
 - [Tracing Guide →](/docs/tracing)
 - [API Reference →](/docs/api)

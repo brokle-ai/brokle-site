@@ -1,0 +1,780 @@
+---
+title: Evaluation
+description: Run experiments, submit scores, and use built-in scorers to evaluate AI applications with the Brokle SDK
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+
+# Evaluation
+
+Run experiments, submit scores, and use built-in scorers to evaluate AI applications. Brokle supports two evaluation approaches:
+
+1. **Span-based experiments** — Score production LLM calls retrospectively using queried spans
+2. **Dataset-based experiments** — Run a task function against a dataset and score the outputs
+
+Use `client.experiments` for running experiments, `client.scores` for submitting individual scores, and built-in scorers from `brokle/scorers`.
+
+## Quick Start: Span-Based Evaluation
+
+Score production spans without re-executing your LLM calls:
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+from brokle import Brokle
+from brokle.scorers import Contains, LengthCheck
+
+client = Brokle(api_key="bk_...")
+
+# 1. Query production spans
+spans = list(client.query.query_iter(
+    filter="gen_ai.provider.name=openai",
+))
+
+# 2. Run scorers against them
+results = client.experiments.run(
+    name="production-quality-check",
+    spans=spans,
+    extract_input=lambda s: {"prompt": s.input},
+    extract_output=lambda s: s.output,
+    scorers=[Contains(substring="helpful"), LengthCheck(min_length=50)],
+)
+
+# 3. View results
+print(results.summary)
+print(results.url)  # Dashboard link
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+import { Brokle } from 'brokle';
+import { Contains, LengthCheck } from 'brokle/scorers';
+
+const client = new Brokle({ apiKey: 'bk_...' });
+
+// 1. Query production spans
+const spans = [];
+for await (const span of client.query.queryIter({
+  filter: 'gen_ai.provider.name=openai',
+})) {
+  spans.push(span);
+}
+
+// 2. Run scorers against them
+const results = await client.experiments.run({
+  name: "production-quality-check",
+  spans,
+  extractInput: (s) => ({ prompt: s.input }),
+  extractOutput: (s) => s.output,
+  scorers: [Contains({ substring: "helpful" }), LengthCheck({ minLength: 50 })],
+});
+
+// 3. View results
+console.log(results.summary);
+console.log(results.url); // Dashboard link
+```
+
+</Tab>
+</Tabs>
+
+<Callout type="info">
+**Query production spans, then score them.** This is span-based evaluation — no re-instrumentation needed. See [Span Query](/docs/sdk/query) for filter syntax and query options.
+</Callout>
+
+## Quick Start: Dataset-Based Evaluation
+
+Run a task function against a dataset and score the outputs:
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+from brokle import Brokle
+from brokle.scorers import ExactMatch
+
+client = Brokle(api_key="bk_...")
+
+dataset = client.datasets.get("01HXYZ...")
+
+results = client.experiments.run(
+    name="gpt4-accuracy-test",
+    dataset=dataset,
+    task=lambda input: call_llm(input["question"]),
+    scorers=[ExactMatch()],
+)
+
+for name, stats in results.summary.items():
+    print(f"{name}: mean={stats['mean']:.2f}, pass_rate={stats['pass_rate']:.2%}")
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+import { Brokle } from 'brokle';
+import { ExactMatch } from 'brokle/scorers';
+
+const client = new Brokle({ apiKey: 'bk_...' });
+
+const dataset = await client.datasets.get("01HXYZ...");
+
+const results = await client.experiments.run({
+  name: "gpt4-accuracy-test",
+  dataset,
+  task: async (input) => callLLM(input.question),
+  scorers: [ExactMatch()],
+});
+
+for (const [name, stats] of Object.entries(results.summary)) {
+  console.log(`${name}: mean=${stats.mean.toFixed(2)}, passRate=${(stats.passRate * 100).toFixed(0)}%`);
+}
+```
+
+</Tab>
+</Tabs>
+
+## Running Experiments
+
+### Span-Based Experiments
+
+Evaluate production spans without re-executing tasks. Provide `spans`, `extractInput`, and `extractOutput`.
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+results = client.experiments.run(
+    name="retrospective-analysis",
+    spans=queried_spans,
+    extract_input=lambda s: {"prompt": s.input},
+    extract_output=lambda s: s.output,
+    extract_expected=lambda s: s.attributes.get("expected"),  # optional
+    scorers=[ExactMatch(), Contains(substring="answer")],
+    max_concurrency=10,
+    metadata={"team": "ml"},
+    on_progress=lambda completed, total: print(f"{completed}/{total}"),
+)
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+const results = await client.experiments.run({
+  name: "retrospective-analysis",
+  spans: queriedSpans,
+  extractInput: (s) => ({ prompt: s.input }),
+  extractOutput: (s) => s.output,
+  extractExpected: (s) => s.attributes.expected, // optional
+  scorers: [ExactMatch(), Contains({ substring: "answer" })],
+  maxConcurrency: 10,
+  metadata: { team: "ml" },
+  onProgress: (completed, total) => console.log(`${completed}/${total}`),
+});
+```
+
+</Tab>
+</Tabs>
+
+### Dataset-Based Experiments
+
+Run a task function on each dataset item and score the outputs. Provide `dataset` and `task`.
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+results = client.experiments.run(
+    name="my-evaluation",
+    dataset=dataset,                           # Dataset object or dataset ID string
+    task=lambda input: call_llm(input["prompt"]),
+    scorers=[ExactMatch(), Contains()],
+    max_concurrency=10,
+    trial_count=3,                             # Run each item 3 times for variance
+    metadata={"model": "gpt-4"},
+    on_progress=lambda completed, total: print(f"{completed}/{total}"),
+)
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+const results = await client.experiments.run({
+  name: "my-evaluation",
+  dataset,                                     // Dataset object or dataset ID string
+  task: async (input) => callLLM(input.prompt),
+  scorers: [ExactMatch(), Contains()],
+  maxConcurrency: 10,
+  trialCount: 3,                               // Run each item 3 times for variance
+  metadata: { model: "gpt-4" },
+  onProgress: (completed, total) => console.log(`${completed}/${total}`),
+});
+```
+
+</Tab>
+</Tabs>
+
+### Run Options
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `name` | `string` | — (required) | Experiment name |
+| `dataset` | `Dataset \| string` | — | Dataset or ID (dataset-based mode) |
+| `task` | `(input) => output` | — | Task function (dataset-based mode) |
+| `spans` | `QueriedSpan[]` | — | Queried spans (span-based mode) |
+| `extractInput` | `(span) => object` | — | Extract input from span (span-based mode) |
+| `extractOutput` | `(span) => any` | — | Extract output from span (span-based mode) |
+| `extractExpected` | `(span) => any` | `None` | Extract expected from span (optional) |
+| `scorers` | `Scorer[]` | — (required) | Scorers to apply |
+| `maxConcurrency` | `number` | `10` | Max concurrent evaluations |
+| `trialCount` | `number` | `1` | Trials per item (dataset-based only) |
+| `metadata` | `object` | `None` | Additional experiment metadata |
+| `onProgress` | `(completed, total) => void` | `None` | Progress callback |
+
+<Callout type="warn">
+`dataset`/`task` and `spans`/`extractInput`/`extractOutput` are mutually exclusive. Choose one mode per experiment.
+</Callout>
+
+### Experiment Results
+
+The `run` method returns an `EvaluationResults` object:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `experimentId` | `string` | Created experiment ID |
+| `experimentName` | `string` | Experiment name |
+| `datasetId` | `string?` | Dataset ID (dataset-based only) |
+| `source` | `"dataset" \| "spans"` | Which mode was used |
+| `url` | `string?` | Dashboard link to view results |
+| `summary` | `Record<string, SummaryStats>` | Per-scorer statistics |
+| `items` | `EvaluationItem[]` | Individual item results |
+
+**SummaryStats** for each scorer:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `mean` | `number` | Average score |
+| `stdDev` | `number` | Standard deviation |
+| `min` | `number` | Minimum score |
+| `max` | `number` | Maximum score |
+| `count` | `number` | Total items scored |
+| `passRate` | `number` | Fraction that scored successfully (0-1) |
+
+## Managing Experiments
+
+### Get & List
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+# Get by ID
+experiment = client.experiments.get("01HXYZ...")
+print(experiment.name, experiment.status)
+
+# List all experiments
+experiments = client.experiments.list(limit=10, page=1)
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+// Get by ID
+const experiment = await client.experiments.get("01HXYZ...");
+console.log(experiment.name, experiment.status);
+
+// List all experiments
+const experiments = await client.experiments.list({ limit: 10, page: 1 });
+```
+
+</Tab>
+</Tabs>
+
+### Compare Experiments
+
+Compare score metrics across multiple experiments. Optionally specify a baseline for calculating differences.
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+# Compare two experiments
+result = client.experiments.compare(["exp_id_1", "exp_id_2"])
+
+# Compare with baseline
+result = client.experiments.compare(
+    ["exp_id_1", "exp_id_2", "exp_id_3"],
+    baseline_id="exp_id_1",
+)
+
+print(result.scores)   # Per-scorer aggregations per experiment
+print(result.diffs)    # Differences from baseline
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+// Compare two experiments
+const result = await client.experiments.compare(["exp_id_1", "exp_id_2"]);
+
+// Compare with baseline
+const withBaseline = await client.experiments.compare(
+  ["exp_id_1", "exp_id_2", "exp_id_3"],
+  { baselineId: "exp_id_1" },
+);
+
+console.log(result.scores);  // Per-scorer aggregations per experiment
+console.log(result.diffs);   // Differences from baseline
+```
+
+</Tab>
+</Tabs>
+
+### Re-run Experiments
+
+Create a new experiment based on an existing one.
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+# Re-run with a new name
+new_exp = client.experiments.rerun("01HXYZ...", name="my-experiment-v2")
+
+# Re-run with auto-generated name
+rerun = client.experiments.rerun("01HXYZ...")
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+// Re-run with a new name
+const newExp = await client.experiments.rerun("01HXYZ...", {
+  name: "my-experiment-v2",
+});
+
+// Re-run with auto-generated name
+const rerun = await client.experiments.rerun("01HXYZ...");
+```
+
+</Tab>
+</Tabs>
+
+## Submitting Scores
+
+Use `client.scores` to submit individual scores to traces or spans outside of experiments.
+
+### Direct Score
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+client.scores.submit(
+    trace_id="abc123",
+    name="accuracy",
+    value=0.95,
+    type="NUMERIC",
+    source="code",
+    reason="High quality response",
+    span_id="span456",  # optional: score a specific span
+)
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+await client.scores.submit({
+  traceId: "abc123",
+  name: "accuracy",
+  value: 0.95,
+  type: ScoreType.NUMERIC,
+  source: ScoreSource.CODE,
+  reason: "High quality response",
+  spanId: "span456", // optional: score a specific span
+});
+```
+
+</Tab>
+</Tabs>
+
+### Score with a Scorer
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+from brokle.scorers import ExactMatch
+
+exact = ExactMatch(name="answer_match")
+
+client.scores.submit(
+    trace_id="abc123",
+    scorer=exact,
+    output="Paris",
+    expected="Paris",
+)
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+import { ExactMatch } from 'brokle/scorers';
+
+const exact = ExactMatch({ name: "answer_match" });
+
+await client.scores.submit({
+  traceId: "abc123",
+  scorer: exact,
+  output: "Paris",
+  expected: "Paris",
+});
+```
+
+</Tab>
+</Tabs>
+
+### Batch Scores
+
+Submit multiple scores at once.
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+result = client.scores.batch([
+    {"trace_id": "abc123", "name": "accuracy", "value": 0.9},
+    {"trace_id": "abc123", "name": "fluency", "value": 0.85},
+    {"trace_id": "def456", "name": "relevance", "value": 0.95},
+])
+print(f"Created {result['created']} scores")
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+const result = await client.scores.batch([
+  { traceId: "abc123", name: "accuracy", value: 0.9 },
+  { traceId: "abc123", name: "fluency", value: 0.85 },
+  { traceId: "def456", name: "relevance", value: 0.95 },
+]);
+console.log(`Created ${result.created} scores`);
+```
+
+</Tab>
+</Tabs>
+
+## Built-in Scorers
+
+Brokle ships with heuristic scorers, LLM-as-Judge scorers, and pre-built evaluators.
+
+### Heuristic Scorers
+
+| Scorer | What it Does | Return Type | Options |
+|--------|-------------|-------------|---------|
+| `ExactMatch` | `output === expected` (string comparison) | BOOLEAN | `name?`, `caseSensitive?` (default: true) |
+| `Contains` | Output includes substring | BOOLEAN | `name?`, `caseSensitive?`, `substring?` |
+| `RegexMatch` | Output matches regex pattern | BOOLEAN | `pattern` (required), `name?` |
+| `JSONValid` | Output is valid JSON | BOOLEAN | `name?` |
+| `LengthCheck` | Output within min/max length | BOOLEAN | `minLength?`, `maxLength?`, `name?` |
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+from brokle.scorers import ExactMatch, Contains, RegexMatch, JSONValid, LengthCheck
+
+# Exact match (case-insensitive)
+exact = ExactMatch(name="answer_match", case_sensitive=False)
+
+# Substring check
+contains = Contains(substring="hello")
+
+# Regex pattern
+email_check = RegexMatch(pattern=r"[a-z]+@[a-z]+\.[a-z]+", name="has_email")
+
+# JSON validation
+json_check = JSONValid()
+
+# Length bounds
+length = LengthCheck(min_length=10, max_length=1000)
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+import { ExactMatch, Contains, RegexMatch, JSONValid, LengthCheck } from 'brokle/scorers';
+
+// Exact match (case-insensitive)
+const exact = ExactMatch({ name: "answer_match", caseSensitive: false });
+
+// Substring check
+const contains = Contains({ substring: "hello" });
+
+// Regex pattern
+const emailCheck = RegexMatch({ pattern: /[a-z]+@[a-z]+\.[a-z]+/i, name: "has_email" });
+
+// JSON validation
+const jsonCheck = JSONValid();
+
+// Length bounds
+const length = LengthCheck({ minLength: 10, maxLength: 1000 });
+```
+
+</Tab>
+</Tabs>
+
+### LLM-as-Judge Scorer
+
+Use an LLM model to evaluate outputs with custom prompts. Uses your project's AI credentials configured in the Brokle dashboard.
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+from brokle.scorers import LLMScorer
+
+relevance = LLMScorer(
+    client=client,
+    name="relevance",
+    prompt="Rate the relevance of this response 0-10:\n\nInput: {{input}}\nOutput: {{output}}",
+    model="gpt-4o",
+)
+
+# Use in experiments
+results = client.experiments.run(
+    name="relevance-check",
+    spans=spans,
+    extract_input=lambda s: {"prompt": s.input},
+    extract_output=lambda s: s.output,
+    scorers=[relevance],
+)
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+import { LLMScorer } from 'brokle/scorers';
+
+const relevance = LLMScorer({
+  client: { apiKey: 'bk_...', baseUrl: 'https://api.brokle.com' },
+  name: 'relevance',
+  prompt: 'Rate the relevance of this response 0-10:\n\nInput: {{input}}\nOutput: {{output}}',
+  model: 'gpt-4o',
+});
+
+// Use in experiments
+const results = await client.experiments.run({
+  name: "relevance-check",
+  spans,
+  extractInput: (s) => ({ prompt: s.input }),
+  extractOutput: (s) => s.output,
+  scorers: [relevance],
+});
+```
+
+</Tab>
+</Tabs>
+
+### Pre-built Evaluators
+
+Ready-to-use LLM-as-Judge evaluators with standardized prompts for common evaluation criteria.
+
+| Category | Evaluators | Description |
+|----------|-----------|-------------|
+| **Factuality** | `Factuality`, `Hallucination` | Factual accuracy and hallucination detection |
+| **Relevance** | `Relevance`, `AnswerRelevance` | Response and Q&A relevance |
+| **Quality** | `Coherence`, `Fluency`, `Completeness` | Writing quality metrics |
+| **Safety** | `Safety`, `Toxicity` | Content safety and toxicity |
+| **RAG** | `ContextPrecision`, `ContextRecall`, `Faithfulness` | RAG pipeline quality |
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+from brokle.scorers import Factuality, Relevance, Coherence, Safety
+
+# Create evaluators (all use your project's AI credentials)
+factuality = Factuality(client=client, model="gpt-4o")
+relevance = Relevance(client=client, model="gpt-4o")
+coherence = Coherence(client=client, model="gpt-4o")
+safety = Safety(client=client, model="gpt-4o")
+
+# Use in experiments
+results = client.experiments.run(
+    name="comprehensive-eval",
+    spans=spans,
+    extract_input=lambda s: {"prompt": s.input},
+    extract_output=lambda s: s.output,
+    scorers=[factuality, relevance, coherence, safety],
+)
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+import { Factuality, Relevance, Coherence, Safety } from 'brokle/scorers';
+
+const config = { apiKey: 'bk_...', baseUrl: 'https://api.brokle.com' };
+
+// Create evaluators
+const factuality = Factuality({ client: config, model: 'gpt-4o' });
+const relevance = Relevance({ client: config, model: 'gpt-4o' });
+const coherence = Coherence({ client: config, model: 'gpt-4o' });
+const safety = Safety({ client: config, model: 'gpt-4o' });
+
+// Use in experiments
+const results = await client.experiments.run({
+  name: "comprehensive-eval",
+  spans,
+  extractInput: (s) => ({ prompt: s.input }),
+  extractOutput: (s) => s.output,
+  scorers: [factuality, relevance, coherence, safety],
+});
+```
+
+</Tab>
+</Tabs>
+
+You can also create evaluators dynamically by name:
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+from brokle.scorers import create_evaluator, list_evaluators
+
+# List available evaluators
+print(list_evaluators())
+# ['factuality', 'hallucination', 'relevance', 'answer_relevance', ...]
+
+# Create by name
+evaluator = create_evaluator("factuality", client=client, model="gpt-4o")
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+import { createEvaluator, listEvaluators } from 'brokle/scorers';
+
+// List available evaluators
+console.log(listEvaluators());
+// ['factuality', 'hallucination', 'relevance', 'answer_relevance', ...]
+
+// Create by name
+const evaluator = createEvaluator("factuality", {
+  client: { apiKey: 'bk_...', baseUrl: 'https://api.brokle.com' },
+  model: 'gpt-4o',
+});
+```
+
+</Tab>
+</Tabs>
+
+### Custom Scorers
+
+Create custom scorers using the `scorer` decorator/factory:
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+from brokle.scorers import scorer, multi_scorer
+
+# Single-score custom scorer
+@scorer
+def word_count(output, expected=None, **kwargs):
+    count = len(str(output).split())
+    return count / 100  # Normalize to 0-1
+
+# Multi-score custom scorer
+@multi_scorer
+def quality_metrics(output, expected=None, **kwargs):
+    text = str(output)
+    return [
+        {"name": "word_count", "value": len(text.split()) / 100, "type": "NUMERIC"},
+        {"name": "has_greeting", "value": 1 if "hello" in text.lower() else 0, "type": "BOOLEAN"},
+    ]
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+import { scorer, multiScorer } from 'brokle/scorers';
+
+// Single-score custom scorer
+const wordCount = scorer("word_count", ({ output }) => {
+  const count = String(output ?? "").split(/\s+/).length;
+  return count / 100; // Normalize to 0-1
+});
+
+// Multi-score custom scorer
+const qualityMetrics = multiScorer("quality", ({ output }) => {
+  const text = String(output ?? "");
+  return [
+    { name: "word_count", value: text.split(/\s+/).length / 100, type: ScoreType.NUMERIC },
+    { name: "has_greeting", value: text.toLowerCase().includes("hello") ? 1 : 0, type: ScoreType.BOOLEAN },
+  ];
+});
+```
+
+</Tab>
+</Tabs>
+
+## Score Types & Sources
+
+### Score Types
+
+| Type | Value | Description |
+|------|-------|-------------|
+| `NUMERIC` | `number` (0-1 typical) | Continuous score |
+| `BOOLEAN` | `0` or `1` | Pass/fail |
+| `CATEGORICAL` | `number` + `stringValue` | Named category |
+
+### Score Sources
+
+| Source | Description |
+|--------|-------------|
+| `code` | Computed by code (heuristic scorers) |
+| `llm` | Evaluated by LLM (LLM-as-Judge) |
+| `human` | Provided by human reviewers |
+
+## ExperimentsManager Reference
+
+| Method | Parameters | Returns | Description |
+|--------|-----------|---------|-------------|
+| `run` | See [Run Options](#run-options) | `EvaluationResults` | Run an experiment |
+| `get` | `experimentId` | `Experiment` | Get experiment by ID |
+| `list` | `limit?`, `page?` | `Experiment[]` | List experiments |
+| `compare` | `experimentIds[]`, `baselineId?` | `ComparisonResult` | Compare experiments |
+| `rerun` | `experimentId`, `name?`, `description?`, `metadata?` | `Experiment` | Re-run an experiment |
+
+## ScoresManager Reference
+
+| Method | Parameters | Returns | Description |
+|--------|-----------|---------|-------------|
+| `submit` | `traceId`, `name?`, `value?`, `scorer?`, `output?`, `expected?`, `type?`, `source?`, `spanId?`, `reason?`, `metadata?` | `ScoreResponse` | Submit a score |
+| `batch` | `scores[]` — `{traceId, name, value, type?, source?, spanId?, reason?, metadata?}` | `{ created: number }` | Submit multiple scores |
+
+## Related
+
+- [Span Query](/docs/sdk/query) — Query production spans for span-based evaluation
+- [Datasets](/docs/sdk/datasets) — Create and manage evaluation datasets
+- [Annotation Queues](/docs/sdk/annotations) — Route items to human reviewers
+- [Evaluation Concepts](/docs/evaluation) — Conceptual overview of evaluation workflows

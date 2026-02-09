@@ -3,6 +3,8 @@
   "pages": [
     "traces",
     "spans",
+    "metrics",
+    "logs",
     "evaluations",
     "projects"
   ]

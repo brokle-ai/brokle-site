@@ -537,8 +537,8 @@ with client.start_as_current_span(name="operation") as span:
 | `flush_interval` | float | `5.0` | Auto-flush interval in seconds (0.1-60.0) |
 | **Transport** | | | |
 | `compression` | str | `"gzip"` | Compression algorithm (`gzip`, `deflate`, or `None`) |
-| `transport` | str | `"http"` | Transport protocol (`http` or `grpc`) |
-| `grpc_endpoint` | str | `None` | Explicit gRPC endpoint |
+| `transport` | str | `"http"` | Transport protocol: `http` or `grpc` ([guide](/docs/sdk/grpc-transport)) |
+| `grpc_endpoint` | str | `None` | Explicit gRPC endpoint ([guide](/docs/sdk/grpc-transport)) |
 | `use_protobuf` | bool | `True` | Use Protobuf format for OTLP export |
 
 ## Best Practices
@@ -621,6 +621,10 @@ client = Brokle(sample_rate=0.1)  # 10% sampling
 ## Next Steps
 
 - [JavaScript SDK →](/docs/sdk/javascript)
+- [Datasets →](/docs/sdk/datasets)
+- [Evaluation & Experiments →](/docs/sdk/evaluation)
+- [Span Query →](/docs/sdk/query)
+- [Annotation Queues →](/docs/sdk/annotations)
 - [OpenAI Integration →](/docs/integrations/openai)
 - [Tracing Guide →](/docs/tracing)
 - [API Reference →](/docs/api)

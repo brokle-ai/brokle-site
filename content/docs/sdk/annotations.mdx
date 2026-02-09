@@ -1,0 +1,366 @@
+---
+title: Annotation Queues
+description: Add traces and spans to annotation queues for human-in-the-loop review with the Brokle SDK
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+
+# Annotation Queues
+
+Add traces and spans to annotation queues for human-in-the-loop (HITL) review using `client.annotations`. Combine automated scoring with human judgment for comprehensive quality assurance.
+
+<Callout type="info">
+**Use annotations alongside automated evaluation.** Query low-confidence spans, route them to human reviewers, then use their feedback to improve your system. Create queues in the Brokle dashboard, then use the SDK to add items programmatically.
+</Callout>
+
+## Quick Start
+
+Query spans that need review and add them to an annotation queue:
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+from brokle import Brokle
+
+client = Brokle(api_key="bk_...")
+
+# Query spans that may need human review
+spans = list(client.query.query_iter(
+    filter="service.name=chatbot AND status=error",
+))
+
+# Add them to an annotation queue
+span_ids = [s.span_id for s in spans]
+result = client.annotations.add_spans(
+    "queue_id",
+    span_ids,
+    priority=5,
+)
+print(f"Added {result['created']} items to queue")
+
+# List pending items
+items = client.annotations.list_items("queue_id", status="pending")
+for item in items["items"]:
+    print(f"{item['object_id']}: {item['status']}")
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+import { Brokle } from 'brokle';
+
+const client = new Brokle({ apiKey: 'bk_...' });
+
+// Query spans that may need human review
+const spans = [];
+for await (const span of client.query.queryIter({
+  filter: 'service.name=chatbot AND status=error',
+})) {
+  spans.push(span);
+}
+
+// Add them to an annotation queue
+const spanIds = spans.map((s) => s.spanId);
+const result = await client.annotations.addSpans(
+  "queue_id",
+  spanIds,
+  { priority: 5 },
+);
+console.log(`Added ${result.created} items to queue`);
+
+// List pending items
+const items = await client.annotations.listItems("queue_id", {
+  status: "pending",
+});
+for (const item of items.items) {
+  console.log(`${item.objectId}: ${item.status}`);
+}
+```
+
+</Tab>
+</Tabs>
+
+## Adding Items to Queues
+
+### Add Traces
+
+Convenience method to add multiple traces to a queue at once.
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+result = client.annotations.add_traces(
+    "queue_id",
+    ["trace_id_1", "trace_id_2", "trace_id_3"],
+    priority=5,
+    metadata={"reason": "low_confidence"},
+)
+print(f"Added {result['created']} traces")
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+const result = await client.annotations.addTraces(
+  "queue_id",
+  ["trace_id_1", "trace_id_2", "trace_id_3"],
+  { priority: 5, metadata: { reason: "low_confidence" } },
+);
+console.log(`Added ${result.created} traces`);
+```
+
+</Tab>
+</Tabs>
+
+### Add Spans
+
+Convenience method to add multiple spans to a queue.
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+result = client.annotations.add_spans(
+    "queue_id",
+    ["span_id_1", "span_id_2"],
+    priority=10,
+    metadata={"category": "error_responses"},
+)
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+const result = await client.annotations.addSpans(
+  "queue_id",
+  ["span_id_1", "span_id_2"],
+  { priority: 10, metadata: { category: "error_responses" } },
+);
+```
+
+</Tab>
+</Tabs>
+
+### Add Mixed Items
+
+Add a mix of traces and spans with individual priority and metadata.
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+result = client.annotations.add_items("queue_id", [
+    {"object_id": "trace_1", "object_type": "trace", "priority": 5},
+    {"object_id": "span_1", "object_type": "span", "priority": 10, "metadata": {"urgent": True}},
+])
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+const result = await client.annotations.addItems("queue_id", [
+  { objectId: "trace_1", objectType: "trace", priority: 5 },
+  { objectId: "span_1", objectType: "span", priority: 10, metadata: { urgent: true } },
+]);
+```
+
+</Tab>
+</Tabs>
+
+### Item Input Fields
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `objectId` | `string` | — (required) | Trace ID or span ID |
+| `objectType` | `"trace" \| "span"` | `"trace"` | Type of object being annotated |
+| `priority` | `number` | `0` | Higher priority = processed first |
+| `metadata` | `object` | `None` | Additional metadata |
+
+## Listing Queue Items
+
+List items in a queue with optional status filtering and pagination.
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+# List all pending items
+result = client.annotations.list_items("queue_id", status="pending")
+print(f"Total: {result['total']}")
+for item in result["items"]:
+    print(f"{item['object_id']}: priority={item['priority']}")
+
+# Paginate through items
+result = client.annotations.list_items("queue_id", limit=20, offset=0)
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+// List all pending items
+const result = await client.annotations.listItems("queue_id", {
+  status: "pending",
+});
+console.log(`Total: ${result.total}`);
+for (const item of result.items) {
+  console.log(`${item.objectId}: priority=${item.priority}`);
+}
+
+// Paginate through items
+const page = await client.annotations.listItems("queue_id", {
+  limit: 20,
+  offset: 0,
+});
+```
+
+</Tab>
+</Tabs>
+
+### List Options
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `status` | `"pending" \| "completed" \| "skipped"` | `None` (all) | Filter by item status |
+| `limit` | `number` | `50` | Maximum items to return |
+| `offset` | `number` | `0` | Items to skip for pagination |
+
+### List Result
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `items` | `QueueItem[]` | Array of queue items |
+| `total` | `number` | Total matching items |
+
+## Workflow: Automated Triage to Human Review
+
+Combine automated scoring with human review for a complete quality pipeline:
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+from brokle import Brokle
+from brokle.scorers import LengthCheck, Contains
+
+client = Brokle(api_key="bk_...")
+
+# 1. Query production spans
+spans = list(client.query.query_iter(
+    filter="gen_ai.provider.name=openai AND service.name=chatbot",
+))
+
+# 2. Run automated scorers
+results = client.experiments.run(
+    name="automated-triage",
+    spans=spans,
+    extract_input=lambda s: {"prompt": s.input},
+    extract_output=lambda s: s.output,
+    scorers=[LengthCheck(min_length=20), Contains(substring="sorry")],
+)
+
+# 3. Find low-quality items to route to humans
+low_quality_span_ids = []
+for item in results.items:
+    avg_score = sum(s.value for s in item.scores) / len(item.scores) if item.scores else 0
+    if avg_score < 0.5 and item.span_id:
+        low_quality_span_ids.append(item.span_id)
+
+# 4. Route to annotation queue for human review
+if low_quality_span_ids:
+    result = client.annotations.add_spans(
+        "review_queue_id",
+        low_quality_span_ids,
+        priority=5,
+        metadata={"source": "automated_triage"},
+    )
+    print(f"Routed {result['created']} spans for human review")
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+import { Brokle } from 'brokle';
+import { LengthCheck, Contains } from 'brokle/scorers';
+
+const client = new Brokle({ apiKey: 'bk_...' });
+
+// 1. Query production spans
+const spans = [];
+for await (const span of client.query.queryIter({
+  filter: 'gen_ai.provider.name=openai AND service.name=chatbot',
+})) {
+  spans.push(span);
+}
+
+// 2. Run automated scorers
+const results = await client.experiments.run({
+  name: "automated-triage",
+  spans,
+  extractInput: (s) => ({ prompt: s.input }),
+  extractOutput: (s) => s.output,
+  scorers: [LengthCheck({ minLength: 20 }), Contains({ substring: "sorry" })],
+});
+
+// 3. Find low-quality items to route to humans
+const lowQualitySpanIds = results.items
+  .filter((item) => {
+    const avg = item.scores.length
+      ? item.scores.reduce((sum, s) => sum + s.value, 0) / item.scores.length
+      : 0;
+    return avg < 0.5 && item.spanId;
+  })
+  .map((item) => item.spanId!);
+
+// 4. Route to annotation queue for human review
+if (lowQualitySpanIds.length > 0) {
+  const result = await client.annotations.addSpans(
+    "review_queue_id",
+    lowQualitySpanIds,
+    { priority: 5, metadata: { source: "automated_triage" } },
+  );
+  console.log(`Routed ${result.created} spans for human review`);
+}
+```
+
+</Tab>
+</Tabs>
+
+## Error Handling
+
+The annotations SDK provides specific error types for common failure modes:
+
+| Error | When | Recovery |
+|-------|------|----------|
+| `QueueNotFoundError` | Queue ID doesn't exist | Verify queue ID in dashboard |
+| `ItemNotFoundError` | Item not found in queue | Check object ID and queue |
+| `ItemLockedError` | Item locked by another reviewer | Wait or choose a different item |
+| `NoItemsAvailableError` | No pending items in queue | All items have been reviewed |
+| `AnnotationError` | General API error | Check error message for details |
+
+## AnnotationsManager Reference
+
+| Method | Parameters | Returns | Description |
+|--------|-----------|---------|-------------|
+| `addItems` | `queueId`, `items[]` — `{objectId, objectType?, priority?, metadata?}` | `{ created: number }` | Add mixed items to queue |
+| `addTraces` | `queueId`, `traceIds[]`, `priority?`, `metadata?` | `{ created: number }` | Add traces to queue |
+| `addSpans` | `queueId`, `spanIds[]`, `priority?`, `metadata?` | `{ created: number }` | Add spans to queue |
+| `listItems` | `queueId`, `status?`, `limit?`, `offset?` | `{ items, total }` | List queue items |
+
+<Callout type="info">
+Python uses snake_case method names: `add_items`, `add_traces`, `add_spans`, `list_items`.
+</Callout>
+
+## Related
+
+- [Span Query](/docs/sdk/query) — Query spans to find items for annotation
+- [Evaluation & Experiments](/docs/sdk/evaluation) — Automated scoring before human review
+- [Datasets](/docs/sdk/datasets) — Create datasets from annotated items

@@ -1,0 +1,346 @@
+---
+title: Span Query
+description: Query production traces and spans programmatically for span-based evaluation and analysis
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+
+# Span Query
+
+Query production traces and spans programmatically using `client.query`. This powers **span-based evaluation** — score production LLM calls without re-instrumenting your application.
+
+<Callout type="info">
+**Span Query + Experiments = span-based evaluation.** Query real production data, then run scorers against it. See the [Evaluation guide](/docs/sdk/evaluation) for the full workflow.
+</Callout>
+
+## Quick Start
+
+Query OpenAI spans from the last 24 hours and iterate over results:
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+from brokle import Brokle
+from datetime import datetime, timedelta
+
+client = Brokle(api_key="bk_...")
+
+# Query recent OpenAI spans
+result = client.query.query(
+    filter="gen_ai.provider.name=openai",
+    start_time=datetime.now() - timedelta(hours=24),
+    limit=100,
+)
+
+print(f"Found {result.total} spans")
+for span in result.spans:
+    print(span.name, span.model, span.input[:50])
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+import { Brokle } from 'brokle';
+
+const client = new Brokle({ apiKey: 'bk_...' });
+
+// Query recent OpenAI spans
+const result = await client.query.query({
+  filter: 'gen_ai.provider.name=openai',
+  startTime: new Date(Date.now() - 24 * 60 * 60 * 1000),
+  limit: 100,
+});
+
+console.log(`Found ${result.total} spans`);
+for (const span of result.spans) {
+  console.log(span.name, span.model, span.input?.slice(0, 50));
+}
+```
+
+</Tab>
+</Tabs>
+
+## Querying Spans
+
+The `query` method returns a page of matching spans with pagination metadata.
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+result = client.query.query(
+    filter="service.name=chatbot AND gen_ai.response.model=gpt-4",
+    start_time=datetime(2024, 1, 1),
+    end_time=datetime(2024, 1, 31),
+    limit=50,
+    page=1,
+)
+
+print(f"Total: {result.total}, Has more: {result.has_more}")
+for span in result.spans:
+    print(span.span_id, span.name)
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+const result = await client.query.query({
+  filter: 'service.name=chatbot AND gen_ai.response.model=gpt-4',
+  startTime: new Date('2024-01-01'),
+  endTime: new Date('2024-01-31'),
+  limit: 50,
+  page: 1,
+});
+
+console.log(`Total: ${result.total}, Has more: ${result.hasMore}`);
+for (const span of result.spans) {
+  console.log(span.spanId, span.name);
+}
+```
+
+</Tab>
+</Tabs>
+
+### Query Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `filter` | `string` | — (required) | Filter expression (see syntax below) |
+| `startTime` | `Date` / `datetime` | `None` | Start of time range |
+| `endTime` | `Date` / `datetime` | `None` | End of time range |
+| `limit` | `number` | `1000` | Maximum spans per page |
+| `page` | `number` | `1` | Page number (1-indexed) |
+
+### Query Result
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `spans` | `QueriedSpan[]` | Array of matching spans |
+| `total` | `number` | Total count of matching spans |
+| `hasMore` | `boolean` | Whether more pages exist |
+| `nextPage` | `number?` | Next page number (if `hasMore` is true) |
+
+## Filter Syntax
+
+Filters use attribute matching with `AND` / `OR` operators to combine conditions.
+
+### Attribute Matching
+
+```
+attribute_name=value
+attribute_name>value
+attribute_name<value
+```
+
+### Common Filter Examples
+
+| Filter | What it Finds |
+|--------|---------------|
+| `gen_ai.provider.name=openai` | All OpenAI calls |
+| `gen_ai.response.model=gpt-4` | GPT-4 responses |
+| `service.name=chatbot` | Chatbot service spans |
+| `gen_ai.provider.name=anthropic AND gen_ai.response.model=claude-3-opus` | Claude 3 Opus calls |
+| `service.name=chatbot AND status=error` | Failed chatbot spans |
+
+### Combining Conditions
+
+```
+# AND — both conditions must match
+gen_ai.provider.name=openai AND gen_ai.response.model=gpt-4
+
+# OR — either condition matches
+gen_ai.provider.name=openai OR gen_ai.provider.name=anthropic
+```
+
+## Auto-Pagination (Iterator)
+
+For large result sets, use the auto-paginating iterator to process spans one at a time without loading everything into memory.
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+# Auto-paginated iteration
+for span in client.query.query_iter(filter="gen_ai.provider.name=openai"):
+    print(span.name, span.output)
+
+# Collect into list with early exit
+spans = []
+for span in client.query.query_iter(filter="service.name=chatbot"):
+    spans.append(span)
+    if len(spans) >= 1000:
+        break
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+// Auto-paginated async iteration
+for await (const span of client.query.queryIter({
+  filter: 'gen_ai.provider.name=openai',
+})) {
+  console.log(span.name, span.output);
+}
+
+// Collect into array with early exit
+const spans: QueriedSpan[] = [];
+for await (const span of client.query.queryIter({ filter: 'service.name=chatbot' })) {
+  spans.push(span);
+  if (spans.length >= 1000) break;
+}
+```
+
+</Tab>
+</Tabs>
+
+## Validating Filters
+
+Check filter syntax before running expensive queries.
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+# Soft validation — returns result object
+result = client.query.validate("service.name=test")
+if result.valid:
+    print("Filter is valid")
+else:
+    print(f"Invalid filter: {result.error}")
+
+# Strict validation — raises on invalid
+client.query.validate_or_raise("service.name=test")  # raises InvalidFilterError if invalid
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+// Soft validation — returns result object
+const result = await client.query.validate('service.name=test');
+if (result.valid) {
+  console.log('Filter is valid');
+} else {
+  console.error('Invalid filter:', result.error);
+}
+
+// Strict validation — throws on invalid
+await client.query.validateOrThrow('service.name=test'); // throws InvalidFilterError if invalid
+```
+
+</Tab>
+</Tabs>
+
+## QueriedSpan Object
+
+Each span returned from a query includes these properties:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `traceId` | `string` | Parent trace ID |
+| `spanId` | `string` | Span ID |
+| `parentSpanId` | `string?` | Parent span ID (if nested) |
+| `name` | `string` | Span name |
+| `serviceName` | `string?` | Service name from resource attributes |
+| `startTime` | `string` | ISO timestamp |
+| `endTime` | `string?` | ISO timestamp |
+| `duration` | `number?` | Duration in microseconds |
+| `status` | `"unset" \| "ok" \| "error"` | Span status |
+| `statusMessage` | `string?` | Status detail message |
+| `attributes` | `object` | All OTEL attributes (merged resource + span) |
+| `events` | `SpanEvent[]?` | Span events |
+| `input` | `string?` | Span input (prompt) |
+| `output` | `string?` | Span output (response) |
+| `model` | `string?` | LLM model name |
+| `tokenUsage` | `TokenUsage?` | `{ promptTokens, completionTokens, totalTokens }` |
+
+## End-to-End: Query to Evaluate
+
+The full span-based evaluation workflow: query production spans, then run scorers against them.
+
+<Tabs items={["Python", "JavaScript"]}>
+<Tab value="Python">
+
+```python
+from brokle import Brokle
+from brokle.scorers import Contains, LengthCheck
+
+client = Brokle(api_key="bk_...")
+
+# 1. Query production spans
+spans = list(client.query.query_iter(
+    filter="gen_ai.provider.name=openai AND service.name=chatbot",
+))
+
+# 2. Run experiment with scorers
+results = client.experiments.run(
+    name="chatbot-quality-check",
+    spans=spans,
+    extract_input=lambda s: {"prompt": s.input},
+    extract_output=lambda s: s.output,
+    scorers=[Contains(substring="helpful"), LengthCheck(min_length=50)],
+)
+
+# 3. View results
+for name, stats in results.summary.items():
+    print(f"{name}: mean={stats['mean']:.2f}, pass_rate={stats['pass_rate']:.2%}")
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```typescript
+import { Brokle } from 'brokle';
+import { Contains, LengthCheck } from 'brokle/scorers';
+
+const client = new Brokle({ apiKey: 'bk_...' });
+
+// 1. Query production spans
+const spans = [];
+for await (const span of client.query.queryIter({
+  filter: 'gen_ai.provider.name=openai AND service.name=chatbot',
+})) {
+  spans.push(span);
+}
+
+// 2. Run experiment with scorers
+const results = await client.experiments.run({
+  name: "chatbot-quality-check",
+  spans,
+  extractInput: (s) => ({ prompt: s.input }),
+  extractOutput: (s) => s.output,
+  scorers: [Contains({ substring: "helpful" }), LengthCheck({ minLength: 50 })],
+});
+
+// 3. View results
+for (const [name, stats] of Object.entries(results.summary)) {
+  console.log(`${name}: mean=${stats.mean.toFixed(2)}, passRate=${(stats.passRate * 100).toFixed(0)}%`);
+}
+```
+
+</Tab>
+</Tabs>
+
+## QueryManager Reference
+
+| Method | Parameters | Returns | Description |
+|--------|-----------|---------|-------------|
+| `query` | `filter`, `startTime?`, `endTime?`, `limit?`, `page?` | `QueryResult` | Query spans with pagination |
+| `queryIter` | `filter`, `startTime?`, `endTime?`, `batchSize?` | `Iterator<QueriedSpan>` | Auto-paginating iterator |
+| `validate` | `filter` | `ValidationResult` | Validate filter syntax |
+| `validateOrThrow` | `filter` | `void` | Validate and throw if invalid |
+
+<Callout type="info">
+Python uses `query_iter` and `validate_or_raise` (snake_case). JavaScript uses `queryIter` and `validateOrThrow` (camelCase).
+</Callout>
+
+## Related
+
+- [Evaluation & Experiments](/docs/sdk/evaluation) — Run experiments against queried spans
+- [Datasets](/docs/sdk/datasets) — Create datasets from production data
+- [Annotation Queues](/docs/sdk/annotations) — Route spans to human reviewers

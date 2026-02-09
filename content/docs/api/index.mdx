@@ -47,6 +47,8 @@ Used by SDKs for telemetry ingestion. Authenticated via API keys.
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/v1/traces` | POST | Ingest OTLP telemetry data |
+| `/v1/metrics` | POST | Ingest OTLP metrics data |
+| `/v1/logs` | POST | Ingest OTLP log data |
 | `/v1/scores` | POST | Submit evaluation scores |
 | `/v1/prompts/{name}` | GET | Fetch prompt by name |
 
@@ -358,6 +360,16 @@ exporter = OTLPSpanExporter(
     title="Spans API"
     description="Query and manage individual spans"
     href="/docs/api/endpoints/spans"
+  />
+  <Card
+    title="Metrics API"
+    description="Ingest OTLP metrics for GenAI performance monitoring"
+    href="/docs/api/endpoints/metrics"
+  />
+  <Card
+    title="Logs API"
+    description="Ingest OTLP logs with trace correlation"
+    href="/docs/api/endpoints/logs"
   />
   <Card
     title="Evaluations API"
