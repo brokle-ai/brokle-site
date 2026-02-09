@@ -23,15 +23,10 @@ The Brokle Python SDK provides comprehensive AI observability for Python applica
     poetry add brokle
     ```
   </Tab>
-  <Tab value="conda" label="Conda">
-    ```bash
-    conda install -c conda-forge brokle
-    ```
-  </Tab>
 </Tabs>
 
 **Requirements:**
-- Python 3.8+
+- Python 3.9+
 - No additional dependencies for core functionality
 
 ## Quick Start
@@ -520,14 +515,31 @@ with client.start_as_current_span(name="operation") as span:
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `api_key` | str | Required | Brokle API key |
-| `base_url` | str | `https://api.brokle.com` | API endpoint |
-| `environment` | str | `"default"` | Environment name |
+| **Required** | | | |
+| `api_key` | str | Required | Brokle API key (must start with `bk_`) |
+| **Connection** | | | |
+| `base_url` | str | `"https://api.brokle.com"` | API endpoint |
+| `timeout` | int | `30` | HTTP request timeout in seconds |
+| **Control** | | | |
+| `enabled` | bool | `True` | Master switch to disable SDK completely |
+| `tracing_enabled` | bool | `True` | Enable/disable tracing |
+| `metrics_enabled` | bool | `True` | Enable/disable metrics collection |
+| `logs_enabled` | bool | `False` | Enable/disable OTLP log export |
+| **Project** | | | |
+| `environment` | str | `"default"` | Environment name (e.g., `production`, `staging`) |
+| `release` | str | `None` | Release identifier for deployment tracking |
 | `sample_rate` | float | `1.0` | Sampling rate (0.0-1.0) |
-| `flush_at` | int | `100` | Batch size before flush |
-| `flush_interval` | float | `5.0` | Auto-flush interval (seconds) |
 | `debug` | bool | `False` | Enable debug logging |
-| `compression` | str | `"gzip"` | Payload compression |
+| **Privacy** | | | |
+| `mask` | callable | `None` | Function to mask sensitive data before transmission |
+| **Batching** | | | |
+| `flush_at` | int | `100` | Maximum batch size before flush (1-1000) |
+| `flush_interval` | float | `5.0` | Auto-flush interval in seconds (0.1-60.0) |
+| **Transport** | | | |
+| `compression` | str | `"gzip"` | Compression algorithm (`gzip`, `deflate`, or `None`) |
+| `transport` | str | `"http"` | Transport protocol (`http` or `grpc`) |
+| `grpc_endpoint` | str | `None` | Explicit gRPC endpoint |
+| `use_protobuf` | bool | `True` | Use Protobuf format for OTLP export |
 
 ## Best Practices
 

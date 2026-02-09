@@ -14,104 +14,96 @@ The Evaluations API provides endpoints for submitting quality scores and feedbac
 
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
-| POST | `/v1/evaluations` | Submit evaluation scores | API Key |
-| GET | `/api/v1/evaluations` | List evaluations | JWT |
-| GET | `/api/v1/evaluations/{evaluationId}` | Get evaluation details | JWT |
-| POST | `/api/v1/evaluations/batch` | Batch create evaluations | JWT |
-| DELETE | `/api/v1/evaluations/{evaluationId}` | Delete evaluation | JWT |
+| POST | `/v1/scores` | Submit evaluation scores | API Key |
+| GET | `/api/v1/scores` | List scores | JWT |
+| GET | `/api/v1/scores/{id}` | Get score details | JWT |
+| POST | `/v1/scores/batch` | Batch submit scores | API Key |
+| DELETE | `/api/v1/scores/{id}` | Delete score | JWT |
+| GET | `/api/v1/projects/{projectId}/scores/analytics` | Score analytics | JWT |
 
 ```mermaid
 sequenceDiagram
     participant App as Your App
     participant Eval as Evaluator
-    participant API as POST /v1/evaluations
+    participant API as POST /v1/scores
     participant DB as Database
 
     App->>App: Generate response
     App->>Eval: Evaluate output
     Eval-->>App: Score + reasoning
-    App->>API: Submit evaluation<br/>{traceId, score, comment}
+    App->>API: Submit score<br/>{trace_id, value, reason}
     API->>DB: Link to trace
     DB-->>API: Stored
     API-->>App: 200 OK
 ```
 
-## Submit Evaluation
+## Submit Score
 
 ```
-POST /v1/evaluations
+POST /v1/scores
 ```
 
-Submit evaluation scores for traces or spans.
+Submit a single evaluation score for a trace or span.
 
 ### Authentication
 
 - **Header**: `X-API-Key: bk_your_api_key`
-- **Required Scope**: `evaluations:write`
 
 ### Request Body
 
 ```json
 {
-  "traceId": "0af7651916cd43dd8448eb211c80319c",
-  "spanId": "b7ad6b7169203331",
-  "evaluations": [
-    {
-      "name": "relevance",
-      "score": 0.95,
-      "type": "numeric",
-      "comment": "Response directly addresses the question"
-    },
-    {
-      "name": "hallucination",
-      "score": 0.0,
-      "type": "boolean",
-      "comment": "No factual errors detected"
-    },
-    {
-      "name": "quality",
-      "value": "excellent",
-      "type": "categorical",
-      "options": ["poor", "fair", "good", "excellent"]
-    }
-  ],
-  "evaluator": {
-    "type": "llm",
-    "model": "gpt-4",
-    "version": "1.0"
-  },
+  "trace_id": "0af7651916cd43dd8448eb211c80319c",
+  "span_id": "b7ad6b7169203331",
+  "name": "relevance",
+  "value": 0.95,
+  "type": "NUMERIC",
+  "reason": "Response directly addresses the question",
   "metadata": {
     "dataset": "test_set_v1",
-    "runId": "run_abc123"
+    "run_id": "run_abc123"
   }
 }
 ```
 
-### Evaluation Types
+### Request Fields
 
-| Type | Score Range | Description |
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `trace_id` | string | No | Trace ID to attach score to (required for trace-linked scores) |
+| `span_id` | string | No | Span ID to attach score to |
+| `name` | string | Yes | Score name (e.g., `relevance`, `hallucination`) |
+| `value` | float | No | Numeric score value |
+| `string_value` | string | No | Categorical score value |
+| `type` | string | Yes | `NUMERIC`, `BOOLEAN`, or `CATEGORICAL` |
+| `reason` | string | No | Explanation for the score |
+| `metadata` | object | No | Arbitrary metadata |
+| `experiment_id` | string | No | Link to an experiment |
+| `experiment_item_id` | string | No | Link to an experiment item |
+
+### Score Types
+
+| Type | Value Field | Description |
 |------|-------------|-------------|
-| `numeric` | 0.0 - 1.0 | Continuous score |
-| `boolean` | 0 or 1 | Binary pass/fail |
-| `categorical` | string | One of predefined options |
-| `integer` | 1-5, 1-10, etc. | Discrete rating scale |
+| `NUMERIC` | `value` (float) | Continuous score (e.g., 0.0 - 1.0) |
+| `BOOLEAN` | `value` (0 or 1) | Binary pass/fail |
+| `CATEGORICAL` | `string_value` | One of predefined categories |
 
 ### Response
 
 ```json
 {
   "data": {
-    "id": "eval_abc123",
-    "traceId": "0af7651916cd43dd8448eb211c80319c",
-    "spanId": "b7ad6b7169203331",
-    "evaluations": [
-      {
-        "name": "relevance",
-        "score": 0.95,
-        "type": "numeric"
-      }
-    ],
-    "createdAt": "2024-01-15T10:31:00Z"
+    "id": "score_abc123",
+    "project_id": "proj_xyz789",
+    "trace_id": "0af7651916cd43dd8448eb211c80319c",
+    "span_id": "b7ad6b7169203331",
+    "name": "relevance",
+    "value": 0.95,
+    "type": "NUMERIC",
+    "source": "sdk",
+    "reason": "Response directly addresses the question",
+    "timestamp": "2024-01-15T10:31:00Z"
   }
 }
 ```
@@ -121,23 +113,15 @@ Submit evaluation scores for traces or spans.
 <Tabs>
   <Tab value="curl" label="cURL">
     ```bash
-    curl -X POST https://api.brokle.com/v1/evaluations \
+    curl -X POST https://api.brokle.com/v1/scores \
       -H "Content-Type: application/json" \
       -H "X-API-Key: bk_your_api_key" \
       -d '{
-        "traceId": "0af7651916cd43dd8448eb211c80319c",
-        "evaluations": [
-          {
-            "name": "relevance",
-            "score": 0.95,
-            "type": "numeric"
-          },
-          {
-            "name": "hallucination",
-            "score": 0.0,
-            "type": "boolean"
-          }
-        ]
+        "trace_id": "0af7651916cd43dd8448eb211c80319c",
+        "name": "relevance",
+        "value": 0.95,
+        "type": "NUMERIC",
+        "reason": "Highly relevant response"
       }'
     ```
   </Tab>
@@ -146,30 +130,17 @@ Submit evaluation scores for traces or spans.
     import requests
 
     response = requests.post(
-        "https://api.brokle.com/v1/evaluations",
+        "https://api.brokle.com/v1/scores",
         headers={
             "Content-Type": "application/json",
             "X-API-Key": "bk_your_api_key"
         },
         json={
-            "traceId": "0af7651916cd43dd8448eb211c80319c",
-            "evaluations": [
-                {
-                    "name": "relevance",
-                    "score": 0.95,
-                    "type": "numeric",
-                    "comment": "Highly relevant response"
-                },
-                {
-                    "name": "factual_accuracy",
-                    "score": 1.0,
-                    "type": "boolean"
-                }
-            ],
-            "evaluator": {
-                "type": "llm",
-                "model": "gpt-4"
-            }
+            "trace_id": "0af7651916cd43dd8448eb211c80319c",
+            "name": "relevance",
+            "value": 0.95,
+            "type": "NUMERIC",
+            "reason": "Highly relevant response"
         }
     )
 
@@ -178,25 +149,18 @@ Submit evaluation scores for traces or spans.
   </Tab>
   <Tab value="javascript" label="JavaScript">
     ```javascript
-    const response = await fetch('https://api.brokle.com/v1/evaluations', {
+    const response = await fetch('https://api.brokle.com/v1/scores', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-API-Key': 'bk_your_api_key'
       },
       body: JSON.stringify({
-        traceId: '0af7651916cd43dd8448eb211c80319c',
-        evaluations: [
-          {
-            name: 'relevance',
-            score: 0.95,
-            type: 'numeric'
-          }
-        ],
-        evaluator: {
-          type: 'llm',
-          model: 'gpt-4'
-        }
+        trace_id: '0af7651916cd43dd8448eb211c80319c',
+        name: 'relevance',
+        value: 0.95,
+        type: 'NUMERIC',
+        reason: 'Highly relevant response'
       })
     });
 
@@ -206,13 +170,13 @@ Submit evaluation scores for traces or spans.
   </Tab>
 </Tabs>
 
-## List Evaluations
+## List Scores
 
 ```
-GET /api/v1/evaluations
+GET /api/v1/scores
 ```
 
-Retrieve evaluations with filtering and pagination.
+Retrieve scores with filtering and pagination.
 
 ### Authentication
 
@@ -222,17 +186,16 @@ Retrieve evaluations with filtering and pagination.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `projectId` | string | Yes | Filter by project |
-| `traceId` | string | No | Filter by trace |
-| `spanId` | string | No | Filter by span |
-| `name` | string | No | Filter by evaluation name |
-| `evaluatorType` | string | No | `llm`, `human`, `automated` |
-| `minScore` | float | No | Minimum score filter |
-| `maxScore` | float | No | Maximum score filter |
-| `startTime` | ISO 8601 | No | Start of time range |
-| `endTime` | ISO 8601 | No | End of time range |
+| `project_id` | string | Yes | Filter by project |
+| `trace_id` | string | No | Filter by trace |
+| `span_id` | string | No | Filter by span |
+| `name` | string | No | Filter by score name |
+| `source` | string | No | Filter by source (e.g., `API`, `sdk`) |
+| `type` | string | No | Filter by type (`NUMERIC`, `BOOLEAN`, `CATEGORICAL`) |
 | `page` | integer | No | Page number |
-| `pageSize` | integer | No | Items per page |
+| `limit` | integer | No | Items per page (default: 50, max: 100) |
+| `sort_by` | string | No | Field to sort by |
+| `sort_dir` | string | No | Sort direction (`asc` or `desc`) |
 
 ### Response
 
@@ -240,111 +203,104 @@ Retrieve evaluations with filtering and pagination.
 {
   "data": [
     {
-      "id": "eval_abc123",
-      "traceId": "0af7651916cd43dd8448eb211c80319c",
-      "spanId": "b7ad6b7169203331",
+      "id": "score_abc123",
+      "project_id": "proj_xyz789",
+      "trace_id": "0af7651916cd43dd8448eb211c80319c",
+      "span_id": "b7ad6b7169203331",
       "name": "relevance",
-      "score": 0.95,
-      "type": "numeric",
-      "comment": "Highly relevant response",
-      "evaluator": {
-        "type": "llm",
-        "model": "gpt-4"
-      },
-      "createdAt": "2024-01-15T10:31:00Z"
+      "value": 0.95,
+      "type": "NUMERIC",
+      "source": "API",
+      "reason": "Highly relevant response",
+      "metadata": {},
+      "timestamp": "2024-01-15T10:31:00Z"
     }
   ],
-  "pagination": {
-    "page": 1,
-    "pageSize": 20,
-    "totalItems": 150,
-    "totalPages": 8
+  "meta": {
+    "request_id": "req_abc123def456",
+    "timestamp": "2024-01-15T10:31:00Z",
+    "version": "v1",
+    "pagination": {
+      "page": 1,
+      "limit": 50,
+      "total": 150,
+      "total_pages": 3,
+      "has_next": true,
+      "has_prev": false
+    }
   }
 }
 ```
 
-## Get Evaluation
+## Get Score
 
 ```
-GET /api/v1/evaluations/{evaluationId}
+GET /api/v1/scores/{id}
 ```
 
-Retrieve details of a specific evaluation.
+Retrieve details of a specific score.
 
 ### Response
 
 ```json
 {
   "data": {
-    "id": "eval_abc123",
-    "traceId": "0af7651916cd43dd8448eb211c80319c",
-    "spanId": "b7ad6b7169203331",
+    "id": "score_abc123",
+    "project_id": "proj_xyz789",
+    "trace_id": "0af7651916cd43dd8448eb211c80319c",
+    "span_id": "b7ad6b7169203331",
     "name": "relevance",
-    "score": 0.95,
-    "type": "numeric",
-    "comment": "Highly relevant response addressing the user's question directly",
-    "evaluator": {
-      "type": "llm",
-      "model": "gpt-4",
-      "version": "1.0",
-      "prompt": "Evaluate the relevance of the response..."
-    },
+    "value": 0.95,
+    "type": "NUMERIC",
+    "source": "API",
+    "reason": "Highly relevant response addressing the user's question directly",
     "metadata": {
       "dataset": "test_set_v1",
-      "runId": "run_abc123"
+      "run_id": "run_abc123"
     },
-    "trace": {
-      "id": "trace_xyz",
-      "name": "chat_completion",
-      "input": {
-        "messages": [{"role": "user", "content": "..."}]
-      },
-      "output": {
-        "content": "..."
-      }
-    },
-    "createdAt": "2024-01-15T10:31:00Z",
-    "updatedAt": "2024-01-15T10:31:00Z"
+    "timestamp": "2024-01-15T10:31:00Z"
   }
 }
 ```
 
-## Batch Create Evaluations
+## Batch Create Scores
 
 ```
-POST /api/v1/evaluations/batch
+POST /v1/scores/batch
 ```
 
-Create multiple evaluations in a single request.
+Submit multiple evaluation scores in a single request.
+
+### Authentication
+
+- **Header**: `X-API-Key: bk_your_api_key`
 
 ### Request Body
 
 ```json
 {
-  "evaluations": [
+  "scores": [
     {
-      "traceId": "trace_1",
+      "trace_id": "0af7651916cd43dd8448eb211c80319c",
+      "span_id": "b7ad6b7169203331",
       "name": "relevance",
-      "score": 0.9,
-      "type": "numeric"
+      "value": 0.9,
+      "type": "NUMERIC",
+      "reason": "Highly relevant response"
     },
     {
-      "traceId": "trace_2",
-      "name": "relevance",
-      "score": 0.85,
-      "type": "numeric"
+      "trace_id": "0af7651916cd43dd8448eb211c80319c",
+      "name": "hallucination",
+      "value": 0.0,
+      "type": "BOOLEAN"
     },
     {
-      "traceId": "trace_3",
+      "trace_id": "1bf8762a27de54ee9559fc322d91420d",
       "name": "relevance",
-      "score": 0.95,
-      "type": "numeric"
+      "value": 0.85,
+      "type": "NUMERIC"
     }
-  ],
-  "evaluator": {
-    "type": "llm",
-    "model": "gpt-4"
-  }
+  ]
 }
 ```
 
@@ -353,81 +309,64 @@ Create multiple evaluations in a single request.
 ```json
 {
   "data": {
-    "created": 3,
-    "failed": 0,
-    "evaluations": [
-      {"id": "eval_1", "traceId": "trace_1", "score": 0.9},
-      {"id": "eval_2", "traceId": "trace_2", "score": 0.85},
-      {"id": "eval_3", "traceId": "trace_3", "score": 0.95}
-    ]
+    "created": 3
   }
 }
 ```
 
-## Evaluation Aggregations
+## Score Analytics
 
-### Aggregate Scores
+### Get Score Analytics
 
 ```
-GET /api/v1/evaluations/aggregate
+GET /api/v1/projects/{projectId}/scores/analytics
 ```
 
-Aggregate evaluation scores for analytics.
+Retrieve comprehensive analytics for a score including statistics, time series, and distribution.
+
+### Authentication
+
+- **Header**: `Authorization: Bearer {jwt_token}`
 
 ### Query Parameters
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `projectId` | string | Project ID (required) |
-| `name` | string | Evaluation name (required) |
-| `groupBy` | string | `model`, `day`, `week`, `evaluator` |
-| `startTime` | ISO 8601 | Start of time range |
-| `endTime` | ISO 8601 | End of time range |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `score_name` | string | Yes | Score name to analyze |
+| `compare_score_name` | string | No | Second score for comparison analytics |
+| `from_timestamp` | RFC3339 | No | Start of time range |
+| `to_timestamp` | RFC3339 | No | End of time range |
+| `interval` | string | No | Aggregation interval: `hour`, `day` (default), `week` |
 
 ### Response
 
 ```json
 {
   "data": {
-    "name": "relevance",
-    "overall": {
+    "statistics": {
+      "count": 1500,
       "mean": 0.87,
-      "median": 0.90,
-      "stdDev": 0.12,
+      "std_dev": 0.12,
       "min": 0.45,
       "max": 1.0,
-      "count": 1500,
-      "p50": 0.90,
-      "p90": 0.98,
-      "p99": 1.0
+      "median": 0.90
     },
-    "byGroup": [
-      {
-        "group": "gpt-4",
-        "mean": 0.92,
-        "count": 500
-      },
-      {
-        "group": "gpt-3.5-turbo",
-        "mean": 0.82,
-        "count": 1000
-      }
+    "time_series": [
+      { "timestamp": "2024-01-15T00:00:00Z", "avg_value": 0.85, "count": 150 },
+      { "timestamp": "2024-01-16T00:00:00Z", "avg_value": 0.88, "count": 175 }
     ],
-    "trend": [
-      {
-        "date": "2024-01-15",
-        "mean": 0.85,
-        "count": 150
-      },
-      {
-        "date": "2024-01-16",
-        "mean": 0.88,
-        "count": 175
-      }
+    "distribution": [
+      { "bin_start": 0.0, "bin_end": 0.2, "count": 50 },
+      { "bin_start": 0.2, "bin_end": 0.4, "count": 100 },
+      { "bin_start": 0.4, "bin_end": 0.6, "count": 200 },
+      { "bin_start": 0.6, "bin_end": 0.8, "count": 450 },
+      { "bin_start": 0.8, "bin_end": 1.0, "count": 700 }
     ]
   }
 }
 ```
+
+When `compare_score_name` is provided, the response also includes `heatmap` and `comparison` fields with correlation metrics (Pearson, Spearman, MAE, RMSE).
 
 ## Human Feedback
 

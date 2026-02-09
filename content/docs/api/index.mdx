@@ -47,7 +47,7 @@ Used by SDKs for telemetry ingestion. Authenticated via API keys.
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/v1/traces` | POST | Ingest OTLP telemetry data |
-| `/v1/evaluations` | POST | Submit evaluation scores |
+| `/v1/scores` | POST | Submit evaluation scores |
 | `/v1/prompts/{name}` | GET | Fetch prompt by name |
 
 ### Dashboard API
@@ -201,12 +201,9 @@ All request bodies should be valid JSON:
 
 ```json
 {
+  "success": true,
   "data": {
     // Response data
-  },
-  "meta": {
-    "requestId": "req_abc123",
-    "timestamp": "2024-01-15T10:30:00Z"
   }
 }
 ```
@@ -215,18 +212,22 @@ All request bodies should be valid JSON:
 
 ```json
 {
+  "success": true,
   "data": [
     // Array of items
   ],
-  "pagination": {
-    "page": 1,
-    "pageSize": 20,
-    "totalItems": 150,
-    "totalPages": 8,
-    "hasMore": true
-  },
   "meta": {
-    "requestId": "req_abc123"
+    "request_id": "req_01h2x3y4z5",
+    "timestamp": "2024-01-15T10:30:00Z",
+    "version": "v1",
+    "pagination": {
+      "page": 1,
+      "limit": 50,
+      "total": 150,
+      "total_pages": 3,
+      "has_next": true,
+      "has_prev": false
+    }
   }
 }
 ```
@@ -235,6 +236,7 @@ All request bodies should be valid JSON:
 
 ```json
 {
+  "success": false,
   "error": {
     "code": "VALIDATION_ERROR",
     "message": "Invalid request body",
@@ -244,9 +246,6 @@ All request bodies should be valid JSON:
         "message": "Name is required"
       }
     ]
-  },
-  "meta": {
-    "requestId": "req_abc123"
   }
 }
 ```
@@ -288,14 +287,14 @@ List endpoints support pagination via query parameters:
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `page` | integer | 1 | Page number (1-indexed) |
-| `pageSize` | integer | 20 | Items per page (max 100) |
-| `sortBy` | string | varies | Field to sort by |
-| `sortOrder` | string | `desc` | `asc` or `desc` |
+| `limit` | integer | 50 | Items per page (max 100) |
+| `sort_by` | string | varies | Field to sort by |
+| `sort_dir` | string | `desc` | `asc` or `desc` |
 
 Example:
 
 ```
-GET /api/v1/traces?page=2&pageSize=50&sortBy=startTime&sortOrder=desc
+GET /api/v1/traces?page=2&limit=50&sort_by=startTime&sort_dir=desc
 ```
 
 ## Filtering

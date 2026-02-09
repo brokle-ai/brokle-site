@@ -58,9 +58,9 @@ Retrieve a paginated list of spans with filtering.
 | `maxDuration` | integer | No | Maximum duration (ms) |
 | `status` | string | No | `ok` or `error` |
 | `page` | integer | No | Page number (default: 1) |
-| `pageSize` | integer | No | Items per page (max: 100) |
-| `sortBy` | string | No | Sort field |
-| `sortOrder` | string | No | `asc` or `desc` |
+| `limit` | integer | No | Items per page (default: 50, max: 100) |
+| `sort_by` | string | No | Sort field |
+| `sort_dir` | string | No | `asc` or `desc` |
 
 ### Response
 
@@ -91,12 +91,18 @@ Retrieve a paginated list of spans with filtering.
       }
     }
   ],
-  "pagination": {
-    "page": 1,
-    "pageSize": 20,
-    "totalItems": 500,
-    "totalPages": 25,
-    "hasMore": true
+  "meta": {
+    "request_id": "req_abc123def456",
+    "timestamp": "2024-01-15T10:30:00Z",
+    "version": "v1",
+    "pagination": {
+      "page": 1,
+      "limit": 50,
+      "total": 500,
+      "total_pages": 10,
+      "has_next": true,
+      "has_prev": false
+    }
   }
 }
 ```
@@ -124,7 +130,7 @@ Retrieve a paginated list of spans with filtering.
             "type": "generation",
             "model": "gpt-4",
             "minDuration": 1000,  # Spans slower than 1s
-            "pageSize": 50
+            "limit": 50
         }
     )
 
@@ -345,80 +351,6 @@ Retrieve all spans for a specific trace in hierarchical order.
 }
 ```
 
-## Span Aggregations
-
-### Aggregate by Model
-
-```
-GET /api/v1/spans/aggregate
-```
-
-Aggregate span data for analytics.
-
-```bash
-curl -X GET "https://api.brokle.com/api/v1/spans/aggregate?projectId=proj_123&groupBy=model&metric=count" \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..."
-```
-
-**Response:**
-
-```json
-{
-  "data": [
-    {
-      "model": "gpt-4",
-      "count": 1500,
-      "avgDuration": 1200,
-      "totalTokens": 450000,
-      "totalCost": 13.50
-    },
-    {
-      "model": "gpt-3.5-turbo",
-      "count": 5000,
-      "avgDuration": 500,
-      "totalTokens": 1200000,
-      "totalCost": 2.40
-    }
-  ]
-}
-```
-
-### Query Parameters for Aggregations
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `projectId` | string | Project ID (required) |
-| `groupBy` | string | Group by: `model`, `type`, `status`, `hour`, `day` |
-| `metric` | string | Metric: `count`, `duration`, `tokens`, `cost` |
-| `startTime` | ISO 8601 | Start of time range |
-| `endTime` | ISO 8601 | End of time range |
-
-## Span Search
-
-### Full-Text Search
-
-```
-GET /api/v1/spans/search
-```
-
-Search across span inputs and outputs.
-
-```bash
-curl -X GET "https://api.brokle.com/api/v1/spans/search?projectId=proj_123&q=error+handling" \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..."
-```
-
-**Query Parameters:**
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `projectId` | string | Project ID (required) |
-| `q` | string | Search query |
-| `searchIn` | string | `input`, `output`, or `both` (default) |
-| `type` | string | Filter by span type |
-| `page` | integer | Page number |
-| `pageSize` | integer | Results per page |
-
 ## Input/Output Masking
 
 For privacy, you can configure which fields to mask:
@@ -523,7 +455,7 @@ while True:
         params={
             "projectId": "proj_123",
             "page": page,
-            "pageSize": 100
+            "limit": 100
         },
         headers={"Authorization": f"Bearer {token}"}
     )
@@ -531,7 +463,7 @@ while True:
     data = response.json()
     all_spans.extend(data["data"])
 
-    if not data["pagination"]["hasMore"]:
+    if not data["meta"]["pagination"]["has_next"]:
         break
 
     page += 1

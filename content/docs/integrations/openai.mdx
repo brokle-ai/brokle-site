@@ -67,7 +67,7 @@ The fastest way to get started is using the OpenAI wrapper:
   <Tab value="python" label="Python">
     ```python
     from brokle import Brokle
-    from brokle.integrations.openai import wrap_openai
+    from brokle.wrappers import wrap_openai
     import openai
 
     # Initialize Brokle
@@ -120,31 +120,36 @@ The fastest way to get started is using the OpenAI wrapper:
 
 ## Configuration Options
 
-Customize what gets captured:
+Configuration is set globally via `Brokle()` or `get_client()` before wrapping your OpenAI client. The `wrap_openai()` function only accepts the client — it automatically uses the global Brokle configuration.
 
 ```python
-from brokle.integrations.openai import wrap_openai, OpenAIConfig
+from brokle import Brokle
+from brokle.wrappers import wrap_openai
+import openai
 
-config = OpenAIConfig(
-    capture_input=True,       # Log prompt content (default: True)
-    capture_output=True,      # Log completion content (default: True)
-    capture_tokens=True,      # Track token usage (default: True)
-    capture_cost=True,        # Calculate costs (default: True)
-    capture_latency=True,     # Track response time (default: True)
-    mask_pii=False,           # Mask PII in logs (default: False)
+# Configure Brokle globally (before wrapping)
+brokle = Brokle(
+    api_key="bk_your_api_key",
+    sample_rate=1.0,        # Sampling rate 0.0-1.0 (default: 1.0)
+    tracing_enabled=True,   # Enable/disable tracing (default: True)
+    debug=False,            # Enable debug logging (default: False)
+    flush_at=100,           # Batch size before flush (default: 100)
+    flush_interval=5.0,     # Max delay before flush in seconds (default: 5.0)
 )
 
+# Wrap OpenAI client (uses global Brokle config automatically)
 openai_client = wrap_openai(openai.OpenAI())
 ```
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `capture_input` | `True` | Log the full prompt/messages |
-| `capture_output` | `True` | Log the completion response |
-| `capture_tokens` | `True` | Track prompt/completion tokens |
-| `capture_cost` | `True` | Calculate estimated cost |
-| `capture_latency` | `True` | Record time to first token and total duration |
-| `mask_pii` | `False` | Automatically mask emails, phone numbers, etc. |
+| `sample_rate` | `1.0` | Sampling rate for traces (0.0 to 1.0) |
+| `tracing_enabled` | `True` | Enable/disable tracing entirely |
+| `debug` | `False` | Enable debug logging |
+| `mask` | `None` | Custom function to mask sensitive data before transmission |
+| `flush_at` | `100` | Maximum batch size before flush (1-1000) |
+| `flush_interval` | `5.0` | Maximum delay in seconds before flush (0.1-60.0) |
+| `enabled` | `True` | Master switch to disable the SDK completely |
 
 ## Advanced Usage
 
@@ -253,7 +258,7 @@ Wrap OpenAI calls in traces for additional context:
 
 ```python
 from brokle import Brokle
-from brokle.integrations.openai import wrap_openai
+from brokle.wrappers import wrap_openai
 
 client = Brokle(api_key="your-api-key")
 openai_client = wrap_openai(openai.OpenAI())

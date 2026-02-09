@@ -82,17 +82,6 @@ Include your API key in the request header:
   </Tab>
 </Tabs>
 
-### API Key Scopes
-
-API keys can be scoped to specific permissions:
-
-| Scope | Description | Endpoints |
-|-------|-------------|-----------|
-| `traces:write` | Send trace data | `POST /v1/traces` |
-| `evaluations:write` | Submit evaluations | `POST /v1/evaluations` |
-| `prompts:read` | Fetch prompts | `GET /v1/prompts/*` |
-| `*` | Full access | All SDK endpoints |
-
 ### Validating API Keys
 
 Validate an API key programmatically:
@@ -107,10 +96,11 @@ curl -X POST https://api.brokle.com/v1/auth/validate-key \
 
 ```json
 {
-  "valid": true,
-  "projectId": "proj_abc123",
-  "scopes": ["traces:write", "evaluations:write"],
-  "expiresAt": null
+  "success": true,
+  "data": {
+    "valid": true,
+    "projectId": "proj_abc123"
+  }
 }
 ```
 
@@ -146,17 +136,25 @@ curl -X POST https://api.brokle.com/api/v1/auth/login \
 
 ```json
 {
-  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "refreshToken": "rt_abc123...",
-  "expiresIn": 3600,
-  "tokenType": "Bearer"
+  "success": true,
+  "data": {
+    "user": {
+      "id": "user_abc123",
+      "email": "user@example.com",
+      "name": "John Doe"
+    }
+  }
 }
 ```
 
-#### Register
+<Callout type="info">
+  Authentication tokens are set as httpOnly cookies automatically. You do not need to handle tokens manually. Cookies set: `access_token` (15min), `refresh_token` (7 days), `csrf_token`.
+</Callout>
+
+#### Sign Up
 
 ```bash
-curl -X POST https://api.brokle.com/api/v1/auth/register \
+curl -X POST https://api.brokle.com/api/v1/auth/signup \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@example.com",
@@ -167,31 +165,35 @@ curl -X POST https://api.brokle.com/api/v1/auth/register \
 
 ### Using JWT Tokens
 
-Include the token in the Authorization header:
+Dashboard API requests are authenticated automatically via httpOnly cookies. No manual token handling is required:
 
 ```bash
+# Cookies are sent automatically after login
 curl -X GET https://api.brokle.com/api/v1/projects \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  --cookie "access_token=..." \
+  --cookie "csrf_token=..."
 ```
 
 ### Token Refresh
 
-Access tokens expire after 1 hour. Use the refresh token to obtain a new access token:
+Access tokens expire after 15 minutes. The refresh token (7-day lifetime) is used automatically by the dashboard to obtain new access tokens:
 
 ```bash
 curl -X POST https://api.brokle.com/api/v1/auth/refresh \
   -H "Content-Type: application/json" \
-  -d '{
-    "refreshToken": "rt_abc123..."
-  }'
+  -d '{}'
 ```
+
+The refresh token is sent automatically via httpOnly cookie.
 
 **Response:**
 
 ```json
 {
-  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "expiresIn": 3600
+  "success": true,
+  "data": {
+    "message": "Token refreshed successfully"
+  }
 }
 ```
 
@@ -201,7 +203,8 @@ Invalidate tokens:
 
 ```bash
 curl -X POST https://api.brokle.com/api/v1/auth/logout \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  --cookie "access_token=..." \
+  --cookie "refresh_token=..."
 ```
 
 ## OAuth 2.0 / SSO (Enterprise)

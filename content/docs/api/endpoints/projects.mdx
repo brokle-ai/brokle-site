@@ -42,7 +42,7 @@ Retrieve all projects for the authenticated user.
 | `organizationId` | string | Filter by organization |
 | `search` | string | Search by name |
 | `page` | integer | Page number |
-| `pageSize` | integer | Items per page |
+| `limit` | integer | Items per page (default: 50, max: 100) |
 
 ### Response
 
@@ -68,11 +68,18 @@ Retrieve all projects for the authenticated user.
       "updatedAt": "2024-01-15T10:30:00Z"
     }
   ],
-  "pagination": {
-    "page": 1,
-    "pageSize": 20,
-    "totalItems": 5,
-    "totalPages": 1
+  "meta": {
+    "request_id": "req_abc123def456",
+    "timestamp": "2024-01-15T10:30:00Z",
+    "version": "v1",
+    "pagination": {
+      "page": 1,
+      "limit": 50,
+      "total": 5,
+      "total_pages": 1,
+      "has_next": false,
+      "has_prev": false
+    }
   }
 }
 ```

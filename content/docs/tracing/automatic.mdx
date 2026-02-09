@@ -363,22 +363,24 @@ embeddings = openai_client.embeddings.create(
 
 ## Configuration Options
 
-Customize what gets captured:
+Wrapper functions like `wrap_openai()` accept only the client — all configuration is set globally via the `Brokle` client:
 
 <Tabs>
   <Tab value="python" label="Python">
     ```python
-    from brokle import Brokle, wrap_openai
-    from brokle.integrations.openai import OpenAIConfig
+    from brokle import Brokle
+    from brokle.wrappers import wrap_openai
+    import openai
 
-    config = OpenAIConfig(
-        capture_input=True,       # Log prompts (default: True)
-        capture_output=True,      # Log completions (default: True)
-        capture_tokens=True,      # Track token usage (default: True)
-        capture_cost=True,        # Calculate costs (default: True)
-        mask_pii=False,           # Mask PII in logs (default: False)
+    # Configure globally — the wrapper uses this automatically
+    brokle = Brokle(
+        api_key="bk_...",
+        mask=my_mask_fn,       # Privacy: mask sensitive data
+        sample_rate=0.5,       # Sample 50% of traces
+        tracing_enabled=True,  # Master tracing switch
     )
 
+    # Wrapper only takes the client, no config options
     openai_client = wrap_openai(openai.OpenAI())
     ```
   </Tab>
@@ -391,11 +393,12 @@ Customize what gets captured:
 
 ### Privacy Options
 
-| Option | Description |
-|--------|-------------|
-| `capture_input=False` | Don't log prompts (useful for sensitive data) |
-| `capture_output=False` | Don't log completions |
-| `mask_pii=True` | Automatically mask emails, phone numbers, etc. |
+| Option | Where to Set | Description |
+|--------|-------------|-------------|
+| `mask` | `Brokle(mask=fn)` | Function to mask sensitive data (PII, credentials) before transmission |
+| `enabled` | `Brokle(enabled=False)` | Disable SDK completely (no data sent) |
+| `tracing_enabled` | `Brokle(tracing_enabled=False)` | Disable tracing while keeping other features |
+| `sample_rate` | `Brokle(sample_rate=0.1)` | Sample only a fraction of traces |
 
 ## Error Handling
 

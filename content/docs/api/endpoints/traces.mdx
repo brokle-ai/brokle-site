@@ -259,9 +259,9 @@ Retrieve a paginated list of traces.
 | `startTime` | ISO 8601 | No | Start of time range |
 | `endTime` | ISO 8601 | No | End of time range |
 | `page` | integer | No | Page number (default: 1) |
-| `pageSize` | integer | No | Items per page (default: 20, max: 100) |
-| `sortBy` | string | No | Sort field (default: `startTime`) |
-| `sortOrder` | string | No | `asc` or `desc` (default: `desc`) |
+| `limit` | integer | No | Items per page (default: 50, max: 100) |
+| `sort_by` | string | No | Sort field (default: `startTime`) |
+| `sort_dir` | string | No | `asc` or `desc` (default: `desc`) |
 | `userId` | string | No | Filter by user ID |
 | `sessionId` | string | No | Filter by session ID |
 | `status` | string | No | Filter by status (`ok`, `error`) |
@@ -295,12 +295,18 @@ Retrieve a paginated list of traces.
       }
     }
   ],
-  "pagination": {
-    "page": 1,
-    "pageSize": 20,
-    "totalItems": 150,
-    "totalPages": 8,
-    "hasMore": true
+  "meta": {
+    "request_id": "req_abc123def456",
+    "timestamp": "2024-01-15T10:30:00Z",
+    "version": "v1",
+    "pagination": {
+      "page": 1,
+      "limit": 50,
+      "total": 150,
+      "total_pages": 3,
+      "has_next": true,
+      "has_prev": false
+    }
   }
 }
 ```
@@ -310,7 +316,7 @@ Retrieve a paginated list of traces.
 <Tabs>
   <Tab value="curl" label="cURL">
     ```bash
-    curl -X GET "https://api.brokle.com/api/v1/traces?projectId=proj_123&pageSize=50" \
+    curl -X GET "https://api.brokle.com/api/v1/traces?projectId=proj_123&limit=50" \
       -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..."
     ```
   </Tab>
@@ -327,7 +333,7 @@ Retrieve a paginated list of traces.
             "projectId": "proj_123",
             "startTime": "2024-01-01T00:00:00Z",
             "endTime": "2024-01-31T23:59:59Z",
-            "pageSize": 50
+            "limit": 50
         }
     )
 

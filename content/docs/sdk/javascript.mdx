@@ -31,7 +31,7 @@ The Brokle JavaScript SDK provides comprehensive AI observability for Node.js ap
 </Tabs>
 
 **Requirements:**
-- Node.js 18+
+- Node.js 20+
 - TypeScript 4.7+ (optional, for type definitions)
 
 ## Quick Start
@@ -72,7 +72,7 @@ const client = new Brokle({
   environment: 'production',      // Optional: Environment name
   sampleRate: 1.0,               // Optional: Sampling rate (0.0-1.0)
   flushAt: 100,                  // Optional: Batch size before flush
-  flushInterval: 5000,           // Optional: Auto-flush interval (ms)
+  flushInterval: 10,              // Optional: Auto-flush interval (seconds)
   debug: false,                  // Optional: Enable debug logging
   compression: 'gzip',           // Optional: Payload compression
 });
@@ -588,7 +588,7 @@ await client.startActiveSpan('operation', async (span) => {
 | `environment` | string | `"default"` | Environment name |
 | `sampleRate` | number | `1.0` | Sampling rate (0.0-1.0) |
 | `flushAt` | number | `100` | Batch size before flush |
-| `flushInterval` | number | `5000` | Auto-flush interval (ms) |
+| `flushInterval` | number | `10` | Auto-flush interval (seconds) |
 | `debug` | boolean | `false` | Enable debug logging |
 | `compression` | string | `"gzip"` | Payload compression |
 
@@ -670,7 +670,7 @@ Reduce batch size and flush interval:
 ```typescript
 const client = new Brokle({
   flushAt: 50,
-  flushInterval: 2000
+  flushInterval: 2,               // Flush every 2 seconds
 });
 ```
 

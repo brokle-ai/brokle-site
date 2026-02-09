@@ -513,7 +513,7 @@ description: "Learn how to [outcome] with Brokle"
 
 **Prerequisites:**
 - Brokle account ([sign up](https://app.brokle.com))
-- Python 3.8+ or Node.js 18+
+- Python 3.9+ or Node.js 20+
 - Basic familiarity with [technology]
 
 **Time to complete:** ~15 minutes
