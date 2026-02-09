@@ -55,6 +55,11 @@ export default async function Page({ params }: PageProps) {
             headline: page.data.title,
             description: page.data.description,
             datePublished: page.data.date,
+            dateModified: page.data.lastModified
+              ? String(page.data.lastModified)
+              : String(page.data.date),
+            wordCount: stats.words,
+            keywords: page.data.tags,
             author: page.data.author.map((id: string) => ({
               '@type': 'Person',
               name: getAuthor(id).name,
@@ -64,10 +69,43 @@ export default async function Page({ params }: PageProps) {
               name: 'Brokle',
               url: baseUrl,
             },
+            mainEntityOfPage: {
+              '@type': 'WebPage',
+              '@id': `${baseUrl}${page.url}`,
+            },
             url: `${baseUrl}${page.url}`,
             ...(page.data.image && {
               image: `${baseUrl}${page.data.image}`,
             }),
+          }),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              {
+                '@type': 'ListItem',
+                position: 1,
+                name: 'Home',
+                item: baseUrl,
+              },
+              {
+                '@type': 'ListItem',
+                position: 2,
+                name: 'Blog',
+                item: `${baseUrl}/blog`,
+              },
+              {
+                '@type': 'ListItem',
+                position: 3,
+                name: page.data.title,
+                item: `${baseUrl}${page.url}`,
+              },
+            ],
           }),
         }}
       />
@@ -102,11 +140,18 @@ export async function generateMetadata({
   return {
     title: `${page.data.title} - Brokle Blog`,
     description: page.data.description,
+    keywords: page.data.tags,
+    alternates: {
+      canonical: `${baseUrl}/blog/${slug}`,
+    },
     openGraph: {
       title: page.data.title,
       description: page.data.description,
       type: 'article',
       publishedTime: String(page.data.date),
+      modifiedTime: page.data.lastModified
+        ? String(page.data.lastModified)
+        : undefined,
       authors: page.data.author.map((id: string) => getAuthor(id).name),
       tags: page.data.tags,
       url: `${baseUrl}${page.url}`,

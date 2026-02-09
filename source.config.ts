@@ -32,7 +32,11 @@ export const blogPosts = defineCollections({
     tags: z.array(z.string()).default([]),
     image: z.string().optional(),
     draft: z.boolean().default(false),
+    lastModified: z.string().date().or(z.date()).optional(),
   }),
+  postprocess: {
+    includeProcessedMarkdown: true,
+  },
 });
 
 export default defineConfig({

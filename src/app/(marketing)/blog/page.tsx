@@ -8,6 +8,15 @@ export const metadata: Metadata = {
   title: 'Blog - Brokle',
   description:
     'Technical guides and updates from the Brokle team.',
+  keywords: [
+    'AI observability',
+    'LLM tracing',
+    'AI evaluation',
+    'prompt management',
+  ],
+  alternates: {
+    canonical: 'https://brokle.com/blog',
+  },
   openGraph: {
     title: 'Blog - Brokle',
     description:
@@ -32,8 +41,28 @@ export default function Blog() {
   const tags = getAllTags();
 
   return (
-    <Suspense>
-      <BlogPage posts={posts} tags={tags} />
-    </Suspense>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'CollectionPage',
+            name: 'Brokle Blog',
+            description:
+              'Technical guides and updates from the Brokle team.',
+            url: 'https://brokle.com/blog',
+            publisher: {
+              '@type': 'Organization',
+              name: 'Brokle',
+              url: 'https://brokle.com',
+            },
+          }),
+        }}
+      />
+      <Suspense>
+        <BlogPage posts={posts} tags={tags} />
+      </Suspense>
+    </>
   );
 }
