@@ -24,9 +24,34 @@ const config = {
     ];
   },
 
+  // Redirect /compare to the primary comparison page (307 — may add a hub page later)
+  async redirects() {
+    return [
+      {
+        source: '/compare',
+        destination: '/',
+        permanent: false,
+      },
+    ];
+  },
+
   // Essential security headers (CSP removed - overkill for marketing site)
   async headers() {
     return [
+      // Prevent indexing of raw markdown routes (LLM copy/open feature)
+      {
+        source: '/llms.mdx/:path*',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      },
+      {
+        source: '/docs/:path*.mdx',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      },
+      {
+        source: '/docs.mdx',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      },
+      // Global security headers
       {
         source: '/:path*',
         headers: [
