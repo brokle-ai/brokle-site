@@ -32,6 +32,31 @@ const config = {
         destination: '/',
         permanent: false,
       },
+      {
+        source: '/product',
+        destination: '/',
+        permanent: false,
+      },
+      {
+        source: '/features',
+        destination: '/',
+        permanent: false,
+      },
+      {
+        source: '/feedback',
+        destination: '/contact',
+        permanent: false,
+      },
+      {
+        source: '/security',
+        destination: '/',
+        permanent: false,
+      },
+      {
+        source: '/use-cases/:path*',
+        destination: '/',
+        permanent: false,
+      },
     ];
   },
 
