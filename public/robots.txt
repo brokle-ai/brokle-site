@@ -7,5 +7,7 @@ Allow: /
 # Sitemap
 Sitemap: https://brokle.com/sitemap.xml
 
+# LLM-readable documentation available at https://brokle.com/llms.txt
+
 # Disallow admin/api paths (if any)
 Disallow: /api/
