@@ -9,7 +9,6 @@ import { ConsentModeUpdater } from '@/components/consent-mode-updater';
 import { ScrollProvider } from '@/contexts/ScrollContext';
 import { OrganizationSchema, SoftwareApplicationSchema } from '@/components/seo';
 import { Toaster } from 'sonner';
-import { GoogleTagManager } from '@next/third-parties/google';
 import Script from 'next/script';
 import type { Metadata } from 'next';
 import './global.css';
@@ -88,17 +87,14 @@ export default function RootLayout({
       className={`${GeistSans.variable} ${GeistMono.variable}`}
       suppressHydrationWarning
     >
-      {process.env.NEXT_PUBLIC_GTM_ID && (
-        <GoogleTagManager gtmId={process.env.NEXT_PUBLIC_GTM_ID} />
-      )}
       <head>
-        {/* Consent defaults MUST execute before GTM (Google requirement).
+        {/* Single atomic script: consent defaults → GTM init.
             beforeInteractive = SSR-injected into <head>, runs during HTML parsing.
-            GoogleTagManager uses afterInteractive = runs after hydration.
-            This gives explicit, deterministic ordering via Next.js script lifecycle. */}
+            Google requires consent defaults BEFORE GTM; a single script block
+            guarantees ordering without race conditions. */}
         {process.env.NEXT_PUBLIC_GTM_ID && (
           <Script
-            id="gtm-consent-defaults"
+            id="gtm-init"
             strategy="beforeInteractive"
             dangerouslySetInnerHTML={{
               __html: `
@@ -110,6 +106,11 @@ export default function RootLayout({
                   'ad_personalization': 'denied',
                   'analytics_storage': 'denied'
                 });
+                (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+                new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+                j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+                'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+                })(window,document,'script','dataLayer','${process.env.NEXT_PUBLIC_GTM_ID}');
               `,
             }}
           />
@@ -132,6 +133,17 @@ export default function RootLayout({
         />
       </head>
       <body className="flex min-h-screen flex-col antialiased" suppressHydrationWarning>
+        {/* GTM noscript fallback — required by Google for non-JS environments */}
+        {process.env.NEXT_PUBLIC_GTM_ID && (
+          <noscript>
+            <iframe
+              src={`https://www.googletagmanager.com/ns.html?id=${process.env.NEXT_PUBLIC_GTM_ID}`}
+              height="0"
+              width="0"
+              style={{ display: 'none', visibility: 'hidden' }}
+            />
+          </noscript>
+        )}
         <OrganizationSchema />
         <SoftwareApplicationSchema />
         <CookieConsentProvider>

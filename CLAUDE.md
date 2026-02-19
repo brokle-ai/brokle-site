@@ -90,7 +90,7 @@ Uses Fumadocs MDX for documentation:
 ```bash
 NEXT_PUBLIC_API_URL=http://localhost:8080      # Brokle backend API
 NEXT_PUBLIC_APP_URL=http://localhost:3001      # Brokle dashboard app
-NEXT_PUBLIC_GA_MEASUREMENT_ID=                 # Google Analytics (optional)
+NEXT_PUBLIC_GTM_ID=                            # Google Tag Manager (optional, GA4 configured inside GTM)
 ```
 
 ## Important Files

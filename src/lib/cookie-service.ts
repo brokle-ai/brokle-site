@@ -9,69 +9,34 @@ const cookieDefaults = {
   secure: typeof window !== 'undefined' ? window.location.protocol === 'https:' : true,
 };
 
-// Analytics instance placeholder
-let analyticsInstance: ReturnType<typeof import('analytics').default> | null = null;
-
-export const initializeAnalytics = async (): Promise<ReturnType<typeof import('analytics').default> | null> => {
-  if (analyticsInstance) return analyticsInstance;
-
-  try {
-    // Dynamically import analytics to avoid SSR issues
-    const Analytics = (await import('analytics')).default;
-    const googleAnalyticsPlugin = (await import('@analytics/google-analytics')).default;
-
-    const measurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
-
-    if (!measurementId) {
-      // GA measurement ID not configured - analytics will be disabled
-      return null;
-    }
-
-    analyticsInstance = Analytics({
-      app: 'Brokle',
-      plugins: [
-        googleAnalyticsPlugin({
-          measurementIds: [measurementId],
-          gtagConfig: {
-            anonymize_ip: true,
-            send_page_view: false,
-            cookie_flags: 'SameSite=None;Secure'
-          }
-        })
-      ]
-    });
-
-    return analyticsInstance;
-  } catch (error) {
-    console.error('Failed to initialize analytics:', error);
-    return null;
+declare global {
+  interface Window {
+    dataLayer: Record<string, unknown>[];
+    gtag: (...args: unknown[]) => void;
   }
-};
+}
 
-export const trackPageView = async (path: string): Promise<void> => {
-  const analytics = analyticsInstance || await initializeAnalytics();
+export const trackPageView = (path: string): void => {
+  if (typeof window === 'undefined') return;
 
-  if (!analytics) {
-    return;
-  }
-
-  analytics.page({
-    path: path,
-    title: typeof document !== 'undefined' ? document.title : ''
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({
+    event: 'virtualPageview',
+    pageUrl: path,
+    pageTitle: document.title,
   });
 };
 
-export const trackEvent = async (category: string, action: string, label?: string, value?: number): Promise<void> => {
-  const analytics = analyticsInstance || await initializeAnalytics();
+export const trackEvent = (category: string, action: string, label?: string, value?: number): void => {
+  if (typeof window === 'undefined') return;
 
-  if (!analytics) {
-    return;
-  }
-
-  analytics.track(action, {
-    category,
-    label,
-    value
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({
+    event: action,
+    event_category: category,
+    event_action: action,
+    event_label: label,
+    event_value: value,
   });
 };
 
@@ -79,12 +44,6 @@ export const initializeMarketing = (): void => {
   // TODO: Initialize marketing pixels (Facebook, LinkedIn, etc.)
   // Implementation would go here when marketing integrations are added
 };
-
-declare global {
-  interface Window {
-    gtag: (...args: unknown[]) => void;
-  }
-}
 
 export const updateGoogleConsent = (preferences: CookiePreferences): void => {
   if (typeof window === 'undefined' || typeof window.gtag !== 'function') return;
@@ -97,18 +56,10 @@ export const updateGoogleConsent = (preferences: CookiePreferences): void => {
   });
 };
 
-export const applyPreferences = async (preferences: CookiePreferences): Promise<boolean> => {
+export const applyPreferences = (preferences: CookiePreferences): boolean => {
   updateGoogleConsent(preferences);
 
-  if (preferences.analytics) {
-    const result = await initializeAnalytics();
-    if (!result) {
-      return false;
-    }
-  } else {
-    // Disable analytics if previously enabled
-    analyticsInstance = null;
-
+  if (!preferences.analytics) {
     // Remove Google Analytics cookies
     removeCookie('_ga');
     removeCookie('_gid');
