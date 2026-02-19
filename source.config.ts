@@ -33,6 +33,11 @@ export const blogPosts = defineCollections({
     image: z.string().optional(),
     draft: z.boolean().default(false),
     lastModified: z.string().date().or(z.date()).optional(),
+    metaTitle: z.string().optional(),
+    metaDescription: z.string().optional(),
+    ogTitle: z.string().optional(),
+    ogDescription: z.string().optional(),
+    canonicalUrl: z.string().url().optional(),
   }),
   postprocess: {
     includeProcessedMarkdown: true,

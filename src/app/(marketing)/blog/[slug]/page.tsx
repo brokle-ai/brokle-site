@@ -20,6 +20,7 @@ export default async function Page({ params }: PageProps) {
   if (!page || page.data.draft) notFound();
 
   const MDX = page.data.body;
+  const canonicalUrl = page.data.canonicalUrl ?? `${baseUrl}${page.url}`;
 
   // Read raw MDX file for accurate reading time
   const mdxPath = path.join(process.cwd(), 'content', 'blog', `${slug}.mdx`);
@@ -71,9 +72,9 @@ export default async function Page({ params }: PageProps) {
             },
             mainEntityOfPage: {
               '@type': 'WebPage',
-              '@id': `${baseUrl}${page.url}`,
+              '@id': canonicalUrl,
             },
-            url: `${baseUrl}${page.url}`,
+            url: canonicalUrl,
             ...(page.data.image && {
               image: `${baseUrl}${page.data.image}`,
             }),
@@ -103,7 +104,7 @@ export default async function Page({ params }: PageProps) {
                 '@type': 'ListItem',
                 position: 3,
                 name: page.data.title,
-                item: `${baseUrl}${page.url}`,
+                item: canonicalUrl,
               },
             ],
           }),
@@ -137,16 +138,23 @@ export async function generateMetadata({
   const page = blog.getPage([slug]);
   if (!page || page.data.draft) notFound();
 
+  const { title, description } = page.data;
+  const metaTitle = page.data.metaTitle ?? title;
+  const metaDescription = page.data.metaDescription ?? description;
+  const ogTitle = page.data.ogTitle ?? metaTitle;
+  const ogDescription = page.data.ogDescription ?? metaDescription;
+  const canonicalUrl = page.data.canonicalUrl ?? `${baseUrl}/blog/${slug}`;
+
   return {
-    title: `${page.data.title} - Brokle Blog`,
-    description: page.data.description,
+    title: `${metaTitle} - Brokle Blog`,
+    description: metaDescription,
     keywords: page.data.tags,
     alternates: {
-      canonical: `${baseUrl}/blog/${slug}`,
+      canonical: canonicalUrl,
     },
     openGraph: {
-      title: page.data.title,
-      description: page.data.description,
+      title: ogTitle,
+      description: ogDescription,
       type: 'article',
       publishedTime: String(page.data.date),
       modifiedTime: page.data.lastModified
@@ -154,7 +162,7 @@ export async function generateMetadata({
         : undefined,
       authors: page.data.author.map((id: string) => getAuthor(id).name),
       tags: page.data.tags,
-      url: `${baseUrl}${page.url}`,
+      url: canonicalUrl,
       siteName: 'Brokle',
       ...(page.data.image && {
         images: [{ url: `${baseUrl}${page.data.image}` }],
@@ -162,8 +170,8 @@ export async function generateMetadata({
     },
     twitter: {
       card: 'summary_large_image',
-      title: page.data.title,
-      description: page.data.description,
+      title: ogTitle,
+      description: ogDescription,
       ...(page.data.image && {
         images: [`${baseUrl}${page.data.image}`],
       }),

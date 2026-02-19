@@ -19,12 +19,14 @@ export async function GET() {
     posts.map(async (post) => {
       const authorNames = getAuthorNames(post.data.author);
       const content = await post.data.getText('processed');
+      const rssTitle = post.data.metaTitle ?? post.data.title;
+      const rssDescription = post.data.metaDescription ?? post.data.description ?? '';
       return `
     <item>
-      <title>${escapeXml(post.data.title)}</title>
+      <title>${escapeXml(rssTitle)}</title>
       <link>${baseUrl}${post.url}</link>
       <guid isPermaLink="true">${baseUrl}${post.url}</guid>
-      <description>${escapeXml(post.data.description ?? '')}</description>
+      <description>${escapeXml(rssDescription)}</description>
       <content:encoded><![CDATA[${content}]]></content:encoded>
       <pubDate>${new Date(post.data.date).toUTCString()}</pubDate>
       <author>hello@brokle.com (${escapeXml(authorNames)})</author>${post.data.tags.map((tag: string) => `
