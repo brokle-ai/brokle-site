@@ -8,6 +8,7 @@ import {
 import { notFound } from 'next/navigation';
 import { getMDXComponents } from '@/mdx-components';
 import { BreadcrumbSchema } from '@/components/seo';
+import { LLMCopyButton, ViewOptions } from '@/components/page-actions';
 import type { Metadata } from 'next';
 
 const baseUrl = 'https://brokle.com';
@@ -48,12 +49,19 @@ export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
   const canonicalUrl = page.data.canonicalUrl ?? undefined;
   const breadcrumbs = buildBreadcrumbs(params.slug || [], page.data.title, canonicalUrl);
 
+  const markdownUrl = `${page.url}.mdx`;
+  const githubUrl = `https://github.com/brokle-ai/brokle-site/blob/main/content/docs/${page.path}`;
+
   return (
     <>
       <BreadcrumbSchema items={breadcrumbs} />
       <DocsPage toc={page.data.toc} full={page.data.full}>
         <DocsTitle>{page.data.title}</DocsTitle>
         <DocsDescription>{page.data.description}</DocsDescription>
+        <div className="flex flex-row gap-2 items-center border-b pt-2 pb-6">
+          <LLMCopyButton markdownUrl={markdownUrl} />
+          <ViewOptions markdownUrl={markdownUrl} githubUrl={githubUrl} />
+        </div>
         <DocsBody>
           <MDX components={getMDXComponents()} />
         </DocsBody>

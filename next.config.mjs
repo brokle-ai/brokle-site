@@ -10,6 +10,20 @@ const config = {
   // Note: www to non-www redirect is handled at DNS/CDN level
   // Note: Lowercase URL enforcement removed - causes redirect loops with static files
 
+  // Rewrite .mdx extension to serve raw markdown for LLM copy/open features
+  async rewrites() {
+    return [
+      {
+        source: '/docs/:path*.mdx',
+        destination: '/llms.mdx/docs/:path*',
+      },
+      {
+        source: '/docs.mdx',
+        destination: '/llms.mdx/docs',
+      },
+    ];
+  },
+
   // Essential security headers (CSP removed - overkill for marketing site)
   async headers() {
     return [

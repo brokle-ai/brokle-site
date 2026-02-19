@@ -13,7 +13,7 @@ export interface PageSEO {
   title: string;
   /** Default meta description */
   description: string;
-  /** Override <title> tag (keep under 50 chars, template adds suffix) */
+  /** Override <title> tag (keep under 60 chars, template adds suffix) */
   metaTitle?: string;
   /** Override <meta name="description"> (keep under 160 chars) */
   metaDescription?: string;

@@ -17,6 +17,7 @@ const footerLinks = {
     { name: "Python SDK", href: "/docs/sdk/python" },
     { name: "JavaScript SDK", href: "/docs/sdk/javascript" },
     { name: "API Reference", href: "/docs/api" },
+    { name: "LLMs.txt", href: "/llms.txt" },
     { name: "Contributing", href: "https://github.com/brokle-ai/brokle/blob/main/CONTRIBUTING.md", external: true },
     { name: "Status", href: "https://status.brokle.com", external: true },
   ],
