@@ -1,9 +1,15 @@
 {
   "redirects": [
     {
-      "source": "/:path*",
+      "source": "/",
       "has": [{ "type": "host", "value": "docs.brokle.com" }],
-      "destination": "https://brokle.com/docs/:path*",
+      "destination": "https://brokle.com/docs",
+      "permanent": false
+    },
+    {
+      "source": "/:path+",
+      "has": [{ "type": "host", "value": "docs.brokle.com" }],
+      "destination": "https://brokle.com/docs/:path+",
       "permanent": false
     }
   ]
