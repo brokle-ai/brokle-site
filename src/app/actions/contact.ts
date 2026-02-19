@@ -48,9 +48,27 @@ export async function submitContactForm(
 
     const { name, email, company, subject, message, inquiryType } = validatedFields.data
 
-    // TODO: Implement actual email sending logic (e.g., Resend, SendGrid)
-    // For now, form validation is complete - email sending would happen here
-    void { name, email, company, subject, message, inquiryType }; // Mark as used
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+    const res = await fetch(`${API_URL}/api/v1/website/contact`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        email,
+        company,
+        subject,
+        message,
+        inquiry_type: inquiryType,
+      }),
+    })
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => null)
+      return {
+        success: false,
+        message: err?.error?.message || 'Failed to send. Please try again.',
+      }
+    }
 
     revalidatePath('/contact')
 

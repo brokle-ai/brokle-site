@@ -80,7 +80,26 @@ export const initializeMarketing = (): void => {
   // Implementation would go here when marketing integrations are added
 };
 
+declare global {
+  interface Window {
+    gtag: (...args: unknown[]) => void;
+  }
+}
+
+export const updateGoogleConsent = (preferences: CookiePreferences): void => {
+  if (typeof window === 'undefined' || typeof window.gtag !== 'function') return;
+
+  window.gtag('consent', 'update', {
+    analytics_storage: preferences.analytics ? 'granted' : 'denied',
+    ad_storage: preferences.marketing ? 'granted' : 'denied',
+    ad_user_data: preferences.marketing ? 'granted' : 'denied',
+    ad_personalization: preferences.marketing ? 'granted' : 'denied',
+  });
+};
+
 export const applyPreferences = async (preferences: CookiePreferences): Promise<boolean> => {
+  updateGoogleConsent(preferences);
+
   if (preferences.analytics) {
     const result = await initializeAnalytics();
     if (!result) {

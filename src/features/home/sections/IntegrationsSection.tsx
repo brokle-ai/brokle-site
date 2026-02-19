@@ -70,7 +70,10 @@ export function IntegrationsSection() {
             Works with your entire stack
           </DisplayHeading>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Native integrations with 100+ AI providers and frameworks. Drop-in compatibility with your existing code.
+            Native integrations with popular AI providers and frameworks. Drop-in compatibility with your existing code.
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Built on OpenTelemetry — compatible with any instrumented tool or framework.
           </p>
         </div>
       </div>

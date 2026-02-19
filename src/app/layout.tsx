@@ -5,9 +5,12 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { CookieConsentProvider } from '@/providers/cookie-consent-provider';
 import { CookieConsent } from '@/components/cookie-consent';
 import { AnalyticsTracker } from '@/components/analytics-tracker';
+import { ConsentModeUpdater } from '@/components/consent-mode-updater';
 import { ScrollProvider } from '@/contexts/ScrollContext';
 import { OrganizationSchema, SoftwareApplicationSchema } from '@/components/seo';
 import { Toaster } from 'sonner';
+import { GoogleTagManager } from '@next/third-parties/google';
+import Script from 'next/script';
 import type { Metadata } from 'next';
 import './global.css';
 
@@ -85,7 +88,32 @@ export default function RootLayout({
       className={`${GeistSans.variable} ${GeistMono.variable}`}
       suppressHydrationWarning
     >
+      {process.env.NEXT_PUBLIC_GTM_ID && (
+        <GoogleTagManager gtmId={process.env.NEXT_PUBLIC_GTM_ID} />
+      )}
       <head>
+        {/* Consent defaults MUST execute before GTM (Google requirement).
+            beforeInteractive = SSR-injected into <head>, runs during HTML parsing.
+            GoogleTagManager uses afterInteractive = runs after hydration.
+            This gives explicit, deterministic ordering via Next.js script lifecycle. */}
+        {process.env.NEXT_PUBLIC_GTM_ID && (
+          <Script
+            id="gtm-consent-defaults"
+            strategy="beforeInteractive"
+            dangerouslySetInnerHTML={{
+              __html: `
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('consent', 'default', {
+                  'ad_storage': 'denied',
+                  'ad_user_data': 'denied',
+                  'ad_personalization': 'denied',
+                  'analytics_storage': 'denied'
+                });
+              `,
+            }}
+          />
+        )}
         {/* DNS Prefetch for external resources */}
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
         <link rel="dns-prefetch" href="https://www.google-analytics.com" />
@@ -108,6 +136,7 @@ export default function RootLayout({
         <SoftwareApplicationSchema />
         <CookieConsentProvider>
           <AnalyticsTracker />
+          <ConsentModeUpdater />
           <ThemeProvider
             attribute="class"
             defaultTheme="system"

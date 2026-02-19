@@ -52,7 +52,7 @@ export function ProductFeatureSection({
 
             {/* Image */}
             <div className={reverse ? "lg:order-1" : ""}>
-              <div className="relative aspect-[4/3] rounded-xl overflow-hidden shadow-lg min-h-[200px] sm:min-h-[250px] lg:min-h-[300px]">
+              <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-xl ring-1 ring-border/50 min-h-[200px] sm:min-h-[250px] lg:min-h-[300px]">
                 <Image
                   src={image.src}
                   alt={image.alt}

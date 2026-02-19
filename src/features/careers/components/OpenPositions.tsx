@@ -5,10 +5,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
-import { Upload, Clock, BriefcaseIcon, MapPin } from "lucide-react"
+import { Clock, BriefcaseIcon, MapPin, Mail } from "lucide-react"
 
 const jobListings = [
   {
@@ -211,70 +209,19 @@ export function OpenPositions() {
           ) : (
             <Card className="border-dashed">
               <CardHeader className="text-center">
-                <CardTitle>We&apos;re not hiring at the moment, but we&apos;d love to stay in touch!</CardTitle>
+                <CardTitle>No open positions right now</CardTitle>
                 <CardDescription>
-                  Join our talent pool to be notified when new positions open up that match your skills and interests.
+                  We&apos;re not hiring at the moment, but we&apos;d love to hear from you.
+                  Reach out and we&apos;ll keep you in mind for future opportunities.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <form className="space-y-6 max-w-2xl mx-auto">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Full Name</Label>
-                      <Input id="name" placeholder="John Doe" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input id="email" type="email" placeholder="john.doe@example.com" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="department">Preferred Department</Label>
-                    <Select>
-                      <SelectTrigger id="department">
-                        <SelectValue placeholder="Select department" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="engineering">Engineering</SelectItem>
-                        <SelectItem value="design">Design</SelectItem>
-                        <SelectItem value="product">Product</SelectItem>
-                        <SelectItem value="marketing">Marketing</SelectItem>
-                        <SelectItem value="sales">Sales</SelectItem>
-                        <SelectItem value="customer-success">Customer Success</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="resume">Upload Resume</Label>
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" className="w-full">
-                        <Upload className="h-4 w-4 mr-2" />
-                        Choose File
-                      </Button>
-                      <span className="text-sm text-muted-foreground">No file chosen</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">PDF, DOCX, or TXT. Max 5MB.</p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="message">Message (Optional)</Label>
-                    <Textarea id="message" placeholder="Tell us about your skills and interests..." rows={4} />
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <input type="checkbox" id="notify" className="rounded border-gray-300" />
-                    <Label htmlFor="notify" className="text-sm font-normal">
-                      Notify me about future job openings that match my profile
-                    </Label>
-                  </div>
-
-                  <Button type="submit" className="w-full">
-                    Join Talent Pool
-                  </Button>
-                </form>
+              <CardContent className="flex justify-center">
+                <Button asChild variant="outline">
+                  <a href="mailto:careers@brokle.com">
+                    <Mail className="h-4 w-4 mr-2" />
+                    Contact Us
+                  </a>
+                </Button>
               </CardContent>
             </Card>
           )}

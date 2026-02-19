@@ -11,7 +11,7 @@ export function ProductScreenshot({ src, alt }: ProductScreenshotProps) {
     <section className="pb-20">
       <div className="container px-4 mx-auto">
         <div className="max-w-6xl mx-auto">
-          <div className="relative aspect-video rounded-xl overflow-hidden shadow-2xl min-h-[200px] sm:min-h-[300px] lg:min-h-[400px]">
+          <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl ring-1 ring-border/50 min-h-[200px] sm:min-h-[300px] lg:min-h-[400px]">
             <Image
               src={src}
               alt={alt}
