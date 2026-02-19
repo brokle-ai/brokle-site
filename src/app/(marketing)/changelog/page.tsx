@@ -1,17 +1,8 @@
 import ChangelogPage from '@/features/changelog/changelog-page';
-import type { Metadata } from 'next';
+import { seoMetadata } from '@/data/seo-metadata';
+import { resolvePageMetadata } from '@/lib/metadata';
 
-export const metadata: Metadata = {
-  title: 'Changelog - Brokle',
-  description: 'Latest updates and improvements to the Brokle platform.',
-  openGraph: {
-    title: 'Changelog - Brokle',
-    description: 'Latest updates and improvements to the Brokle platform.',
-    url: 'https://brokle.com/changelog',
-    siteName: 'Brokle',
-    type: 'website',
-  },
-};
+export const metadata = resolvePageMetadata(seoMetadata.changelog, '/changelog');
 
 export default function Changelog() {
   return <ChangelogPage />;

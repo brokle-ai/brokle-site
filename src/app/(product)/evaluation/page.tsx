@@ -1,5 +1,7 @@
 import type { Metadata } from "next"
 import { ProductSchema } from "@/components/seo"
+import { seoMetadata } from "@/data/seo-metadata"
+import { resolvePageMetadata } from "@/lib/metadata"
 import {
   ProductHero,
   ProductScreenshot,
@@ -20,19 +22,10 @@ import {
 } from "lucide-react"
 import { getSignupUrl } from "@/lib/app-urls"
 
-export const metadata: Metadata = {
-  title: "Evaluation Framework - Brokle",
-  description:
-    "Automated AI evaluation with LLM-as-judge. Build custom evaluators, run A/B tests, and score outputs at scale.",
-  openGraph: {
-    title: "Evaluation Framework - Brokle",
-    description:
-      "Automated AI evaluation with LLM-as-judge. Build custom evaluators and score outputs at scale.",
-    url: "https://brokle.com/evaluation",
-    siteName: "Brokle",
-    type: "website",
-  },
-}
+export const metadata: Metadata = resolvePageMetadata(
+  seoMetadata.evaluation,
+  "/evaluation",
+)
 
 export default function EvaluationPage() {
   return (

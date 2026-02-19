@@ -1,5 +1,7 @@
 import type { Metadata } from "next"
 import { ProductSchema } from "@/components/seo"
+import { seoMetadata } from "@/data/seo-metadata"
+import { resolvePageMetadata } from "@/lib/metadata"
 import {
   ProductHero,
   ProductScreenshot,
@@ -23,19 +25,10 @@ import {
 } from "lucide-react"
 import { getSignupUrl } from "@/lib/app-urls"
 
-export const metadata: Metadata = {
-  title: "Tracing & Debugging - Brokle",
-  description:
-    "Debug your AI applications with detailed traces. See every AI call, chain execution, and agent step. OpenTelemetry-native tracing for AI applications.",
-  openGraph: {
-    title: "Tracing & Debugging - Brokle",
-    description:
-      "Debug your AI applications with detailed traces. OpenTelemetry-native tracing for AI.",
-    url: "https://brokle.com/tracing",
-    siteName: "Brokle",
-    type: "website",
-  },
-}
+export const metadata: Metadata = resolvePageMetadata(
+  seoMetadata.tracing,
+  "/tracing",
+)
 
 export default function TracingPage() {
   return (

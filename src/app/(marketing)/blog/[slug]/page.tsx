@@ -146,7 +146,7 @@ export async function generateMetadata({
   const canonicalUrl = page.data.canonicalUrl ?? `${baseUrl}/blog/${slug}`;
 
   return {
-    title: `${metaTitle} - Brokle Blog`,
+    title: { absolute: `${metaTitle} - Brokle Blog` },
     description: metaDescription,
     keywords: page.data.tags,
     alternates: {

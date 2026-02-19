@@ -1,19 +1,14 @@
-import type { Metadata } from "next"
-import { ComparisonPage } from "@/features/comparisons/ComparisonPage"
-import { vsLangsmithData } from "@/features/comparisons/data/vs-langsmith"
+import type { Metadata } from 'next';
+import { ComparisonPage } from '@/features/comparisons/ComparisonPage';
+import { vsLangsmithData } from '@/features/comparisons/data/vs-langsmith';
+import { seoMetadata } from '@/data/seo-metadata';
+import { resolvePageMetadata } from '@/lib/metadata';
 
-export const metadata: Metadata = {
-  title: "Brokle vs LangSmith - Open Source LLM Observability",
-  description: vsLangsmithData.metaDescription,
-  keywords: [
-    "LangSmith alternative",
-    "LangSmith vs Brokle",
-    "open source LangSmith",
-    "LLM observability comparison",
-    "self-hosted LLM tracing",
-  ],
-}
+export const metadata: Metadata = resolvePageMetadata(
+  seoMetadata.vsLangsmith,
+  '/compare/vs-langsmith',
+);
 
 export default function VsLangsmithPage() {
-  return <ComparisonPage data={vsLangsmithData} />
+  return <ComparisonPage data={vsLangsmithData} />;
 }

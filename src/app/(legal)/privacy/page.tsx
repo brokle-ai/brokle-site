@@ -1,17 +1,8 @@
 import PrivacyPolicyPage from '@/features/privacy-policy/privacy-policy-page';
-import type { Metadata } from 'next';
+import { seoMetadata } from '@/data/seo-metadata';
+import { resolvePageMetadata } from '@/lib/metadata';
 
-export const metadata: Metadata = {
-  title: 'Privacy Policy - Brokle',
-  description: 'Brokle privacy policy. How we handle and protect your data.',
-  openGraph: {
-    title: 'Privacy Policy - Brokle',
-    description: 'Brokle privacy policy. How we handle and protect your data.',
-    url: 'https://brokle.com/privacy',
-    siteName: 'Brokle',
-    type: 'website',
-  },
-};
+export const metadata = resolvePageMetadata(seoMetadata.privacy, '/privacy');
 
 export default function Privacy() {
   return <PrivacyPolicyPage />;

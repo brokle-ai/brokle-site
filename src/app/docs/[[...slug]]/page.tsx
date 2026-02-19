@@ -10,8 +10,9 @@ import { getMDXComponents } from '@/mdx-components';
 import { BreadcrumbSchema } from '@/components/seo';
 import type { Metadata } from 'next';
 
-function buildBreadcrumbs(slugs: string[], title: string) {
-  const baseUrl = 'https://brokle.com';
+const baseUrl = 'https://brokle.com';
+
+function buildBreadcrumbs(slugs: string[], title: string, canonicalUrl?: string) {
   const items = [
     { name: 'Home', url: baseUrl },
     { name: 'Documentation', url: `${baseUrl}/docs` },
@@ -29,10 +30,10 @@ function buildBreadcrumbs(slugs: string[], title: string) {
     items.push({ name, url: `${baseUrl}${currentPath}` });
   }
 
-  // Add current page
+  // Add current page (use canonical URL if set)
   items.push({
     name: title,
-    url: `${baseUrl}/docs/${slugs.join('/')}`,
+    url: canonicalUrl ?? `${baseUrl}/docs/${slugs.join('/')}`,
   });
 
   return items;
@@ -44,7 +45,8 @@ export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
   if (!page) notFound();
 
   const MDX = page.data.body;
-  const breadcrumbs = buildBreadcrumbs(params.slug || [], page.data.title);
+  const canonicalUrl = page.data.canonicalUrl ?? undefined;
+  const breadcrumbs = buildBreadcrumbs(params.slug || [], page.data.title, canonicalUrl);
 
   return (
     <>
@@ -71,11 +73,33 @@ export async function generateMetadata(
   const page = source.getPage(params.slug);
   if (!page) notFound();
 
+  const { title, description } = page.data;
+  const metaTitle = page.data.metaTitle ?? title;
+  const metaDescription = page.data.metaDescription ?? description;
+  const ogTitle = page.data.ogTitle ?? metaTitle;
+  const ogDescription = page.data.ogDescription ?? metaDescription;
+  const slugPath = params.slug?.join('/') ?? '';
+  const canonicalUrl =
+    page.data.canonicalUrl ?? `${baseUrl}/docs${slugPath ? `/${slugPath}` : ''}`;
+
   return {
-    title: page.data.title,
-    description: page.data.description,
+    title: metaTitle,
+    description: metaDescription,
+    alternates: { canonical: canonicalUrl },
     openGraph: {
+      title: ogTitle,
+      description: ogDescription,
+      url: canonicalUrl,
+      siteName: 'Brokle',
       images: getPageImage(page).url,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      site: '@brokleai',
+      creator: '@brokleai',
+      title: ogTitle,
+      description: ogDescription,
+      images: [getPageImage(page).url],
     },
   };
 }

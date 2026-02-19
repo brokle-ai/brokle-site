@@ -1,5 +1,7 @@
 import type { Metadata } from "next"
 import { ProductSchema } from "@/components/seo"
+import { seoMetadata } from "@/data/seo-metadata"
+import { resolvePageMetadata } from "@/lib/metadata"
 import {
   ProductHero,
   ProductScreenshot,
@@ -20,19 +22,10 @@ import {
 } from "lucide-react"
 import { getSignupUrl } from "@/lib/app-urls"
 
-export const metadata: Metadata = {
-  title: "Prompt Management - Brokle",
-  description:
-    "Version, test, and deploy prompts with confidence. Track changes, compare performance, and roll back instantly.",
-  openGraph: {
-    title: "Prompt Management - Brokle",
-    description:
-      "Version, test, and deploy prompts with confidence. Track changes and roll back instantly.",
-    url: "https://brokle.com/prompt-management",
-    siteName: "Brokle",
-    type: "website",
-  },
-}
+export const metadata: Metadata = resolvePageMetadata(
+  seoMetadata.promptManagement,
+  "/prompt-management",
+)
 
 export default function PromptManagementPage() {
   return (

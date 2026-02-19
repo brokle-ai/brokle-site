@@ -1,19 +1,8 @@
 import ContactPage from '@/features/contact/contact-page';
-import type { Metadata } from 'next';
+import { seoMetadata } from '@/data/seo-metadata';
+import { resolvePageMetadata } from '@/lib/metadata';
 
-export const metadata: Metadata = {
-  title: 'Contact - Brokle',
-  description:
-    'Get in touch with the Brokle team. We are here to help with your AI observability needs.',
-  openGraph: {
-    title: 'Contact - Brokle',
-    description:
-      'Get in touch with the Brokle team. We are here to help with your AI observability needs.',
-    url: 'https://brokle.com/contact',
-    siteName: 'Brokle',
-    type: 'website',
-  },
-};
+export const metadata = resolvePageMetadata(seoMetadata.contact, '/contact');
 
 export default function Contact() {
   return <ContactPage />;

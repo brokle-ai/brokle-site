@@ -1,31 +1,11 @@
 import BlogPage, { type BlogPostData } from '@/features/blog/blog-page';
 import { getBlogPosts, getAllTags } from '@/lib/source';
 import { getAuthor } from '@/data/authors';
-import type { Metadata } from 'next';
+import { seoMetadata } from '@/data/seo-metadata';
+import { resolvePageMetadata } from '@/lib/metadata';
 import { Suspense } from 'react';
 
-export const metadata: Metadata = {
-  title: 'Blog - Brokle',
-  description:
-    'Technical guides and updates from the Brokle team.',
-  keywords: [
-    'AI observability',
-    'LLM tracing',
-    'AI evaluation',
-    'prompt management',
-  ],
-  alternates: {
-    canonical: 'https://brokle.com/blog',
-  },
-  openGraph: {
-    title: 'Blog - Brokle',
-    description:
-      'Technical guides and updates from the Brokle team.',
-    url: 'https://brokle.com/blog',
-    siteName: 'Brokle',
-    type: 'website',
-  },
-};
+export const metadata = resolvePageMetadata(seoMetadata.blog, '/blog');
 
 export default function Blog() {
   const posts: BlogPostData[] = getBlogPosts().map((post) => ({
